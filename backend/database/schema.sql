@@ -15,6 +15,8 @@ create table if not exists usuarios (
     password_hash   text not null,
     rol             text not null check (rol in ('admin', 'supervisor', 'tecnico')) default 'tecnico',
     activo          boolean not null default true,
+    -- Foto de perfil en base64 (data URI), ej: "data:image/jpeg;base64,..."
+    avatar          text,
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()
 );

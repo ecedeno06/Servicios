@@ -35,6 +35,26 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  actualizarAvatar(avatar: string | null): Observable<Usuario> {
+    return this.http.put<Usuario>(`${environment.apiUrl}/auth/me`, { avatar }).pipe(
+      tap((usuario) => this.guardarUsuarioActualizado(usuario))
+    );
+  }
+
+  cambiarPassword(passwordActual: string, passwordNueva: string): Observable<{ mensaje: string }> {
+    return this.http.put<{ mensaje: string }>(`${environment.apiUrl}/auth/password`, {
+      password_actual: passwordActual,
+      password_nueva: passwordNueva,
+    });
+  }
+
+  private guardarUsuarioActualizado(usuario: Usuario): void {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const actual = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...actual, usuario: { ...actual.usuario, ...usuario } }));
+    this._usuario.set({ ...this._usuario(), ...usuario } as Usuario);
+  }
+
   get token(): string | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;

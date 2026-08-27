@@ -42,7 +42,7 @@ import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
         <tbody>
           @for (c of contratosFiltrados(); track c.id) {
             <tr>
-              <td><a [routerLink]="['/contratos', c.id]">{{ c.numero_contrato }}</a></td>
+              <td><a [routerLink]="['/contratos', c.id]" [title]="c.observaciones || 'Sin observaciones registradas.'">{{ c.numero_contrato }}</a></td>
               <td>{{ c.cliente_nombre }}</td>
               <td>{{ c.fecha_inicio | date:'dd/MM/yyyy' }}</td>
               <td>{{ c.fecha_fin ? (c.fecha_fin | date:'dd/MM/yyyy') : '-' }}</td>

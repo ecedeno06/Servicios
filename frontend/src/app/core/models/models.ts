@@ -6,6 +6,7 @@ export interface Usuario {
   email: string;
   rol: Rol;
   activo: boolean;
+  avatar?: string | null;
   created_at?: string;
 }
 

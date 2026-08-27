@@ -74,7 +74,7 @@ import { ConsumoHoras, Contrato, Cliente } from '../../core/models/models';
           @for (fila of consumoFiltrado(); track fila.contrato_servicio_id) {
             <tr>
               <td>{{ fila.cliente_nombre }}</td>
-              <td><a [routerLink]="['/contratos', fila.contrato_id]">{{ fila.numero_contrato }}</a></td>
+              <td><a [routerLink]="['/contratos', fila.contrato_id]" [title]="observaciones(fila.contrato_id)">{{ fila.numero_contrato }}</a></td>
               <td>{{ fila.tipo_servicio_nombre }}</td>
               <td>{{ fila.horas_contratadas | number:'1.0-1' }}</td>
               <td>{{ fila.horas_ejecutadas | number:'1.0-1' }}</td>
@@ -151,6 +151,11 @@ export class DashboardComponent implements OnInit {
     if (pct >= 100) return 'danger';
     if (pct >= 80) return 'warn';
     return 'ok';
+  }
+
+  observaciones(contratoId: string): string {
+    const contrato = this.contratos().find((c) => c.id === contratoId);
+    return contrato?.observaciones || 'Sin observaciones registradas.';
   }
 
   vigencia(contratoId: string): { texto: string; clase: string } {
