@@ -21,6 +21,11 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
       </div>
 
       <div class="card">
+        <h2 style="margin:0;">Observaciones</h2>
+        <p class="mt-16" style="margin-bottom:0; white-space: pre-wrap;">{{ c.observaciones || 'Sin observaciones registradas.' }}</p>
+      </div>
+
+      <div class="card mt-16">
         <div class="flex items-center gap-12" style="justify-content: space-between;">
           <h2 style="margin:0;">Horas establecidas por tipo de servicio</h2>
           <button class="btn btn-accent btn-sm" (click)="panelAbierto.set(true)">+ Asignar servicio</button>
