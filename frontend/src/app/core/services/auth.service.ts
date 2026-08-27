@@ -35,6 +35,15 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  puedeEditar(): boolean {
+    const rol = this.usuario()?.rol;
+    return rol === 'admin' || rol === 'supervisor';
+  }
+
+  puedeEliminar(): boolean {
+    return this.usuario()?.rol === 'admin';
+  }
+
   actualizarAvatar(avatar: string | null): Observable<Usuario> {
     return this.http.put<Usuario>(`${environment.apiUrl}/auth/me`, { avatar }).pipe(
       tap((usuario) => this.guardarUsuarioActualizado(usuario))

@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContratosService } from '../../core/services/contratos.service';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Contrato, Documento, TipoServicio } from '../../core/models/models';
 
 @Component({
@@ -28,7 +29,9 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
       <div class="card mt-16">
         <div class="flex items-center gap-12" style="justify-content: space-between;">
           <h2 style="margin:0;">Horas establecidas por tipo de servicio</h2>
-          <button class="btn btn-accent btn-sm" (click)="panelAbierto.set(true)">+ Asignar servicio</button>
+          @if (auth.puedeEditar()) {
+            <button class="btn btn-accent btn-sm" (click)="panelAbierto.set(true)">+ Asignar servicio</button>
+          }
         </div>
 
         <div class="table-wrap mt-16">
@@ -49,8 +52,12 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
                     </div>
                   </td>
                   <td class="table-actions">
-                    <button class="btn btn-outline btn-sm" (click)="editarHoras(s)">Editar</button>
-                    <button class="btn btn-danger btn-sm" (click)="eliminarServicio(s.contrato_servicio_id)">Quitar</button>
+                    @if (auth.puedeEditar()) {
+                      <button class="btn btn-outline btn-sm" (click)="editarHoras(s)">Editar</button>
+                    }
+                    @if (auth.puedeEliminar()) {
+                      <button class="btn btn-danger btn-sm" (click)="eliminarServicio(s.contrato_servicio_id)">Quitar</button>
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -64,7 +71,9 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
       <div class="card mt-16">
         <div class="flex items-center gap-12" style="justify-content: space-between;">
           <h2 style="margin:0;">Documentos</h2>
-          <button class="btn btn-accent btn-sm" (click)="panelDocAbierto.set(true)">+ Agregar documento</button>
+          @if (auth.puedeEditar()) {
+            <button class="btn btn-accent btn-sm" (click)="panelDocAbierto.set(true)">+ Agregar documento</button>
+          }
         </div>
 
         <div class="table-wrap mt-16">
@@ -78,7 +87,9 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
                   <td>{{ d.nombre }}</td>
                   <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
                   <td class="table-actions">
-                    <button class="btn btn-danger btn-sm" (click)="quitarDocumento(d)">Quitar</button>
+                    @if (auth.puedeEditar()) {
+                      <button class="btn btn-danger btn-sm" (click)="quitarDocumento(d)">Quitar</button>
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -192,7 +203,8 @@ export class ContratoDetalleComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private srv: ContratosService,
-    private tiposSrv: TiposServicioService
+    private tiposSrv: TiposServicioService,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {

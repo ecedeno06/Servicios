@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ContratosService } from '../../core/services/contratos.service';
 import { ClientesService } from '../../core/services/clientes.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
 
 @Component({
@@ -16,7 +17,9 @@ import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
         <h1>Contratos</h1>
         <div class="desc">Contratos firmados por cliente, con sus horas y estado</div>
       </div>
-      <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo contrato</button>
+      @if (auth.puedeEditar()) {
+        <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo contrato</button>
+      }
     </div>
 
     <div class="filter-bar">
@@ -49,8 +52,12 @@ import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
               <td><span class="badge" [ngClass]="vigencia(c).clase">{{ vigencia(c).texto }}</span></td>
               <td class="table-actions">
                 <a class="btn btn-outline btn-sm" [routerLink]="['/contratos', c.id]">Ver horas</a>
-                <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
-                <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
+                @if (auth.puedeEditar()) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
+                }
+                @if (auth.puedeEliminar()) {
+                  <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
+                }
               </td>
             </tr>
           } @empty {
@@ -145,7 +152,12 @@ export class ContratosComponent implements OnInit {
     { validators: fechaFinNoAnteriorValidator }
   );
 
-  constructor(private fb: FormBuilder, private srv: ContratosService, private clientesSrv: ClientesService) {}
+  constructor(
+    private fb: FormBuilder,
+    private srv: ContratosService,
+    private clientesSrv: ClientesService,
+    public auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.cargar();

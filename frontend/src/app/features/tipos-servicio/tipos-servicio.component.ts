@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TipoServicio } from '../../core/models/models';
 
 @Component({
@@ -14,7 +15,9 @@ import { TipoServicio } from '../../core/models/models';
         <h1>Tipos de servicio</h1>
         <div class="desc">Catalogo de servicios que se pueden asignar a un contrato</div>
       </div>
-      <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo tipo de servicio</button>
+      @if (auth.puedeEditar()) {
+        <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo tipo de servicio</button>
+      }
     </div>
 
     <div class="table-wrap">
@@ -27,8 +30,12 @@ import { TipoServicio } from '../../core/models/models';
               <td>{{ t.descripcion || '-' }}</td>
               <td><span class="badge" [class.badge-green]="t.activo" [class.badge-slate]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span></td>
               <td class="table-actions">
-                <button class="btn btn-outline btn-sm" (click)="abrirEditar(t)">Editar</button>
-                <button class="btn btn-danger btn-sm" (click)="eliminar(t)">Eliminar</button>
+                @if (auth.puedeEditar()) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirEditar(t)">Editar</button>
+                }
+                @if (auth.puedeEliminar()) {
+                  <button class="btn btn-danger btn-sm" (click)="eliminar(t)">Eliminar</button>
+                }
               </td>
             </tr>
           } @empty {
@@ -78,7 +85,7 @@ export class TiposServicioComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: TiposServicioService) {}
+  constructor(private fb: FormBuilder, private srv: TiposServicioService, public auth: AuthService) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.tipos.set(data)); }

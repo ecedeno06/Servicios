@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClientesService } from '../../core/services/clientes.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Cliente } from '../../core/models/models';
 
 @Component({
@@ -14,7 +15,9 @@ import { Cliente } from '../../core/models/models';
         <h1>Clientes</h1>
         <div class="desc">Empresas o personas a quienes se les presta el servicio</div>
       </div>
-      <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo cliente</button>
+      @if (auth.puedeEditar()) {
+        <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo cliente</button>
+      }
     </div>
 
     <div class="filter-bar">
@@ -48,8 +51,12 @@ import { Cliente } from '../../core/models/models';
               <td>{{ c.telefono || '-' }}</td>
               <td><span class="badge" [class.badge-green]="c.activo" [class.badge-slate]="!c.activo">{{ c.activo ? 'Activo' : 'Inactivo' }}</span></td>
               <td class="table-actions">
-                <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
-                <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
+                @if (auth.puedeEditar()) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
+                }
+                @if (auth.puedeEliminar()) {
+                  <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
+                }
               </td>
             </tr>
           } @empty {
@@ -128,7 +135,7 @@ export class ClientesComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: ClientesService) {}
+  constructor(private fb: FormBuilder, private srv: ClientesService, public auth: AuthService) {}
 
   ngOnInit(): void { this.cargar(); }
 

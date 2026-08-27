@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { ContratosService } from '../../core/services/contratos.service';
+import { AuthService } from '../../core/services/auth.service';
 import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/models/models';
 
 @Component({
@@ -56,8 +57,10 @@ import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/mode
               <td>{{ r.horas | number:'1.0-2' }}</td>
               <td>{{ r.usuario_nombre }}</td>
               <td class="table-actions">
-                <button class="btn btn-outline btn-sm" (click)="abrirEditar(r)">Editar</button>
-                <button class="btn btn-danger btn-sm" (click)="eliminar(r)">Eliminar</button>
+                @if (auth.puedeEditar()) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirEditar(r)">Editar</button>
+                  <button class="btn btn-danger btn-sm" (click)="eliminar(r)">Eliminar</button>
+                }
               </td>
             </tr>
           } @empty {
@@ -242,7 +245,8 @@ export class RegistroHorasComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private srv: RegistroHorasService,
-    private contratosSrv: ContratosService
+    private contratosSrv: ContratosService,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
