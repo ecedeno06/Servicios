@@ -7,7 +7,9 @@ async function listar(req, res, next) {
       `select c.*, cl.nombre as cliente_nombre
        from contratos c
        join clientes cl on cl.id = c.cliente_id
-       order by c.created_at desc`
+       where c.empresa_id = $1
+       order by c.created_at desc`,
+      [req.empresaId]
     );
     res.json(rows);
   } catch (err) { next(err); }
@@ -19,8 +21,8 @@ async function obtener(req, res, next) {
     const { rows } = await pool.query(
       `select c.*, cl.nombre as cliente_nombre
        from contratos c join clientes cl on cl.id = c.cliente_id
-       where c.id = $1`,
-      [req.params.id]
+       where c.id = $1 and c.empresa_id = $2`,
+      [req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Contrato no encontrado' });
 
@@ -36,10 +38,14 @@ async function obtener(req, res, next) {
 async function crear(req, res, next) {
   try {
     const { cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos } = req.body;
+
+    const cliente = await pool.query('select id from clientes where id = $1 and empresa_id = $2', [cliente_id, req.empresaId]);
+    if (!cliente.rows[0]) return res.status(400).json({ mensaje: 'El cliente indicado no pertenece a esta empresa' });
+
     const { rows } = await pool.query(
-      `insert into contratos (cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos)
-       values ($1,$2,$3,$4, coalesce($5,'activo'), $6, coalesce($7,'[]'::jsonb)) returning *`,
-      [cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos ? JSON.stringify(documentos) : null]
+      `insert into contratos (empresa_id, cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos)
+       values ($1,$2,$3,$4,$5, coalesce($6,'activo'), $7, coalesce($8,'[]'::jsonb)) returning *`,
+      [req.empresaId, cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos ? JSON.stringify(documentos) : null]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -48,6 +54,12 @@ async function crear(req, res, next) {
 async function actualizar(req, res, next) {
   try {
     const { cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos } = req.body;
+
+    if (cliente_id) {
+      const cliente = await pool.query('select id from clientes where id = $1 and empresa_id = $2', [cliente_id, req.empresaId]);
+      if (!cliente.rows[0]) return res.status(400).json({ mensaje: 'El cliente indicado no pertenece a esta empresa' });
+    }
+
     const { rows } = await pool.query(
       `update contratos set
          cliente_id = coalesce($1, cliente_id),
@@ -57,8 +69,8 @@ async function actualizar(req, res, next) {
          estado = coalesce($5, estado),
          observaciones = coalesce($6, observaciones),
          documentos = coalesce($7, documentos)
-       where id = $8 returning *`,
-      [cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos ? JSON.stringify(documentos) : null, req.params.id]
+       where id = $8 and empresa_id = $9 returning *`,
+      [cliente_id, numero_contrato, fecha_inicio, fecha_fin, estado, observaciones, documentos ? JSON.stringify(documentos) : null, req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Contrato no encontrado' });
     res.json(rows[0]);
@@ -67,7 +79,10 @@ async function actualizar(req, res, next) {
 
 async function eliminar(req, res, next) {
   try {
-    const { rowCount } = await pool.query('delete from contratos where id = $1', [req.params.id]);
+    const { rowCount } = await pool.query(
+      'delete from contratos where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
     if (!rowCount) return res.status(404).json({ mensaje: 'Contrato no encontrado' });
     res.status(204).send();
   } catch (err) { next(err); }
@@ -79,6 +94,13 @@ async function eliminar(req, res, next) {
 async function agregarServicio(req, res, next) {
   try {
     const { tipo_servicio_id, horas_contratadas } = req.body;
+
+    const contrato = await pool.query('select id from contratos where id = $1 and empresa_id = $2', [req.params.id, req.empresaId]);
+    if (!contrato.rows[0]) return res.status(404).json({ mensaje: 'Contrato no encontrado' });
+
+    const tipoServicio = await pool.query('select id from tipos_servicio where id = $1 and empresa_id = $2', [tipo_servicio_id, req.empresaId]);
+    if (!tipoServicio.rows[0]) return res.status(400).json({ mensaje: 'El tipo de servicio indicado no pertenece a esta empresa' });
+
     const { rows } = await pool.query(
       `insert into contrato_servicios (contrato_id, tipo_servicio_id, horas_contratadas)
        values ($1,$2,$3) returning *`,
@@ -93,9 +115,11 @@ async function actualizarServicio(req, res, next) {
   try {
     const { horas_contratadas } = req.body;
     const { rows } = await pool.query(
-      `update contrato_servicios set horas_contratadas = coalesce($1, horas_contratadas)
-       where id = $2 and contrato_id = $3 returning *`,
-      [horas_contratadas, req.params.contratoServicioId, req.params.id]
+      `update contrato_servicios cs set horas_contratadas = coalesce($1, cs.horas_contratadas)
+       from contratos c
+       where cs.id = $2 and cs.contrato_id = $3 and cs.contrato_id = c.id and c.empresa_id = $4
+       returning cs.*`,
+      [horas_contratadas, req.params.contratoServicioId, req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Servicio de contrato no encontrado' });
     res.json(rows[0]);
@@ -106,8 +130,10 @@ async function actualizarServicio(req, res, next) {
 async function eliminarServicio(req, res, next) {
   try {
     const { rowCount } = await pool.query(
-      'delete from contrato_servicios where id = $1 and contrato_id = $2',
-      [req.params.contratoServicioId, req.params.id]
+      `delete from contrato_servicios cs
+       using contratos c
+       where cs.id = $1 and cs.contrato_id = $2 and cs.contrato_id = c.id and c.empresa_id = $3`,
+      [req.params.contratoServicioId, req.params.id, req.empresaId]
     );
     if (!rowCount) return res.status(404).json({ mensaje: 'Servicio de contrato no encontrado' });
     res.status(204).send();

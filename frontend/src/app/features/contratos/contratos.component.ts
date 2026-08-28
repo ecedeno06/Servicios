@@ -210,12 +210,17 @@ export class ContratosComponent implements OnInit {
   vigencia(c: Contrato): { texto: string; clase: string } {
     if (c.estado === 'cancelado') return { texto: 'Cancelado', clase: 'badge-slate' };
     if (c.estado === 'finalizado') return { texto: 'Finalizado', clase: 'badge-slate' };
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaInicio = new Date(c.fecha_inicio);
+    fechaInicio.setHours(0, 0, 0, 0);
+    if (fechaInicio > hoy) return { texto: 'No iniciado', clase: 'badge-slate' };
+
     if (c.estado === 'vencido') return { texto: 'Vencido', clase: 'badge-red' };
 
     if (!c.fecha_fin) return { texto: 'Vigente', clase: 'badge-green' };
 
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
     const fechaFin = new Date(c.fecha_fin);
     fechaFin.setHours(0, 0, 0, 0);
     const diasRestantes = Math.round((fechaFin.getTime() - hoy.getTime()) / 86400000);

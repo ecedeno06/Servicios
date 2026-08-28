@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/tiposServicio.controller');
-const { requireAuth, requireRol } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requireRol } = require('../middleware/auth');
 
-router.use(requireAuth);
+router.use(requireAuth, requireEmpresa);
 
 router.get('/', ctrl.listar);
 router.get('/:id', ctrl.obtener);

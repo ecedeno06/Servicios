@@ -4,6 +4,9 @@
   "description": "API REST para gestion de horas de servicio a clientes (Node.js + Express + Postgres/Supabase)",
   "main": "src/server.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"

@@ -43,12 +43,20 @@ import { Contrato, Documento, TipoServicio } from '../../core/models/models';
               @for (s of c.servicios; track s.contrato_servicio_id) {
                 <tr>
                   <td>{{ s.tipo_servicio_nombre }}</td>
-                  <td>{{ s.horas_contratadas | number:'1.0-1' }}</td>
-                  <td>{{ s.horas_ejecutadas | number:'1.0-1' }}</td>
+                  <td>
+                    <a [routerLink]="['/horas']" [queryParams]="{ contrato_id: c.id, tipo_servicio_id: s.tipo_servicio_id }">
+                      {{ s.horas_contratadas | number:'1.0-1' }}
+                    </a>
+                  </td>
+                  <td>
+                    <a [routerLink]="['/horas']" [queryParams]="{ contrato_id: c.id, tipo_servicio_id: s.tipo_servicio_id }">
+                      {{ s.horas_ejecutadas | number:'1.0-1' }}
+                    </a>
+                  </td>
                   <td>
                     <div class="hour-gauge" [class.warn]="pct(s) >= 80 && pct(s) < 100" [class.danger]="pct(s) >= 100">
                       <div class="track"><div class="fill" [style.width.%]="pct(s)"></div></div>
-                      <div class="meta"><span>{{ s.horas_disponibles | number:'1.0-1' }} h libres</span><span>{{ pct(s) }}%</span></div>
+                      <div class="meta"><span>{{ s.horas_disponibles | number:'1.0-1' }} h libres</span><span>{{ pct(s) }}% usado</span></div>
                     </div>
                   </td>
                   <td class="table-actions">

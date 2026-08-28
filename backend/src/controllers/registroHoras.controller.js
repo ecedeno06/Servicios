@@ -14,8 +14,8 @@ function calcularHoras(horaInicio, horaFin) {
 async function listar(req, res, next) {
   try {
     const { contrato_id, tipo_servicio_id, usuario_id, desde, hasta } = req.query;
-    const condiciones = [];
-    const valores = [];
+    const condiciones = ['rh.empresa_id = $1'];
+    const valores = [req.empresaId];
 
     if (contrato_id) { valores.push(contrato_id); condiciones.push(`rh.contrato_id = $${valores.length}`); }
     if (tipo_servicio_id) { valores.push(tipo_servicio_id); condiciones.push(`rh.tipo_servicio_id = $${valores.length}`); }
@@ -23,7 +23,7 @@ async function listar(req, res, next) {
     if (desde) { valores.push(desde); condiciones.push(`rh.fecha >= $${valores.length}`); }
     if (hasta) { valores.push(hasta); condiciones.push(`rh.fecha <= $${valores.length}`); }
 
-    const where = condiciones.length ? `where ${condiciones.join(' and ')}` : '';
+    const where = `where ${condiciones.join(' and ')}`;
 
     const { rows } = await pool.query(
       `select rh.*, c.numero_contrato, cl.nombre as cliente_nombre,
@@ -43,7 +43,10 @@ async function listar(req, res, next) {
 
 async function obtener(req, res, next) {
   try {
-    const { rows } = await pool.query('select * from registro_horas where id = $1', [req.params.id]);
+    const { rows } = await pool.query(
+      'select * from registro_horas where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
     res.json(rows[0]);
   } catch (err) { next(err); }
@@ -51,7 +54,8 @@ async function obtener(req, res, next) {
 
 // POST /api/horas
 // Valida que exista una "bolsa" de horas (contrato_servicios) para ese
-// contrato + tipo de servicio antes de permitir registrar la ejecucion.
+// contrato + tipo de servicio, que el contrato pertenezca a la empresa
+// activa, y que el contrato este vigente segun sus fechas y estado.
 async function crear(req, res, next) {
   try {
     const { contrato_id, tipo_servicio_id, fecha, hora_inicio, hora_fin, descripcion, documentos } = req.body;
@@ -66,9 +70,15 @@ async function crear(req, res, next) {
     }
 
     const bolsa = await pool.query(
-      `select id, horas_contratadas from contrato_servicios
-       where contrato_id = $1 and tipo_servicio_id = $2`,
-      [contrato_id, tipo_servicio_id]
+      `select cs.id, cs.horas_contratadas, c.estado,
+              to_char(c.fecha_inicio, 'DD/MM/YYYY') as fecha_inicio_fmt,
+              to_char(c.fecha_fin, 'DD/MM/YYYY') as fecha_fin_fmt,
+              (c.fecha_inicio <= coalesce($4::date, current_date)) as ya_inicio,
+              (c.fecha_fin is null or c.fecha_fin >= coalesce($4::date, current_date)) as no_vencido
+       from contrato_servicios cs
+       join contratos c on c.id = cs.contrato_id
+       where cs.contrato_id = $1 and cs.tipo_servicio_id = $2 and c.empresa_id = $3`,
+      [contrato_id, tipo_servicio_id, req.empresaId, fecha || null]
     );
     if (!bolsa.rows[0]) {
       return res.status(400).json({
@@ -76,10 +86,21 @@ async function crear(req, res, next) {
       });
     }
 
+    const contrato = bolsa.rows[0];
+    if (contrato.estado === 'cancelado' || contrato.estado === 'finalizado') {
+      return res.status(400).json({ mensaje: `Este contrato esta ${contrato.estado} y no admite nuevas horas.` });
+    }
+    if (!contrato.ya_inicio) {
+      return res.status(400).json({ mensaje: `Este contrato aun no esta vigente (inicia el ${contrato.fecha_inicio_fmt}).` });
+    }
+    if (!contrato.no_vencido) {
+      return res.status(400).json({ mensaje: `Este contrato ya vencio (finalizo el ${contrato.fecha_fin_fmt}).` });
+    }
+
     const { rows } = await pool.query(
-      `insert into registro_horas (contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos)
-       values ($1,$2,$3, coalesce($4, current_date), $5, $6, $7, $8, coalesce($9,'[]'::jsonb)) returning *`,
-      [contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null]
+      `insert into registro_horas (empresa_id, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, coalesce($10,'[]'::jsonb)) returning *`,
+      [req.empresaId, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -105,8 +126,8 @@ async function actualizar(req, res, next) {
          horas = coalesce($4, horas),
          descripcion = coalesce($5, descripcion),
          documentos = coalesce($6, documentos)
-       where id = $7 returning *`,
-      [fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null, req.params.id]
+       where id = $7 and empresa_id = $8 returning *`,
+      [fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null, req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
     res.json(rows[0]);
@@ -115,16 +136,22 @@ async function actualizar(req, res, next) {
 
 async function eliminar(req, res, next) {
   try {
-    const { rowCount } = await pool.query('delete from registro_horas where id = $1', [req.params.id]);
+    const { rowCount } = await pool.query(
+      'delete from registro_horas where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
     if (!rowCount) return res.status(404).json({ mensaje: 'Registro no encontrado' });
     res.status(204).send();
   } catch (err) { next(err); }
 }
 
-// GET /api/horas/consumo  -> resumen de horas por servicio de TODOS los contratos
+// GET /api/horas/consumo  -> resumen de horas por servicio de la empresa activa
 async function consumoGeneral(req, res, next) {
   try {
-    const { rows } = await pool.query('select * from vista_consumo_horas order by cliente_nombre, tipo_servicio_nombre');
+    const { rows } = await pool.query(
+      'select * from vista_consumo_horas where empresa_id = $1 order by cliente_nombre, tipo_servicio_nombre',
+      [req.empresaId]
+    );
     res.json(rows);
   } catch (err) { next(err); }
 }
@@ -133,8 +160,8 @@ async function consumoGeneral(req, res, next) {
 async function consumoPorContrato(req, res, next) {
   try {
     const { rows } = await pool.query(
-      'select * from vista_consumo_horas where contrato_id = $1 order by tipo_servicio_nombre',
-      [req.params.contratoId]
+      'select * from vista_consumo_horas where contrato_id = $1 and empresa_id = $2 order by tipo_servicio_nombre',
+      [req.params.contratoId, req.empresaId]
     );
     res.json(rows);
   } catch (err) { next(err); }

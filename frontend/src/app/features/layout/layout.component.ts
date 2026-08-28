@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, AbstractControl } from '@angular/forms';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { EmpresaSeleccionable } from '../../core/models/models';
 
 @Component({
   selector: 'app-layout',
@@ -28,6 +29,9 @@ import { AuthService } from '../../core/services/auth.service';
           @if (auth.usuario()?.rol === 'admin') {
             <a routerLink="/usuarios" routerLinkActive="active">Usuarios</a>
           }
+          @if (auth.esSuperAdmin()) {
+            <a routerLink="/empresas" routerLinkActive="active">Empresas</a>
+          }
         </nav>
 
         <div class="sidebar-footer">v1.0 &middot; Conectado a Supabase</div>
@@ -35,7 +39,24 @@ import { AuthService } from '../../core/services/auth.service';
 
       <div class="main">
         <header class="topbar">
-          <div></div>
+          <div>
+            @if (misEmpresas().length > 1) {
+              <select
+                class="input"
+                style="max-width:240px;"
+                [disabled]="cambiandoEmpresa()"
+                (change)="cambiarEmpresa($event)"
+              >
+                @for (e of misEmpresas(); track e.empresa_id) {
+                  <option [value]="e.empresa_id" [selected]="e.empresa_id === auth.empresaActiva()?.empresa_id">
+                    {{ e.empresa_nombre }}
+                  </option>
+                }
+              </select>
+            } @else if (auth.empresaActiva()) {
+              <span class="text-muted text-sm">{{ auth.empresaActiva()?.empresa_nombre }}</span>
+            }
+          </div>
 
           <div class="user-menu">
             <button class="user-pill user-pill-btn" (click)="menuAbierto.set(!menuAbierto())">
@@ -104,10 +125,12 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `,
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
+  misEmpresas = signal<EmpresaSeleccionable[]>([]);
+  cambiandoEmpresa = signal(false);
 
   passwordForm = this.fb.group(
     {
@@ -119,6 +142,23 @@ export class LayoutComponent {
   );
 
   constructor(public auth: AuthService, private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.auth.misEmpresas().subscribe((data) => this.misEmpresas.set(data));
+  }
+
+  cambiarEmpresa(event: Event): void {
+    const empresaId = (event.target as HTMLSelectElement).value;
+    if (!empresaId || empresaId === this.auth.empresaActiva()?.empresa_id) return;
+    this.cambiandoEmpresa.set(true);
+    this.auth.seleccionarEmpresa(empresaId).subscribe({
+      next: () => window.location.reload(),
+      error: (err) => {
+        this.cambiandoEmpresa.set(false);
+        alert(err?.error?.mensaje || 'No se pudo cambiar de empresa');
+      },
+    });
+  }
 
   iniciales(): string {
     const nombre = this.auth.usuario()?.nombre || '';

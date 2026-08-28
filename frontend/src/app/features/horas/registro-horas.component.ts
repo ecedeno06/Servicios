@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { ContratosService } from '../../core/services/contratos.service';
@@ -9,7 +10,7 @@ import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/mode
 @Component({
   selector: 'app-registro-horas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
   template: `
     <div class="page-header">
       <div>
@@ -18,6 +19,20 @@ import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/mode
       </div>
       <button class="btn btn-accent" (click)="abrirNuevo()">+ Registrar horas</button>
     </div>
+
+    @if (filtroContratoId()) {
+      <div class="filter-bar">
+        <span class="text-muted text-sm">
+          Filtrando por
+          @if (registrosFiltrados()[0]; as r) {
+            <strong>{{ r.numero_contrato }} &middot; {{ r.tipo_servicio_nombre }}</strong>
+          } @else {
+            <strong>el servicio seleccionado</strong>
+          }
+        </span>
+        <a class="btn btn-outline" routerLink="/horas">Quitar filtro</a>
+      </div>
+    }
 
     <div class="filter-bar">
       <input
@@ -172,6 +187,9 @@ import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/mode
               </div>
             </div>
 
+            @if (errorGuardar()) {
+              <div class="error-text mt-16">{{ errorGuardar() }}</div>
+            }
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ registroEditando() ? 'Guardar cambios' : 'Guardar' }}</button>
               <button type="button" class="btn btn-outline" (click)="cerrarPanel()">Cancelar</button>
@@ -192,13 +210,22 @@ export class RegistroHorasComponent implements OnInit {
   filtroTexto = signal('');
   filtro = signal('');
 
+  // Filtro por contrato+servicio via query params (ej. desde "Ver horas" en el detalle del contrato)
+  filtroContratoId = signal<string | null>(null);
+  filtroTipoServicioId = signal<string | null>(null);
+
   registrosFiltrados = computed(() => {
+    const contratoId = this.filtroContratoId();
+    const tipoServicioId = this.filtroTipoServicioId();
     const texto = this.filtro().trim().toLowerCase();
-    if (!texto) return this.registros();
-    return this.registros().filter((r) =>
-      [r.cliente_nombre, r.numero_contrato, r.tipo_servicio_nombre, r.usuario_nombre, r.descripcion]
-        .some((campo) => (campo ?? '').toLowerCase().includes(texto))
-    );
+
+    return this.registros().filter((r) => {
+      if (contratoId && r.contrato_id !== contratoId) return false;
+      if (tipoServicioId && r.tipo_servicio_id !== tipoServicioId) return false;
+      if (!texto) return true;
+      return [r.cliente_nombre, r.numero_contrato, r.tipo_servicio_nombre, r.usuario_nombre, r.descripcion]
+        .some((campo) => (campo ?? '').toLowerCase().includes(texto));
+    });
   });
 
   columnaOrden = signal<keyof RegistroHora | null>(null);
@@ -224,6 +251,7 @@ export class RegistroHorasComponent implements OnInit {
 
   horasCalculadas = signal(0);
   documentosActuales = signal<Documento[]>([]);
+  errorGuardar = signal<string | null>(null);
 
   form = this.fb.group(
     {
@@ -246,6 +274,7 @@ export class RegistroHorasComponent implements OnInit {
     private fb: FormBuilder,
     private srv: RegistroHorasService,
     private contratosSrv: ContratosService,
+    private route: ActivatedRoute,
     public auth: AuthService
   ) {}
 
@@ -255,6 +284,10 @@ export class RegistroHorasComponent implements OnInit {
     this.form.get('contrato_id')?.valueChanges.subscribe((contratoId) => this.alCambiarContrato(contratoId));
     this.form.valueChanges.subscribe(({ hora_inicio, hora_fin }) => {
       this.horasCalculadas.set(calcularHoras(hora_inicio, hora_fin));
+    });
+    this.route.queryParamMap.subscribe((params) => {
+      this.filtroContratoId.set(params.get('contrato_id'));
+      this.filtroTipoServicioId.set(params.get('tipo_servicio_id'));
     });
   }
 
@@ -279,11 +312,23 @@ export class RegistroHorasComponent implements OnInit {
 
   abrirNuevo(): void {
     this.registroEditando.set(null);
-    this.form.reset({ fecha: new Date().toISOString().substring(0, 10) });
+    const contratoId = this.filtroContratoId();
+    const tipoServicioId = this.filtroTipoServicioId();
+    this.form.reset({ fecha: new Date().toISOString().substring(0, 10), contrato_id: contratoId ?? '' });
     this.horasCalculadas.set(0);
     this.documentosActuales.set([]);
     this.docForm.reset();
-    this.serviciosDisponibles.set([]);
+    this.errorGuardar.set(null);
+
+    if (contratoId) {
+      this.srv.consumoPorContrato(contratoId).subscribe((data) => {
+        this.serviciosDisponibles.set(data);
+        if (tipoServicioId) this.form.get('tipo_servicio_id')?.setValue(tipoServicioId);
+      });
+    } else {
+      this.serviciosDisponibles.set([]);
+    }
+
     this.panelAbierto.set(true);
   }
 
@@ -300,6 +345,7 @@ export class RegistroHorasComponent implements OnInit {
     this.horasCalculadas.set(calcularHoras(r.hora_inicio, r.hora_fin));
     this.documentosActuales.set(r.documentos ?? []);
     this.docForm.reset();
+    this.errorGuardar.set(null);
     this.panelAbierto.set(true);
   }
 
@@ -323,6 +369,7 @@ export class RegistroHorasComponent implements OnInit {
 
   guardar(): void {
     if (this.form.invalid) return;
+    this.errorGuardar.set(null);
     const editando = this.registroEditando();
     const documentos = this.documentosActuales();
     const { fecha, hora_inicio, hora_fin, descripcion } = this.form.getRawValue();
@@ -331,7 +378,7 @@ export class RegistroHorasComponent implements OnInit {
       : this.srv.crear({ ...this.form.getRawValue(), documentos });
     peticion.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el registro de horas'),
+      error: (err) => this.errorGuardar.set(err?.error?.mensaje || 'No se pudo guardar el registro de horas'),
     });
   }
 

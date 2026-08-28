@@ -7,6 +7,7 @@ node_modules/
 
 # Backend
 backend/npm-debug.log
+backend/database/backups/
 
 # Frontend (Angular)
 frontend/.angular/

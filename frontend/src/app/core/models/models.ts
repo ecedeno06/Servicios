@@ -4,22 +4,47 @@ export interface Usuario {
   id: string;
   nombre: string;
   email: string;
-  rol: Rol;
+  // Rol y activo son atributos de la relacion con la empresa activa
+  // (usuarios_empresas_rol), no de la persona en si.
+  rol: Rol | null;
   activo: boolean;
   avatar?: string | null;
+  es_super_admin?: boolean;
+  empresa_id?: string | null;
+  empresa_nombre?: string | null;
   created_at?: string;
 }
 
 export interface UsuarioForm {
-  nombre: string;
+  nombre?: string;
   email: string;
   password?: string;
   rol: Rol;
   activo: boolean;
 }
 
+export interface Empresa {
+  id: string;
+  nombre: string;
+  identificacion?: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  activo: boolean;
+  created_at?: string;
+}
+
+// Empresa a la que pertenece el usuario autenticado, con su rol en ella
+// (para el selector de empresa activa y el picker de login multi-empresa)
+export interface EmpresaSeleccionable {
+  empresa_id: string;
+  empresa_nombre: string;
+  rol: Rol;
+}
+
 export interface Cliente {
   id: string;
+  empresa_id?: string;
   nombre: string;
   identificacion?: string;
   email?: string;
@@ -31,6 +56,7 @@ export interface Cliente {
 
 export interface TipoServicio {
   id: string;
+  empresa_id?: string;
   nombre: string;
   descripcion?: string;
   activo: boolean;
@@ -46,6 +72,7 @@ export interface Documento {
 
 export interface Contrato {
   id: string;
+  empresa_id?: string;
   cliente_id: string;
   cliente_nombre?: string;
   numero_contrato: string;
@@ -81,6 +108,7 @@ export interface ConsumoHoras {
 
 export interface RegistroHora {
   id: string;
+  empresa_id?: string;
   contrato_id: string;
   numero_contrato?: string;
   cliente_nombre?: string;

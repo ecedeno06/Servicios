@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsuariosService } from '../../core/services/usuarios.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Usuario, Rol } from '../../core/models/models';
 
 @Component({
@@ -12,7 +13,7 @@ import { Usuario, Rol } from '../../core/models/models';
     <div class="page-header">
       <div>
         <h1>Usuarios</h1>
-        <div class="desc">Personas que acceden al sistema (tecnicos, supervisores, administradores)</div>
+        <div class="desc">Personas con acceso a esta empresa (tecnicos, supervisores, administradores)</div>
       </div>
       <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo usuario</button>
     </div>
@@ -46,17 +47,28 @@ import { Usuario, Rol } from '../../core/models/models';
             <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
             <button class="close" (click)="cerrarPanel()">&times;</button>
           </div>
+          <p class="text-muted text-sm">
+            Empresa: <strong>{{ auth.empresaActiva()?.empresa_nombre }}</strong>.
+            El rol que elijas abajo aplica solo a esta empresa (para asociar a alguien
+            a otra empresa, primero cambia la empresa activa en la barra superior).
+          </p>
+          @if (!editando()) {
+            <p class="text-muted text-sm">
+              Si el email ya pertenece a alguien con cuenta en el sistema, se le
+              asociara a esta empresa con el rol indicado (no hace falta nombre ni contrasena).
+            </p>
+          }
           <form [formGroup]="form" (ngSubmit)="guardar()">
             <div class="form-group">
-              <label>Nombre completo *</label>
-              <input class="input" formControlName="nombre" />
-            </div>
-            <div class="form-group mt-16">
               <label>Email *</label>
               <input class="input" type="email" formControlName="email" />
             </div>
             <div class="form-group mt-16">
-              <label>{{ editando() ? 'Nueva contrasena (dejar vacio para no cambiar)' : 'Contrasena *' }}</label>
+              <label>{{ editando() ? 'Nombre completo' : 'Nombre completo (solo si es una persona nueva)' }}</label>
+              <input class="input" formControlName="nombre" />
+            </div>
+            <div class="form-group mt-16">
+              <label>{{ editando() ? 'Nueva contrasena (dejar vacio para no cambiar)' : 'Contrasena (solo si es una persona nueva)' }}</label>
               <input class="input" type="password" formControlName="password" />
             </div>
             <div class="form-group mt-16">
@@ -86,14 +98,14 @@ export class UsuariosComponent implements OnInit {
   editando = signal<Usuario | null>(null);
 
   form = this.fb.group({
-    nombre: ['', Validators.required],
+    nombre: [''],
     email: ['', [Validators.required, Validators.email]],
     password: [''],
     rol: ['tecnico' as Rol],
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: UsuariosService) {}
+  constructor(private fb: FormBuilder, private srv: UsuariosService, public auth: AuthService) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.usuarios.set(data)); }
@@ -101,8 +113,9 @@ export class UsuariosComponent implements OnInit {
   abrirNuevo(): void {
     this.editando.set(null);
     this.form.reset({ rol: 'tecnico', activo: true });
-    this.form.get('password')?.setValidators(Validators.required);
-    this.form.get('password')?.updateValueAndValidity();
+    // nombre/password no son obligatorios aqui: si el email ya existe en el
+    // sistema (otra empresa), el backend solo lo asocia a esta con el rol
+    // indicado. Si es una persona nueva, el backend exige ambos y lo avisa.
     this.panelAbierto.set(true);
   }
 
@@ -123,11 +136,17 @@ export class UsuariosComponent implements OnInit {
 
     const actual = this.editando();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data as any);
-    req.subscribe(() => { this.cerrarPanel(); this.cargar(); });
+    req.subscribe({
+      next: () => { this.cerrarPanel(); this.cargar(); },
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el usuario'),
+    });
   }
 
   eliminar(u: Usuario): void {
-    if (!confirm(`Eliminar al usuario "${u.nombre}"?`)) return;
-    this.srv.eliminar(u.id).subscribe(() => this.cargar());
+    if (!confirm(`Quitar a "${u.nombre}" de esta empresa?`)) return;
+    this.srv.eliminar(u.id).subscribe({
+      next: () => this.cargar(),
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo quitar al usuario'),
+    });
   }
 }

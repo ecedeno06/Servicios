@@ -77,13 +77,17 @@ import { ConsumoHoras, Contrato, Cliente } from '../../core/models/models';
               <td><a [routerLink]="['/contratos', fila.contrato_id]" [title]="observaciones(fila.contrato_id)">{{ fila.numero_contrato }}</a></td>
               <td>{{ fila.tipo_servicio_nombre }}</td>
               <td>{{ fila.horas_contratadas | number:'1.0-1' }}</td>
-              <td>{{ fila.horas_ejecutadas | number:'1.0-1' }}</td>
+              <td>
+                <a [routerLink]="['/horas']" [queryParams]="{ contrato_id: fila.contrato_id, tipo_servicio_id: fila.tipo_servicio_id }">
+                  {{ fila.horas_ejecutadas | number:'1.0-1' }}
+                </a>
+              </td>
               <td>
                 <div class="hour-gauge" [class.warn]="nivel(fila) === 'warn'" [class.danger]="nivel(fila) === 'danger'">
                   <div class="track"><div class="fill" [style.width.%]="porcentaje(fila)"></div></div>
                   <div class="meta">
                     <span>{{ fila.horas_disponibles | number:'1.0-1' }} h libres</span>
-                    <span>{{ porcentaje(fila) }}%</span>
+                    <span>{{ porcentaje(fila) }}% usado</span>
                   </div>
                 </div>
               </td>
@@ -164,6 +168,13 @@ export class DashboardComponent implements OnInit {
 
     if (contrato.estado === 'cancelado') return { texto: 'Cancelado', clase: 'badge-slate' };
     if (contrato.estado === 'finalizado') return { texto: 'Finalizado', clase: 'badge-slate' };
+
+    const hoy0 = new Date();
+    hoy0.setHours(0, 0, 0, 0);
+    const fechaInicio = new Date(contrato.fecha_inicio);
+    fechaInicio.setHours(0, 0, 0, 0);
+    if (fechaInicio > hoy0) return { texto: 'No iniciado', clase: 'badge-slate' };
+
     if (contrato.estado === 'vencido') return { texto: 'Vencido', clase: 'badge-red' };
 
     if (!contrato.fecha_fin) return { texto: 'Vigente', clase: 'badge-green' };
