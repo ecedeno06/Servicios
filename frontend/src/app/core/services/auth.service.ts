@@ -70,10 +70,6 @@ export class AuthService {
       );
   }
 
-  misEmpresas(): Observable<EmpresaSeleccionable[]> {
-    return this.http.get<EmpresaSeleccionable[]>(`${environment.apiUrl}/auth/mis-empresas`);
-  }
-
   logout(): void {
     localStorage.removeItem(STORAGE_KEY);
     this._usuario.set(null);

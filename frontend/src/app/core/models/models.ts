@@ -42,6 +42,19 @@ export interface EmpresaSeleccionable {
   rol: Rol;
 }
 
+// Catalogo global de usuarios (id, nombre, email), sin rol -- para elegir
+// a quien asociar a una empresa desde la pantalla de Empresas
+export interface UsuarioGlobal {
+  id: string;
+  nombre: string;
+  email: string;
+}
+
+// Usuario asociado a una empresa puntual, visto desde la pantalla de Empresas
+export interface UsuarioDeEmpresa extends UsuarioGlobal {
+  rol: Rol;
+}
+
 export interface Cliente {
   id: string;
   empresa_id?: string;

@@ -32,13 +32,38 @@ async function obtener(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// POST /api/usuarios  { nombre, email, password, rol, activo }
+// GET /api/usuarios/buscar?email=...
+// Indica si ya existe un usuario global con ese email (para que el
+// frontend evite pedir nombre/password si ya es una persona existente).
+async function buscarPorEmail(req, res, next) {
+  try {
+    const email = (req.query.email || '').trim();
+    if (!email) return res.status(400).json({ mensaje: 'email es requerido' });
+
+    const { rows } = await pool.query('select nombre from usuarios where email = $1', [email]);
+    if (!rows[0]) return res.json({ existe: false });
+    res.json({ existe: true, nombre: rows[0].nombre });
+  } catch (err) { next(err); }
+}
+
+// POST /api/usuarios  { nombre, email, password, rol, activo, empresa_id? }
 // Si ya existe un usuario global con ese email, solo se asocia a la
-// empresa activa con el rol indicado; si no existe, se crea primero.
+// empresa indicada con el rol indicado; si no existe, se crea primero.
+// empresa_id en el body solo se respeta si quien llama es super-admin
+// (para poder agregar el primer usuario a una empresa sin necesitar
+// tenerla como empresa activa); cualquier otro admin siempre usa su
+// propia empresa activa, sin importar lo que mande en el body.
 async function crear(req, res, next) {
   try {
-    const { nombre, email, password, rol, activo } = req.body;
+    const { nombre, email, password, rol, activo, empresa_id } = req.body;
     if (!email) return res.status(400).json({ mensaje: 'email es requerido' });
+
+    let empresaDestino = req.empresaId;
+    if (req.usuario.es_super_admin && empresa_id) {
+      const empresa = await pool.query('select id from empresas where id = $1 and activo = true', [empresa_id]);
+      if (!empresa.rows[0]) return res.status(400).json({ mensaje: 'La empresa indicada no existe o esta inactiva' });
+      empresaDestino = empresa_id;
+    }
 
     const existente = await pool.query('select id from usuarios where email = $1', [email]);
     let usuarioId;
@@ -63,7 +88,7 @@ async function crear(req, res, next) {
        values ($1, $2, coalesce($3, 'tecnico'))
        on conflict (usuario_id, empresa_id) do update set rol = excluded.rol
        returning rol`,
-      [usuarioId, req.empresaId, rol]
+      [usuarioId, empresaDestino, rol]
     );
 
     const { rows: usuarioRows } = await pool.query(
@@ -130,4 +155,4 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+module.exports = { listar, obtener, crear, actualizar, eliminar, buscarPorEmail };

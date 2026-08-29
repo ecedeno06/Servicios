@@ -5,6 +5,7 @@ const { requireAuth, requireEmpresa, requireRol } = require('../middleware/auth'
 router.use(requireAuth, requireEmpresa, requireRol('admin'));
 
 router.get('/', ctrl.listar);
+router.get('/buscar', ctrl.buscarPorEmail);
 router.get('/:id', ctrl.obtener);
 router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);

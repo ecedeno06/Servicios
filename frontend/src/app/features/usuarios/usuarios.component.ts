@@ -47,38 +47,50 @@ import { Usuario, Rol } from '../../core/models/models';
             <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
             <button class="close" (click)="cerrarPanel()">&times;</button>
           </div>
+
           <p class="text-muted text-sm">
             Empresa: <strong>{{ auth.empresaActiva()?.empresa_nombre }}</strong>.
-            El rol que elijas abajo aplica solo a esta empresa (para asociar a alguien
-            a otra empresa, primero cambia la empresa activa en la barra superior).
           </p>
           @if (!editando()) {
             <p class="text-muted text-sm">
               Si el email ya pertenece a alguien con cuenta en el sistema, se le
-              asociara a esta empresa con el rol indicado (no hace falta nombre ni contrasena).
+              asociara a esta empresa como tecnico (no hace falta nombre ni contrasena;
+              el rol se puede ajustar despues editandolo).
             </p>
           }
+
           <form [formGroup]="form" (ngSubmit)="guardar()">
             <div class="form-group">
               <label>Email *</label>
-              <input class="input" type="email" formControlName="email" />
+              <input class="input" type="email" formControlName="email" (blur)="onEmailBlur()" />
             </div>
-            <div class="form-group mt-16">
-              <label>{{ editando() ? 'Nombre completo' : 'Nombre completo (solo si es una persona nueva)' }}</label>
-              <input class="input" formControlName="nombre" />
-            </div>
-            <div class="form-group mt-16">
-              <label>{{ editando() ? 'Nueva contrasena (dejar vacio para no cambiar)' : 'Contrasena (solo si es una persona nueva)' }}</label>
-              <input class="input" type="password" formControlName="password" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Rol</label>
-              <select class="input" formControlName="rol">
-                <option value="tecnico">Tecnico</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
+
+            @if (usuarioExistente()) {
+              <p class="text-muted text-sm mt-16">
+                Ya existe una cuenta con este email ({{ usuarioExistente()!.nombre }}) — se usara esa cuenta,
+                no hace falta nombre ni contrasena.
+              </p>
+            } @else {
+              <div class="form-group mt-16">
+                <label>{{ editando() ? 'Nombre completo' : 'Nombre completo (solo si es una persona nueva)' }}</label>
+                <input class="input" formControlName="nombre" />
+              </div>
+              <div class="form-group mt-16">
+                <label>{{ editando() ? 'Nueva contrasena (dejar vacio para no cambiar)' : 'Contrasena (solo si es una persona nueva)' }}</label>
+                <input class="input" type="password" formControlName="password" />
+              </div>
+            }
+
+            @if (editando()) {
+              <div class="form-group mt-16">
+                <label>Rol</label>
+                <select class="input" formControlName="rol">
+                  <option value="tecnico">Tecnico</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+            }
             <div class="form-group mt-16">
               <label class="flex items-center gap-8"><input type="checkbox" formControlName="activo" /> Usuario activo</label>
             </div>
@@ -96,6 +108,7 @@ export class UsuariosComponent implements OnInit {
   usuarios = signal<Usuario[]>([]);
   panelAbierto = signal(false);
   editando = signal<Usuario | null>(null);
+  usuarioExistente = signal<{ nombre: string } | null>(null);
 
   form = this.fb.group({
     nombre: [''],
@@ -112,15 +125,17 @@ export class UsuariosComponent implements OnInit {
 
   abrirNuevo(): void {
     this.editando.set(null);
+    this.usuarioExistente.set(null);
     this.form.reset({ rol: 'tecnico', activo: true });
     // nombre/password no son obligatorios aqui: si el email ya existe en el
-    // sistema (otra empresa), el backend solo lo asocia a esta con el rol
-    // indicado. Si es una persona nueva, el backend exige ambos y lo avisa.
+    // sistema (otra empresa), el backend solo lo asocia a esta empresa (como
+    // tecnico por defecto; el rol se ajusta despues editando o desde Empresas).
     this.panelAbierto.set(true);
   }
 
   abrirEditar(u: Usuario): void {
     this.editando.set(u);
+    this.usuarioExistente.set(null);
     this.form.reset({ ...u, password: '' });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
@@ -129,13 +144,27 @@ export class UsuariosComponent implements OnInit {
 
   cerrarPanel(): void { this.panelAbierto.set(false); }
 
+  onEmailBlur(): void {
+    if (this.editando()) return;
+    const email = this.form.get('email')?.value;
+    if (!email || this.form.get('email')?.invalid) {
+      this.usuarioExistente.set(null);
+      return;
+    }
+    this.srv.buscarPorEmail(email).subscribe({
+      next: (res) => this.usuarioExistente.set(res.existe ? { nombre: res.nombre! } : null),
+      error: () => this.usuarioExistente.set(null),
+    });
+  }
+
   guardar(): void {
     if (this.form.invalid) return;
-    const data = { ...this.form.getRawValue() };
-    if (!data.password) delete (data as any).password;
+    const data: any = { ...this.form.getRawValue() };
+    if (!data.password) delete data.password;
+    if (this.usuarioExistente()) { delete data.nombre; delete data.password; }
 
     const actual = this.editando();
-    const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data as any);
+    const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);
     req.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el usuario'),

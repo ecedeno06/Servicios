@@ -33,6 +33,46 @@ async function login(req, res, next) {
       return res.status(401).json({ mensaje: 'Credenciales invalidas' });
     }
 
+    // Un super-admin elige SIEMPRE la empresa activa al iniciar sesion (incluso
+    // si solo tiene una), viendo todas las empresas del sistema -- la unica
+    // forma de cambiar de empresa activa es cerrando sesion y volviendo a
+    // entrar (ver seleccionarEmpresa: no se permite el cambio "en caliente").
+    if (usuario.es_super_admin) {
+      const { rows: todasEmpresas } = await pool.query(
+        `select e.id as empresa_id, e.nombre as empresa_nombre,
+                coalesce(uer.rol, 'admin') as rol
+         from empresas e
+         left join usuarios_empresas_rol uer
+                on uer.empresa_id = e.id and uer.usuario_id = $1
+         where e.activo = true
+         order by e.nombre`,
+        [usuario.id]
+      );
+
+      if (todasEmpresas.length === 0) {
+        const payload = {
+          id: usuario.id, nombre: usuario.nombre, email: usuario.email,
+          rol: null, empresa_id: null, empresa_nombre: null,
+          es_super_admin: true, avatar: usuario.avatar,
+        };
+        const token = firmarToken({
+          id: payload.id, nombre: payload.nombre, email: payload.email,
+          rol: null, empresa_id: null, es_super_admin: true,
+        });
+        return res.json({ token, usuario: payload });
+      }
+
+      const tokenParcial = firmarToken(
+        { id: usuario.id, nombre: usuario.nombre, email: usuario.email, parcial: true },
+        '10m'
+      );
+      return res.json({
+        requiereSeleccionEmpresa: true,
+        tokenParcial,
+        empresas: todasEmpresas.map((e) => ({ empresa_id: e.empresa_id, empresa_nombre: e.empresa_nombre, rol: e.rol })),
+      });
+    }
+
     const { rows: empresas } = await pool.query(
       `select uer.empresa_id, uer.rol, e.nombre as empresa_nombre
        from usuarios_empresas_rol uer
@@ -42,7 +82,7 @@ async function login(req, res, next) {
       [usuario.id]
     );
 
-    if (empresas.length === 0 && !usuario.es_super_admin) {
+    if (empresas.length === 0) {
       return res.status(401).json({ mensaje: 'El usuario no tiene ninguna empresa asignada' });
     }
 
@@ -58,7 +98,7 @@ async function login(req, res, next) {
       });
     }
 
-    const empresaActiva = empresas[0]; // undefined solo si es super_admin sin empresas asignadas
+    const empresaActiva = empresas[0];
     const payload = {
       id: usuario.id,
       nombre: usuario.nombre,
@@ -85,10 +125,15 @@ async function login(req, res, next) {
 }
 
 // POST /api/auth/seleccionar-empresa  { empresa_id }
-// Sirve tanto para completar un login con varias empresas (token parcial)
-// como para cambiar de empresa activa con la sesion ya iniciada.
+// Solo completa un login pendiente de seleccion de empresa (token parcial).
+// No permite cambiar de empresa activa "en caliente" con una sesion ya
+// completa -- para eso hay que cerrar sesion y volver a entrar.
 async function seleccionarEmpresa(req, res, next) {
   try {
+    if (!req.usuario.parcial) {
+      return res.status(403).json({ mensaje: 'Para cambiar de empresa activa cierra sesion y vuelve a entrar.' });
+    }
+
     const { empresa_id } = req.body;
     if (!empresa_id) return res.status(400).json({ mensaje: 'empresa_id es requerido' });
 

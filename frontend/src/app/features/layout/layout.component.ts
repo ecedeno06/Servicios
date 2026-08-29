@@ -1,9 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, AbstractControl } from '@angular/forms';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { EmpresaSeleccionable } from '../../core/models/models';
 
 @Component({
   selector: 'app-layout',
@@ -40,20 +39,7 @@ import { EmpresaSeleccionable } from '../../core/models/models';
       <div class="main">
         <header class="topbar">
           <div>
-            @if (misEmpresas().length > 1) {
-              <select
-                class="input"
-                style="max-width:240px;"
-                [disabled]="cambiandoEmpresa()"
-                (change)="cambiarEmpresa($event)"
-              >
-                @for (e of misEmpresas(); track e.empresa_id) {
-                  <option [value]="e.empresa_id" [selected]="e.empresa_id === auth.empresaActiva()?.empresa_id">
-                    {{ e.empresa_nombre }}
-                  </option>
-                }
-              </select>
-            } @else if (auth.empresaActiva()) {
+            @if (auth.empresaActiva()) {
               <span class="text-muted text-sm">{{ auth.empresaActiva()?.empresa_nombre }}</span>
             }
           </div>
@@ -125,12 +111,10 @@ import { EmpresaSeleccionable } from '../../core/models/models';
     }
   `,
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
-  misEmpresas = signal<EmpresaSeleccionable[]>([]);
-  cambiandoEmpresa = signal(false);
 
   passwordForm = this.fb.group(
     {
@@ -142,23 +126,6 @@ export class LayoutComponent implements OnInit {
   );
 
   constructor(public auth: AuthService, private fb: FormBuilder) {}
-
-  ngOnInit(): void {
-    this.auth.misEmpresas().subscribe((data) => this.misEmpresas.set(data));
-  }
-
-  cambiarEmpresa(event: Event): void {
-    const empresaId = (event.target as HTMLSelectElement).value;
-    if (!empresaId || empresaId === this.auth.empresaActiva()?.empresa_id) return;
-    this.cambiandoEmpresa.set(true);
-    this.auth.seleccionarEmpresa(empresaId).subscribe({
-      next: () => window.location.reload(),
-      error: (err) => {
-        this.cambiandoEmpresa.set(false);
-        alert(err?.error?.mensaje || 'No se pudo cambiar de empresa');
-      },
-    });
-  }
 
   iniciales(): string {
     const nombre = this.auth.usuario()?.nombre || '';

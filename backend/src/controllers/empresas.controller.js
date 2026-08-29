@@ -54,4 +54,66 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+// GET /api/empresas/usuarios-globales  -> catalogo de usuarios del sistema
+// (para el selector de "asociar usuario" en la pantalla de empresas)
+async function listarUsuariosGlobales(req, res, next) {
+  try {
+    const { rows } = await pool.query('select id, nombre, email from usuarios order by nombre');
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// GET /api/empresas/:id/usuarios  -> usuarios asociados a esta empresa, con su rol
+async function listarUsuariosDeEmpresa(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      `select u.id, u.nombre, u.email, uer.rol
+       from usuarios_empresas_rol uer
+       join usuarios u on u.id = uer.usuario_id
+       where uer.empresa_id = $1
+       order by u.nombre`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// POST /api/empresas/:id/usuarios  { usuario_id, rol }
+// Asocia un usuario ya existente (elegido de la tabla global de usuarios) a
+// esta empresa; si ya estaba asociado, actualiza el rol en vez de duplicar.
+async function asociarUsuario(req, res, next) {
+  try {
+    const { usuario_id, rol } = req.body;
+    if (!usuario_id) return res.status(400).json({ mensaje: 'usuario_id es requerido' });
+
+    const { rows } = await pool.query(
+      `insert into usuarios_empresas_rol (usuario_id, empresa_id, rol)
+       values ($1, $2, coalesce($3, 'tecnico'))
+       on conflict (usuario_id, empresa_id) do update set rol = excluded.rol
+       returning rol`,
+      [usuario_id, req.params.id, rol]
+    );
+
+    const { rows: usuarioRows } = await pool.query('select id, nombre, email from usuarios where id = $1', [usuario_id]);
+    if (!usuarioRows[0]) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+
+    res.status(201).json({ ...usuarioRows[0], rol: rows[0].rol });
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/empresas/:id/usuarios/:usuarioId  -> desasocia (nunca borra al usuario global)
+async function desasociarUsuario(req, res, next) {
+  try {
+    const { rowCount } = await pool.query(
+      'delete from usuarios_empresas_rol where usuario_id = $1 and empresa_id = $2',
+      [req.params.usuarioId, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ mensaje: 'El usuario no esta asociado a esta empresa' });
+    res.status(204).send();
+  } catch (err) { next(err); }
+}
+
+module.exports = {
+  listar, obtener, crear, actualizar, eliminar,
+  listarUsuariosGlobales, listarUsuariosDeEmpresa, asociarUsuario, desasociarUsuario,
+};
