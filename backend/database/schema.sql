@@ -17,6 +17,8 @@ create table if not exists empresas (
     email           text,
     telefono        text,
     direccion       text,
+    -- Logo en base64 (data URI), ej: "data:image/png;base64,..."
+    logo            text,
     activo          boolean not null default true,
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()

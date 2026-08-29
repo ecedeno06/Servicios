@@ -12,6 +12,7 @@ export interface Usuario {
   es_super_admin?: boolean;
   empresa_id?: string | null;
   empresa_nombre?: string | null;
+  empresa_logo?: string | null;
   created_at?: string;
 }
 
@@ -30,6 +31,7 @@ export interface Empresa {
   email?: string;
   telefono?: string;
   direccion?: string;
+  logo?: string | null;
   activo: boolean;
   created_at?: string;
 }

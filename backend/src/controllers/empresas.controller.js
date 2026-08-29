@@ -17,11 +17,11 @@ async function obtener(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { nombre, identificacion, email, telefono, direccion, activo } = req.body;
+    const { nombre, identificacion, email, telefono, direccion, logo, activo } = req.body;
     const { rows } = await pool.query(
-      `insert into empresas (nombre, identificacion, email, telefono, direccion, activo)
-       values ($1,$2,$3,$4,$5, coalesce($6, true)) returning *`,
-      [nombre, identificacion, email, telefono, direccion, activo]
+      `insert into empresas (nombre, identificacion, email, telefono, direccion, logo, activo)
+       values ($1,$2,$3,$4,$5,$6, coalesce($7, true)) returning *`,
+      [nombre, identificacion, email, telefono, direccion, logo, activo]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -29,7 +29,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { nombre, identificacion, email, telefono, direccion, activo } = req.body;
+    const { nombre, identificacion, email, telefono, direccion, logo, activo } = req.body;
     const { rows } = await pool.query(
       `update empresas set
          nombre = coalesce($1, nombre),
@@ -37,9 +37,10 @@ async function actualizar(req, res, next) {
          email = coalesce($3, email),
          telefono = coalesce($4, telefono),
          direccion = coalesce($5, direccion),
-         activo = coalesce($6, activo)
-       where id = $7 returning *`,
-      [nombre, identificacion, email, telefono, direccion, activo, req.params.id]
+         logo = coalesce($6, logo),
+         activo = coalesce($7, activo)
+       where id = $8 returning *`,
+      [nombre, identificacion, email, telefono, direccion, logo, activo, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Empresa no encontrada' });
     res.json(rows[0]);

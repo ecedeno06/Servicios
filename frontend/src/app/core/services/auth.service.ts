@@ -26,7 +26,9 @@ export class AuthService {
   esSuperAdmin = computed(() => !!this._usuario()?.es_super_admin);
   empresaActiva = computed(() => {
     const u = this._usuario();
-    return u?.empresa_id ? { empresa_id: u.empresa_id, empresa_nombre: u.empresa_nombre } : null;
+    return u?.empresa_id
+      ? { empresa_id: u.empresa_id, empresa_nombre: u.empresa_nombre, empresa_logo: u.empresa_logo }
+      : null;
   });
 
   // Empresas para elegir cuando el login detecta que el usuario pertenece

@@ -8,125 +8,8 @@ import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol } from '../../core/models
   selector: 'app-empresas',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1>Empresas</h1>
-        <div class="desc">Organizaciones que usan el sistema (solo super administradores)</div>
-      </div>
-      <button class="btn btn-accent" (click)="abrirNuevo()">+ Nueva empresa</button>
-    </div>
-
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead><tr><th>Nombre</th><th>Identificacion</th><th>Email</th><th>Estado</th><th></th></tr></thead>
-        <tbody>
-          @for (e of empresas(); track e.id) {
-            <tr>
-              <td>{{ e.nombre }}</td>
-              <td>{{ e.identificacion || '-' }}</td>
-              <td>{{ e.email || '-' }}</td>
-              <td><span class="badge" [class.badge-green]="e.activo" [class.badge-slate]="!e.activo">{{ e.activo ? 'Activa' : 'Inactiva' }}</span></td>
-              <td class="table-actions">
-                <button class="btn btn-outline btn-sm" (click)="abrirEditar(e)">Editar</button>
-                <button class="btn btn-danger btn-sm" (click)="eliminar(e)">Eliminar</button>
-              </td>
-            </tr>
-          } @empty {
-            <tr><td colspan="5"><div class="empty-state">No hay empresas registradas.</div></td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (panelAbierto()) {
-      <div class="overlay" (click)="cerrarPanel()">
-        <div class="drawer" (click)="$event.stopPropagation()">
-          <div class="drawer-header">
-            <h2>{{ editando() ? 'Editar empresa' : 'Nueva empresa' }}</h2>
-            <button class="close" (click)="cerrarPanel()">&times;</button>
-          </div>
-          <form [formGroup]="form" (ngSubmit)="guardar()">
-            <div class="form-group">
-              <label>Nombre *</label>
-              <input class="input" formControlName="nombre" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Identificacion (RUC / NIT / Cedula juridica)</label>
-              <input class="input" formControlName="identificacion" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Email</label>
-              <input class="input" type="email" formControlName="email" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Telefono</label>
-              <input class="input" formControlName="telefono" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Direccion</label>
-              <input class="input" formControlName="direccion" />
-            </div>
-
-            @if (editando(); as e) {
-              <div class="card mt-16">
-                <h3 style="margin:0;">Usuarios de esta empresa</h3>
-
-                <div class="table-wrap mt-16">
-                  <table class="data-table">
-                    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th></th></tr></thead>
-                    <tbody>
-                      @for (u of usuariosDeEmpresa(); track u.id) {
-                        <tr>
-                          <td>{{ u.nombre }}</td>
-                          <td>{{ u.email }}</td>
-                          <td><span class="badge badge-slate">{{ u.rol }}</span></td>
-                          <td class="table-actions">
-                            <button type="button" class="btn btn-danger btn-sm" (click)="desasociarUsuario(e.id, u)">Quitar</button>
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr><td colspan="4"><div class="empty-state">Esta empresa todavia no tiene usuarios asociados.</div></td></tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="form-group mt-16">
-                  <label>Asociar usuario existente</label>
-                  <select class="input" [(ngModel)]="usuarioParaAsociar" [ngModelOptions]="{ standalone: true }">
-                    <option [ngValue]="''" disabled>Selecciona un usuario</option>
-                    @for (u of usuariosDisponibles(); track u.id) {
-                      <option [ngValue]="u.id">{{ u.nombre }} &middot; {{ u.email }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="form-group mt-16">
-                  <label>Rol en esta empresa</label>
-                  <select class="input" [(ngModel)]="rolParaAsociar" [ngModelOptions]="{ standalone: true }">
-                    <option value="tecnico">Tecnico</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-                <button type="button" class="btn btn-outline btn-sm mt-16" [disabled]="!usuarioParaAsociar" (click)="asociarUsuario(e.id)">
-                  + Asociar usuario
-                </button>
-              </div>
-            }
-
-            <div class="form-group mt-16">
-              <label class="flex items-center gap-8"><input type="checkbox" formControlName="activo" /> Empresa activa</label>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
-              <button type="button" class="btn btn-outline" (click)="cerrarPanel()">Cancelar</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    }
-  `,
+  templateUrl: './empresas.component.html',
+  styleUrl: './empresas.component.css',
 })
 export class EmpresasComponent implements OnInit {
   empresas = signal<Empresa[]>([]);
@@ -150,6 +33,7 @@ export class EmpresasComponent implements OnInit {
     email: [''],
     telefono: [''],
     direccion: [''],
+    logo: [null as string | null],
     activo: [true],
   });
 
@@ -204,6 +88,27 @@ export class EmpresasComponent implements OnInit {
 
   cerrarPanel(): void { this.panelAbierto.set(false); }
 
+  onLogoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+      alert('Selecciona un archivo de imagen valido.');
+      return;
+    }
+
+    redimensionarImagen(archivo, 300).then((base64) => {
+      this.form.get('logo')?.setValue(base64);
+    });
+
+    input.value = '';
+  }
+
+  quitarLogo(): void {
+    this.form.get('logo')?.setValue(null);
+  }
+
   guardar(): void {
     if (this.form.invalid) return;
     const data = this.form.getRawValue();
@@ -222,4 +127,26 @@ export class EmpresasComponent implements OnInit {
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la empresa'),
     });
   }
+}
+
+function redimensionarImagen(archivo: File, maxDimension: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const lector = new FileReader();
+    lector.onerror = () => reject(lector.error);
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      img.onload = () => {
+        const escala = Math.min(1, maxDimension / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * escala);
+        canvas.height = Math.round(img.height * escala);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = lector.result as string;
+    };
+    lector.readAsDataURL(archivo);
+  });
 }

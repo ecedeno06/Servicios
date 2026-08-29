@@ -9,60 +9,8 @@ import { EmpresaSeleccionable } from '../../core/models/models';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <div class="auth-screen">
-      <div class="auth-card">
-        <div class="auth-logo">HS</div>
-
-        @if (!empresasParaElegir()) {
-          <h1>Ingresar</h1>
-          <p class="text-muted text-sm">Gestion de horas de servicio a clientes</p>
-
-          @if (error()) {
-            <div class="auth-error mt-16">{{ error() }}</div>
-          }
-
-          <form [formGroup]="form" (ngSubmit)="enviar()" class="mt-16">
-            <div class="form-group">
-              <label>Correo electronico</label>
-              <input class="input" type="email" formControlName="email" placeholder="tucorreo@empresa.com" />
-            </div>
-            <div class="form-group mt-16">
-              <label>Contrasena</label>
-              <input class="input" type="password" formControlName="password" placeholder="********" />
-            </div>
-            <button class="btn btn-primary w-full mt-16" type="submit" [disabled]="form.invalid || cargando()">
-              {{ cargando() ? 'Ingresando...' : 'Ingresar' }}
-            </button>
-          </form>
-        } @else {
-          <h1>Selecciona una empresa</h1>
-          <p class="text-muted text-sm">Tu cuenta tiene acceso a mas de una empresa.</p>
-
-          @if (error()) {
-            <div class="auth-error mt-16">{{ error() }}</div>
-          }
-
-          <div class="mt-16" style="display:flex; flex-direction:column; gap:8px;">
-            @for (e of empresasParaElegir(); track e.empresa_id) {
-              <button
-                type="button"
-                class="btn btn-outline w-full"
-                [disabled]="cargando()"
-                (click)="elegirEmpresa(e.empresa_id)"
-              >
-                {{ e.empresa_nombre }} <span class="text-muted text-sm">({{ e.rol }})</span>
-              </button>
-            }
-          </div>
-
-          <button type="button" class="btn btn-outline w-full mt-16" (click)="cancelarSeleccion()">
-            Volver
-          </button>
-        }
-      </div>
-    </div>
-  `,
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.css',
 })
 export class LoginComponent {
   cargando = signal(false);

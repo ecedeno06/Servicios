@@ -52,7 +52,7 @@ async function login(req, res, next) {
       if (todasEmpresas.length === 0) {
         const payload = {
           id: usuario.id, nombre: usuario.nombre, email: usuario.email,
-          rol: null, empresa_id: null, empresa_nombre: null,
+          rol: null, empresa_id: null, empresa_nombre: null, empresa_logo: null,
           es_super_admin: true, avatar: usuario.avatar,
         };
         const token = firmarToken({
@@ -74,7 +74,7 @@ async function login(req, res, next) {
     }
 
     const { rows: empresas } = await pool.query(
-      `select uer.empresa_id, uer.rol, e.nombre as empresa_nombre
+      `select uer.empresa_id, uer.rol, e.nombre as empresa_nombre, e.logo as empresa_logo
        from usuarios_empresas_rol uer
        join empresas e on e.id = uer.empresa_id
        where uer.usuario_id = $1 and e.activo = true
@@ -106,6 +106,7 @@ async function login(req, res, next) {
       rol: empresaActiva ? empresaActiva.rol : null,
       empresa_id: empresaActiva ? empresaActiva.empresa_id : null,
       empresa_nombre: empresaActiva ? empresaActiva.empresa_nombre : null,
+      empresa_logo: empresaActiva ? empresaActiva.empresa_logo : null,
       es_super_admin: usuario.es_super_admin,
       avatar: usuario.avatar,
     };
@@ -144,26 +145,28 @@ async function seleccionarEmpresa(req, res, next) {
     const usuario = usuarioRows[0];
 
     const { rows: relacion } = await pool.query(
-      `select uer.rol, e.nombre as empresa_nombre
+      `select uer.rol, e.nombre as empresa_nombre, e.logo as empresa_logo
        from usuarios_empresas_rol uer
        join empresas e on e.id = uer.empresa_id
        where uer.usuario_id = $1 and uer.empresa_id = $2 and e.activo = true`,
       [req.usuario.id, empresa_id]
     );
 
-    let rol, empresaNombre;
+    let rol, empresaNombre, empresaLogo;
     if (relacion[0]) {
       rol = relacion[0].rol;
       empresaNombre = relacion[0].empresa_nombre;
+      empresaLogo = relacion[0].empresa_logo;
     } else if (usuario.es_super_admin) {
       // Un super-admin puede entrar a cualquier empresa aunque no tenga
       // membresia formal (ej. para dar de alta al primer usuario real de
       // una empresa recien creada). No se crea fila en usuarios_empresas_rol:
       // es acceso de sesion, no una membresia persistida.
-      const { rows: empresaRows } = await pool.query('select nombre from empresas where id = $1 and activo = true', [empresa_id]);
+      const { rows: empresaRows } = await pool.query('select nombre, logo from empresas where id = $1 and activo = true', [empresa_id]);
       if (!empresaRows[0]) return res.status(404).json({ mensaje: 'Empresa no encontrada' });
       rol = 'admin';
       empresaNombre = empresaRows[0].nombre;
+      empresaLogo = empresaRows[0].logo;
     } else {
       return res.status(403).json({ mensaje: 'No tienes acceso a esa empresa' });
     }
@@ -175,6 +178,7 @@ async function seleccionarEmpresa(req, res, next) {
       rol,
       empresa_id,
       empresa_nombre: empresaNombre,
+      empresa_logo: empresaLogo,
       es_super_admin: usuario.es_super_admin,
       avatar: usuario.avatar,
     };
