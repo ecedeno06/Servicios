@@ -7,9 +7,10 @@
 
 :root {
   /* Paleta */
-  --slate-950: #0f172a;
+  /*--slate-950: #0f172a;*/
+  --slate-950: #57595f;
   --slate-900: #141c2e;
-  --slate-800: #1c2740;
+  --slate-800: #313642;
   --slate-700: #2a3654;
   --slate-500: #64748b;
   --slate-300: #cbd5e1;
@@ -180,7 +181,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   display: none;
 }
 
-.sidebar-nav a:hover { background: var(--slate-900); color: white; }
+.sidebar-nav a:hover { background: var(--slate-800); color: white; }
 .sidebar-nav a.active {
   background: var(--slate-800);
   color: white;
