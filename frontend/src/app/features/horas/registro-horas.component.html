@@ -24,12 +24,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>N.° Servicio</th>
+        <th class="th-narrow">N.° Servicio</th>
         <th class="sortable" (click)="ordenarPor('fecha')">Fecha{{ indicadorOrden('fecha') }}</th>
         <th class="sortable" (click)="ordenarPor('cliente_nombre')">Cliente{{ indicadorOrden('cliente_nombre') }}</th>
         <th class="sortable" (click)="ordenarPor('numero_contrato')">Contrato{{ indicadorOrden('numero_contrato') }}</th>
         <th class="sortable" (click)="ordenarPor('tipo_servicio_nombre')">Servicio{{ indicadorOrden('tipo_servicio_nombre') }}</th>
-        <th class="sortable" (click)="ordenarPor('horas')">Horas{{ indicadorOrden('horas') }}</th>
+        <th class="sortable th-narrow" (click)="ordenarPor('horas')">Horas{{ indicadorOrden('horas') }}</th>
         <th class="sortable" (click)="ordenarPor('usuario_nombre')">Registrado por{{ indicadorOrden('usuario_nombre') }}</th>
         <th></th>
       </tr>
