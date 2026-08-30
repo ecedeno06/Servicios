@@ -4,6 +4,8 @@ import { FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, Abstrac
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
+const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
+
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -15,6 +17,7 @@ export class LayoutComponent {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
+  sidebarColapsado = signal(localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
 
   passwordForm = this.fb.group(
     {
@@ -26,6 +29,12 @@ export class LayoutComponent {
   );
 
   constructor(public auth: AuthService, private fb: FormBuilder) {}
+
+  toggleSidebar(): void {
+    const nuevo = !this.sidebarColapsado();
+    this.sidebarColapsado.set(nuevo);
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, nuevo ? '1' : '0');
+  }
 
   iniciales(): string {
     const nombre = this.auth.usuario()?.nombre || '';
