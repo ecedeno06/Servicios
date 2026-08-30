@@ -105,6 +105,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   gap: 10px;
   padding: 20px 18px;
   border-bottom: 1px solid var(--slate-800);
+  background: var(--slate-900);
 }
 
 .sidebar.collapsed .sidebar-brand {
@@ -135,7 +136,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 .sidebar-brand .subtitle {
   font-size: 11px;
-  color: var(--slate-500);
+  color: var(--slate-50);
 }
 
 .sidebar-nav {
