@@ -1,0 +1,189 @@
+<div class="page-header">
+  <div>
+    <h1>Registro de horas</h1>
+    <div class="desc">Horas de servicio ejecutadas a cada cliente, por contrato y tipo de servicio</div>
+  </div>
+  <button class="btn btn-accent" (click)="abrirNuevo()">+ Registrar horas</button>
+</div>
+
+@if (filtroContratoId()) {
+  <div class="filter-bar">
+    <span class="text-muted text-sm">
+      Filtrando por
+      @if (registrosFiltrados()[0]; as r) {
+        <strong>{{ r.numero_contrato }} &middot; {{ r.tipo_servicio_nombre }}</strong>
+      } @else {
+        <strong>el servicio seleccionado</strong>
+      }
+    </span>
+    <a class="btn btn-outline" routerLink="/horas">Quitar filtro</a>
+  </div>
+}
+
+<div class="filter-bar">
+  <input
+    class="input"
+    type="text"
+    placeholder="Buscar por N. de servicio, fecha, cliente, contrato, servicio, horas o quien registro..."
+    [ngModel]="filtroTexto()"
+    (ngModelChange)="filtroTexto.set($event)"
+    (keyup.enter)="aplicarFiltro()"
+  />
+  <button class="btn btn-primary" (click)="aplicarFiltro()">Filtrar</button>
+  @if (filtro()) {
+    <button class="btn btn-outline" (click)="limpiarFiltro()">Limpiar</button>
+  }
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>N.° Servicio</th>
+        <th class="sortable" (click)="ordenarPor('fecha')">Fecha{{ indicadorOrden('fecha') }}</th>
+        <th class="sortable" (click)="ordenarPor('cliente_nombre')">Cliente{{ indicadorOrden('cliente_nombre') }}</th>
+        <th class="sortable" (click)="ordenarPor('numero_contrato')">Contrato{{ indicadorOrden('numero_contrato') }}</th>
+        <th class="sortable" (click)="ordenarPor('tipo_servicio_nombre')">Servicio{{ indicadorOrden('tipo_servicio_nombre') }}</th>
+        <th class="sortable" (click)="ordenarPor('horas')">Horas{{ indicadorOrden('horas') }}</th>
+        <th class="sortable" (click)="ordenarPor('usuario_nombre')">Registrado por{{ indicadorOrden('usuario_nombre') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of registrosOrdenados(); track r.id) {
+        <tr>
+          <td>{{ numeroServicio(r) }}</td>
+          <td>{{ r.fecha | date:'dd/MM/yyyy' }}{{ r.created_at ? ' ' + (r.created_at | date:'HH:mm') : '' }}</td>
+          <td>{{ r.cliente_nombre }}</td>
+          <td>{{ r.numero_contrato }}</td>
+          <td>{{ r.tipo_servicio_nombre }}</td>
+          <td>{{ r.horas | number:'1.0-2' }}</td>
+          <td>{{ r.usuario_nombre }}</td>
+          <td class="table-actions">
+            <button class="btn btn-outline btn-sm" (click)="generarPdf(r)">PDF</button>
+            @if (auth.puedeEditar()) {
+              <button class="btn btn-outline btn-sm" (click)="abrirEditar(r)">Editar</button>
+              <button class="btn btn-danger btn-sm" (click)="eliminar(r)">Eliminar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="8"><div class="empty-state">{{ filtro() ? 'Ningun registro coincide con la busqueda.' : 'Aun no se han registrado horas ejecutadas.' }}</div></td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (panelAbierto()) {
+  <div class="overlay" (click)="cerrarPanel()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ registroEditando() ? 'Editar registro de horas' : 'Registrar horas ejecutadas' }}</h2>
+        <button class="close" (click)="cerrarPanel()">&times;</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        @if (registroEditando(); as r) {
+          <div class="form-group">
+            <label>Contrato</label>
+            <input class="input" type="text" [value]="r.numero_contrato + ' · ' + r.cliente_nombre" disabled />
+          </div>
+          <div class="form-group mt-16">
+            <label>Tipo de servicio</label>
+            <input class="input" type="text" [value]="r.tipo_servicio_nombre" disabled />
+          </div>
+        } @else {
+          <div class="form-group">
+            <label>Contrato *</label>
+            <select class="input" formControlName="contrato_id">
+              <option value="" disabled>Selecciona un contrato</option>
+              @for (c of contratos(); track c.id) { <option [value]="c.id">{{ c.numero_contrato }} &middot; {{ c.cliente_nombre }}</option> }
+            </select>
+          </div>
+
+          <div class="form-group mt-16">
+            <label>Tipo de servicio *</label>
+            <select class="input" formControlName="tipo_servicio_id">
+              <option value="" disabled>Selecciona un servicio</option>
+              @for (s of serviciosDisponibles(); track s.tipo_servicio_id) {
+                <option [value]="s.tipo_servicio_id">{{ s.tipo_servicio_nombre }} ({{ s.horas_disponibles | number:'1.0-1' }} h libres)</option>
+              }
+            </select>
+            @if (form.get('contrato_id')?.value && serviciosDisponibles().length === 0) {
+              <div class="hint">Este contrato no tiene horas establecidas para ningun servicio. Ve al detalle del contrato para asignarlas.</div>
+            }
+          </div>
+        }
+
+        <div class="form-group mt-16">
+          <label>Fecha *</label>
+          <input class="input" type="date" formControlName="fecha" />
+        </div>
+        <div class="form-group mt-16">
+          <label>Hora de inicio *</label>
+          <input class="input" type="time" formControlName="hora_inicio" />
+        </div>
+        <div class="form-group mt-16">
+          <label>Hora de fin *</label>
+          <input class="input" type="time" formControlName="hora_fin" />
+          @if (form.errors?.['horaFinInvalida']) {
+            <div class="error-text">La hora de fin debe ser posterior a la hora de inicio.</div>
+          }
+        </div>
+        <div class="form-group mt-16">
+          <label>Horas ejecutadas</label>
+          <input class="input" type="text" [value]="horasCalculadas() | number:'1.0-2'" disabled />
+        </div>
+        <div class="form-group mt-16">
+          <label>Descripcion</label>
+          <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalle de la actividad realizada"></textarea>
+        </div>
+
+        <div class="card mt-16">
+          <h3 style="margin:0;">Documentos</h3>
+
+          <div class="table-wrap mt-16">
+            <table class="data-table">
+              <thead>
+                <tr><th>Nombre</th><th>URL</th><th></th></tr>
+              </thead>
+              <tbody>
+                @for (d of documentosActuales(); track d.url) {
+                  <tr>
+                    <td>{{ d.nombre }}</td>
+                    <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
+                    <td class="table-actions">
+                      <button type="button" class="btn btn-danger btn-sm" (click)="quitarDocumento(d)">Quitar</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="3"><div class="empty-state">Sin documentos asociados.</div></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div [formGroup]="docForm">
+            <div class="form-group mt-16">
+              <label>Nombre</label>
+              <input class="input" formControlName="nombre" placeholder="Evidencia.pdf" />
+            </div>
+            <div class="form-group mt-16">
+              <label>URL (OneDrive u otro origen)</label>
+              <input class="input" type="url" formControlName="url" placeholder="https://onedrive.live.com/..." />
+            </div>
+            <button type="button" class="btn btn-outline btn-sm mt-16" [disabled]="docForm.invalid" (click)="agregarDocumento()">+ Agregar documento</button>
+          </div>
+        </div>
+
+        @if (errorGuardar()) {
+          <div class="error-text mt-16">{{ errorGuardar() }}</div>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ registroEditando() ? 'Guardar cambios' : 'Guardar' }}</button>
+          <button type="button" class="btn btn-outline" (click)="cerrarPanel()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

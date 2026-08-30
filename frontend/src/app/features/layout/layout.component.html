@@ -1,0 +1,106 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">
+        HS
+      </div>
+      <div>
+        <div class="title">Horas de Servicio</div>
+        <div class="subtitle">Panel de gestion</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/dashboard" routerLinkActive="active">Resumen</a>
+      <a routerLink="/contratos" routerLinkActive="active">Contratos</a>
+      <a routerLink="/horas" routerLinkActive="active">Registro de horas</a>
+      <a routerLink="/reportes" routerLinkActive="active">Reportes</a>
+      <a routerLink="/clientes" routerLinkActive="active">Clientes</a>
+      <a routerLink="/tipos-servicio" routerLinkActive="active">Tipos de servicio</a>
+      @if (auth.usuario()?.rol === 'admin') {
+        <a routerLink="/usuarios" routerLinkActive="active">Usuarios</a>
+      }
+      @if (auth.esSuperAdmin()) {
+        <a routerLink="/empresas" routerLinkActive="active">Empresas</a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">v1.0 &middot; Conectado a Supabase</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="flex items-center gap-8">
+        @if (auth.empresaActiva(); as empresa) {
+          @if (empresa.empresa_logo) {
+            <img [src]="empresa.empresa_logo" alt="Logo" style="width:80px;height:80px;border-radius:6px;object-fit:contain;" />
+          }
+          <span class="text-muted text-sm">{{ empresa.empresa_nombre }}</span>
+        }
+      </div>
+
+      <div class="user-menu">
+        <button class="user-pill user-pill-btn" (click)="menuAbierto.set(!menuAbierto())">
+          @if (auth.usuario()?.avatar) {
+            <img class="avatar-img" [src]="auth.usuario()?.avatar" alt="Avatar" />
+          } @else {
+            <div class="avatar">{{ iniciales() }}</div>
+          }
+          <div>
+            <div>{{ auth.usuario()?.nombre }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ auth.usuario()?.rol }}</div>
+          </div>
+        </button>
+
+        @if (menuAbierto()) {
+          <div class="dropdown-backdrop" (click)="menuAbierto.set(false)"></div>
+          <div class="dropdown-menu">
+            <button type="button" class="dropdown-item" (click)="fileInput.click()">Cambiar foto de perfil</button>
+            <button type="button" class="dropdown-item" (click)="abrirCambioPassword()">Cambiar contrasena</button>
+            <button type="button" class="dropdown-item dropdown-item-danger" (click)="auth.logout()">Salir</button>
+          </div>
+        }
+      </div>
+
+      <input #fileInput type="file" accept="image/*" style="display:none" (change)="onArchivoSeleccionado($event)" />
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+
+    <footer class="page-footer">&copy; {{ anioActual }} Edwin Cedeño. Todos los derechos reservados.</footer>
+  </div>
+</div>
+
+@if (panelPasswordAbierto()) {
+  <div class="overlay" (click)="cerrarCambioPassword()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Cambiar contrasena</h2>
+        <button class="close" (click)="cerrarCambioPassword()">&times;</button>
+      </div>
+      <form [formGroup]="passwordForm" (ngSubmit)="guardarPassword()">
+        <div class="form-group">
+          <label>Contrasena actual *</label>
+          <input class="input" type="password" formControlName="password_actual" />
+        </div>
+        <div class="form-group mt-16">
+          <label>Nueva contrasena *</label>
+          <input class="input" type="password" formControlName="password_nueva" />
+        </div>
+        <div class="form-group mt-16">
+          <label>Confirmar nueva contrasena *</label>
+          <input class="input" type="password" formControlName="password_confirmar" />
+          @if (passwordForm.errors?.['noCoincide']) {
+            <div class="error-text">Las contrasenas no coinciden.</div>
+          }
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid">Guardar</button>
+          <button type="button" class="btn btn-outline" (click)="cerrarCambioPassword()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

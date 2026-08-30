@@ -1,0 +1,36 @@
+<div class="page-header">
+  <div>
+    <h1>Reporte de horas</h1>
+    <div class="desc">Genera un PDF resumen de horas ejecutadas por cliente y rango de fechas</div>
+  </div>
+</div>
+
+<div class="card">
+  <form [formGroup]="filtroForm" (ngSubmit)="generarReporte()">
+    <div class="form-group">
+      <label>Cliente</label>
+      <select class="input" formControlName="cliente">
+        <option value="">Todos los clientes</option>
+        @for (c of clientes(); track c.id) { <option [value]="c.nombre">{{ c.nombre }}</option> }
+      </select>
+    </div>
+    <div class="form-group mt-16">
+      <label>Desde *</label>
+      <input class="input" type="date" formControlName="fechaInicio" />
+    </div>
+    <div class="form-group mt-16">
+      <label>Hasta *</label>
+      <input class="input" type="date" formControlName="fechaFin" />
+    </div>
+
+    @if (errorGenerar()) {
+      <div class="error-text mt-16">{{ errorGenerar() }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || generando()">
+        {{ generando() ? 'Generando...' : 'Generar PDF' }}
+      </button>
+    </div>
+  </form>
+</div>
