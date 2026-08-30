@@ -8,28 +8,30 @@
   }
 </div>
 
-<div class="filter-bar">
-  <input
-    class="input"
-    type="text"
-    placeholder="Buscar por numero de contrato o cliente..."
-    [ngModel]="filtroTexto()"
-    (ngModelChange)="filtroTexto.set($event)"
-    (keyup.enter)="aplicarFiltro()"
-  />
-  <button class="btn btn-primary" (click)="aplicarFiltro()">Filtrar</button>
-  @if (filtro()) {
-    <button class="btn btn-outline" (click)="limpiarFiltro()">Limpiar</button>
-  }
-</div>
-
 <div class="table-wrap">
   <table class="data-table">
     <thead>
-      <tr><th>Numero</th><th>Cliente</th><th>Inicio</th><th>Fin</th><th>Estado</th><th></th></tr>
+      <tr>
+        <th class="sortable" (click)="ordenarPor('numero_contrato')">Numero{{ indicadorOrden('numero_contrato') }}</th>
+        <th class="sortable" (click)="ordenarPor('cliente_nombre')">Cliente{{ indicadorOrden('cliente_nombre') }}</th>
+        <th class="sortable" (click)="ordenarPor('fecha_inicio')">Inicio{{ indicadorOrden('fecha_inicio') }}</th>
+        <th class="sortable" (click)="ordenarPor('fecha_fin')">Fin{{ indicadorOrden('fecha_fin') }}</th>
+        <th class="sortable" (click)="ordenarPor('estado')">Estado{{ indicadorOrden('estado') }}</th>
+        <th></th>
+      </tr>
+      <tr class="filter-row">
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroNumero()" (ngModelChange)="filtroNumero.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCliente()" (ngModelChange)="filtroCliente.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="dd/mm/aaaa" [ngModel]="filtroInicio()" (ngModelChange)="filtroInicio.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="dd/mm/aaaa" [ngModel]="filtroFin()" (ngModelChange)="filtroFin.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" /></th>
+        <th>
+          @if (hayFiltros()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Limpiar</button> }
+        </th>
+      </tr>
     </thead>
     <tbody>
-      @for (c of contratosFiltrados(); track c.id) {
+      @for (c of contratosOrdenados(); track c.id) {
         <tr>
           <td><a [routerLink]="['/contratos', c.id]" [title]="c.observaciones || 'Sin observaciones registradas.'">{{ c.numero_contrato }}</a></td>
           <td>{{ c.cliente_nombre }}</td>
@@ -47,7 +49,7 @@
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="6"><div class="empty-state">{{ filtro() ? 'Ningun contrato coincide con la busqueda.' : 'No hay contratos registrados todavia.' }}</div></td></tr>
+        <tr><td colspan="6"><div class="empty-state">{{ hayFiltros() ? 'Ningun contrato coincide con los filtros.' : 'No hay contratos registrados todavia.' }}</div></td></tr>
       }
     </tbody>
   </table>

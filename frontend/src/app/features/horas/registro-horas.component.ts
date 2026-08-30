@@ -22,33 +22,56 @@ export class RegistroHorasComponent implements OnInit {
   panelAbierto = signal(false);
   registroEditando = signal<RegistroHora | null>(null);
 
-  filtroTexto = signal('');
-  filtro = signal('');
-
   // Filtro por contrato+servicio via query params (ej. desde "Ver horas" en el detalle del contrato)
   filtroContratoId = signal<string | null>(null);
   filtroTipoServicioId = signal<string | null>(null);
 
+  // Filtro por columna (uno por cada encabezado de la tabla)
+  filtroNumero = signal('');
+  filtroFecha = signal('');
+  filtroCliente = signal('');
+  filtroContrato = signal('');
+  filtroServicio = signal('');
+  filtroHoras = signal('');
+  filtroUsuario = signal('');
+
+  hayFiltros = computed(() =>
+    !!(this.filtroNumero() || this.filtroFecha() || this.filtroCliente() || this.filtroContrato() ||
+      this.filtroServicio() || this.filtroHoras() || this.filtroUsuario())
+  );
+
+  limpiarFiltros(): void {
+    this.filtroNumero.set('');
+    this.filtroFecha.set('');
+    this.filtroCliente.set('');
+    this.filtroContrato.set('');
+    this.filtroServicio.set('');
+    this.filtroHoras.set('');
+    this.filtroUsuario.set('');
+  }
+
   registrosFiltrados = computed(() => {
     const contratoId = this.filtroContratoId();
     const tipoServicioId = this.filtroTipoServicioId();
-    const texto = this.filtro().trim().toLowerCase();
+    const numero = this.filtroNumero().trim().toLowerCase();
+    const fecha = this.filtroFecha().trim().toLowerCase();
+    const cliente = this.filtroCliente().trim().toLowerCase();
+    const contrato = this.filtroContrato().trim().toLowerCase();
+    const servicio = this.filtroServicio().trim().toLowerCase();
+    const horas = this.filtroHoras().trim().toLowerCase();
+    const usuario = this.filtroUsuario().trim().toLowerCase();
 
     return this.registros().filter((r) => {
       if (contratoId && r.contrato_id !== contratoId) return false;
       if (tipoServicioId && r.tipo_servicio_id !== tipoServicioId) return false;
-      if (!texto) return true;
-      const campos = [
-        this.numeroServicio(r),
-        formatearFecha(r.fecha),
-        r.cliente_nombre,
-        r.numero_contrato,
-        r.tipo_servicio_nombre,
-        String(r.horas ?? ''),
-        r.usuario_nombre,
-        r.descripcion,
-      ];
-      return campos.some((campo) => (campo ?? '').toString().toLowerCase().includes(texto));
+      if (numero && !this.numeroServicio(r).toLowerCase().includes(numero)) return false;
+      if (fecha && !fechaConHora(r).toLowerCase().includes(fecha)) return false;
+      if (cliente && !(r.cliente_nombre ?? '').toLowerCase().includes(cliente)) return false;
+      if (contrato && !(r.numero_contrato ?? '').toLowerCase().includes(contrato)) return false;
+      if (servicio && !(r.tipo_servicio_nombre ?? '').toLowerCase().includes(servicio)) return false;
+      if (horas && !String(r.horas ?? '').toLowerCase().includes(horas)) return false;
+      if (usuario && !(r.usuario_nombre ?? '').toLowerCase().includes(usuario)) return false;
+      return true;
     });
   });
 
@@ -117,9 +140,6 @@ export class RegistroHorasComponent implements OnInit {
   }
 
   cargar(): void { this.srv.listar().subscribe((data) => this.registros.set(data)); }
-
-  aplicarFiltro(): void { this.filtro.set(this.filtroTexto()); }
-  limpiarFiltro(): void { this.filtroTexto.set(''); this.filtro.set(''); }
 
   ordenarPor(columna: keyof RegistroHora): void {
     if (this.columnaOrden() === columna) {
@@ -258,6 +278,14 @@ function claveFechaHora(r: RegistroHora): string {
   const fecha = r.fecha?.substring(0, 10) ?? '';
   const hora = r.created_at?.substring(11, 19) ?? '00:00:00';
   return `${fecha}T${hora}`;
+}
+
+// Misma cadena que se muestra en la columna Fecha de la tabla, para que el
+// filtro de esa columna busque sobre lo que el usuario realmente ve.
+function fechaConHora(r: RegistroHora): string {
+  const fecha = formatearFecha(r.fecha);
+  const hora = r.created_at ? r.created_at.substring(11, 16) : '';
+  return hora ? `${fecha} ${hora}` : fecha;
 }
 
 function calcularHoras(horaInicio: string | null | undefined, horaFin: string | null | undefined): number {

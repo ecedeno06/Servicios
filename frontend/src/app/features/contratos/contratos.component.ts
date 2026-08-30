@@ -20,16 +20,73 @@ export class ContratosComponent implements OnInit {
   panelAbierto = signal(false);
   contratoEditando = signal<Contrato | null>(null);
 
-  filtroTexto = signal('');
-  filtro = signal('');
+  // Filtro por columna (uno por cada encabezado de la tabla)
+  filtroNumero = signal('');
+  filtroCliente = signal('');
+  filtroInicio = signal('');
+  filtroFin = signal('');
+  filtroEstado = signal('');
+
+  hayFiltros = computed(() =>
+    !!(this.filtroNumero() || this.filtroCliente() || this.filtroInicio() || this.filtroFin() || this.filtroEstado())
+  );
+
+  limpiarFiltros(): void {
+    this.filtroNumero.set('');
+    this.filtroCliente.set('');
+    this.filtroInicio.set('');
+    this.filtroFin.set('');
+    this.filtroEstado.set('');
+  }
 
   contratosFiltrados = computed(() => {
-    const texto = this.filtro().trim().toLowerCase();
-    if (!texto) return this.contratos();
-    return this.contratos().filter((c) =>
-      [c.numero_contrato, c.cliente_nombre].some((campo) => (campo ?? '').toLowerCase().includes(texto))
-    );
+    const numero = this.filtroNumero().trim().toLowerCase();
+    const cliente = this.filtroCliente().trim().toLowerCase();
+    const inicio = this.filtroInicio().trim().toLowerCase();
+    const fin = this.filtroFin().trim().toLowerCase();
+    const estado = this.filtroEstado().trim().toLowerCase();
+
+    return this.contratos().filter((c) => {
+      if (numero && !(c.numero_contrato ?? '').toLowerCase().includes(numero)) return false;
+      if (cliente && !(c.cliente_nombre ?? '').toLowerCase().includes(cliente)) return false;
+      if (inicio && !formatearFecha(c.fecha_inicio).includes(inicio)) return false;
+      if (fin && !(c.fecha_fin ? formatearFecha(c.fecha_fin) : '-').includes(fin)) return false;
+      if (estado && !this.vigencia(c).texto.toLowerCase().includes(estado)) return false;
+      return true;
+    });
   });
+
+  columnaOrden = signal<keyof Contrato | null>(null);
+  direccionOrden = signal<'asc' | 'desc'>('asc');
+
+  contratosOrdenados = computed(() => {
+    const columna = this.columnaOrden();
+    const filas = [...this.contratosFiltrados()];
+    if (!columna) return filas;
+    const direccion = this.direccionOrden() === 'asc' ? 1 : -1;
+    return filas.sort((a, b) => {
+      const valorA = a[columna];
+      const valorB = b[columna];
+      if (valorA == null && valorB == null) return 0;
+      if (valorA == null) return -1 * direccion;
+      if (valorB == null) return 1 * direccion;
+      return String(valorA).localeCompare(String(valorB)) * direccion;
+    });
+  });
+
+  ordenarPor(columna: keyof Contrato): void {
+    if (this.columnaOrden() === columna) {
+      this.direccionOrden.set(this.direccionOrden() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.columnaOrden.set(columna);
+      this.direccionOrden.set('asc');
+    }
+  }
+
+  indicadorOrden(columna: keyof Contrato): string {
+    if (this.columnaOrden() !== columna) return '';
+    return this.direccionOrden() === 'asc' ? ' ▲' : ' ▼';
+  }
 
   form = this.fb.group(
     {
@@ -56,9 +113,6 @@ export class ContratosComponent implements OnInit {
   }
 
   cargar(): void { this.srv.listar().subscribe((data) => this.contratos.set(data)); }
-
-  aplicarFiltro(): void { this.filtro.set(this.filtroTexto()); }
-  limpiarFiltro(): void { this.filtroTexto.set(''); this.filtro.set(''); }
 
   abrirNuevo(): void {
     this.contratoEditando.set(null);
@@ -127,4 +181,10 @@ function fechaFinNoAnteriorValidator(group: AbstractControl): ValidationErrors |
   const fin = group.get('fecha_fin')?.value;
   if (!inicio || !fin) return null;
   return fin < inicio ? { fechaFinAnterior: true } : null;
+}
+
+function formatearFecha(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const [anio, mes, dia] = iso.substring(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
 }
