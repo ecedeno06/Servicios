@@ -6,14 +6,16 @@
 </div>
 
 <div class="stats-grid">
-  <div class="stat-card">
-    <div class="label">Clientes activos</div>
-    <div class="value">{{ clientesActivos() }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="label">Contratos activos</div>
-    <div class="value">{{ contratosActivos() }}</div>
-  </div>
+  @if (!auth.esCliente()) {
+    <div class="stat-card">
+      <div class="label">Clientes activos</div>
+      <div class="value">{{ clientesActivos() }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Contratos activos</div>
+      <div class="value">{{ contratosActivos() }}</div>
+    </div>
+  }
   <div class="stat-card">
     <div class="label">Horas contratadas</div>
     <div class="value">{{ totalContratadas() | number:'1.0-1' }}</div>

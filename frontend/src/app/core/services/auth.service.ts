@@ -24,6 +24,7 @@ export class AuthService {
   usuario = computed(() => this._usuario());
   estaAutenticado = computed(() => !!this._usuario());
   esSuperAdmin = computed(() => !!this._usuario()?.es_super_admin);
+  esCliente = computed(() => this._usuario()?.rol === 'cliente');
   empresaActiva = computed(() => {
     const u = this._usuario();
     return u?.empresa_id

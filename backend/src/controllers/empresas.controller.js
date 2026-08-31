@@ -64,13 +64,26 @@ async function listarUsuariosGlobales(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/empresas/:id/clientes  -> clientes de esta empresa (para elegir a
+// cual representa un usuario cuando se le asocia con rol 'cliente')
+async function listarClientesDeEmpresa(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      'select id, nombre from clientes where empresa_id = $1 and activo = true order by nombre',
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 // GET /api/empresas/:id/usuarios  -> usuarios asociados a esta empresa, con su rol
 async function listarUsuariosDeEmpresa(req, res, next) {
   try {
     const { rows } = await pool.query(
-      `select u.id, u.nombre, u.email, uer.rol
+      `select u.id, u.nombre, u.email, uer.rol, uer.cliente_id, cl.nombre as cliente_nombre
        from usuarios_empresas_rol uer
        join usuarios u on u.id = uer.usuario_id
+       left join clientes cl on cl.id = uer.cliente_id
        where uer.empresa_id = $1
        order by u.nombre`,
       [req.params.id]
@@ -79,26 +92,34 @@ async function listarUsuariosDeEmpresa(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// POST /api/empresas/:id/usuarios  { usuario_id, rol }
+// POST /api/empresas/:id/usuarios  { usuario_id, rol, cliente_id }
 // Asocia un usuario ya existente (elegido de la tabla global de usuarios) a
 // esta empresa; si ya estaba asociado, actualiza el rol en vez de duplicar.
+// cliente_id es obligatorio cuando rol = 'cliente' (a que cliente de esta
+// empresa representa), e ignorado para cualquier otro rol.
 async function asociarUsuario(req, res, next) {
   try {
-    const { usuario_id, rol } = req.body;
+    const { usuario_id, rol, cliente_id } = req.body;
     if (!usuario_id) return res.status(400).json({ mensaje: 'usuario_id es requerido' });
 
+    if (rol === 'cliente') {
+      if (!cliente_id) return res.status(400).json({ mensaje: 'cliente_id es requerido para el rol cliente' });
+      const cliente = await pool.query('select id from clientes where id = $1 and empresa_id = $2', [cliente_id, req.params.id]);
+      if (!cliente.rows[0]) return res.status(400).json({ mensaje: 'El cliente indicado no pertenece a esta empresa' });
+    }
+
     const { rows } = await pool.query(
-      `insert into usuarios_empresas_rol (usuario_id, empresa_id, rol)
-       values ($1, $2, coalesce($3, 'tecnico'))
-       on conflict (usuario_id, empresa_id) do update set rol = excluded.rol
-       returning rol`,
-      [usuario_id, req.params.id, rol]
+      `insert into usuarios_empresas_rol (usuario_id, empresa_id, rol, cliente_id)
+       values ($1, $2, coalesce($3, 'tecnico'), $4)
+       on conflict (usuario_id, empresa_id) do update set rol = excluded.rol, cliente_id = excluded.cliente_id
+       returning rol, cliente_id`,
+      [usuario_id, req.params.id, rol, rol === 'cliente' ? cliente_id : null]
     );
 
     const { rows: usuarioRows } = await pool.query('select id, nombre, email from usuarios where id = $1', [usuario_id]);
     if (!usuarioRows[0]) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
 
-    res.status(201).json({ ...usuarioRows[0], rol: rows[0].rol });
+    res.status(201).json({ ...usuarioRows[0], rol: rows[0].rol, cliente_id: rows[0].cliente_id });
   } catch (err) { next(err); }
 }
 
@@ -117,4 +138,5 @@ async function desasociarUsuario(req, res, next) {
 module.exports = {
   listar, obtener, crear, actualizar, eliminar,
   listarUsuariosGlobales, listarUsuariosDeEmpresa, asociarUsuario, desasociarUsuario,
+  listarClientesDeEmpresa,
 };

@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { EmpresasService } from '../../core/services/empresas.service';
+import { EmpresasService, ClienteDeEmpresa } from '../../core/services/empresas.service';
 import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol } from '../../core/models/models';
 
 @Component({
@@ -18,8 +18,10 @@ export class EmpresasComponent implements OnInit {
 
   usuariosGlobales = signal<UsuarioGlobal[]>([]);
   usuariosDeEmpresa = signal<UsuarioDeEmpresa[]>([]);
+  clientesDeEmpresa = signal<ClienteDeEmpresa[]>([]);
   usuarioParaAsociar = '';
   rolParaAsociar: Rol = 'tecnico';
+  clienteParaAsociar = '';
 
   // Solo ofrece en el selector a los usuarios que todavia no estan asociados
   usuariosDisponibles = computed(() => {
@@ -58,7 +60,9 @@ export class EmpresasComponent implements OnInit {
     this.form.reset({ ...e });
     this.usuarioParaAsociar = '';
     this.rolParaAsociar = 'tecnico';
+    this.clienteParaAsociar = '';
     this.cargarUsuariosDeEmpresa(e.id);
+    this.srv.clientesDeEmpresa(e.id).subscribe((data) => this.clientesDeEmpresa.set(data));
     this.panelAbierto.set(true);
   }
 
@@ -68,10 +72,17 @@ export class EmpresasComponent implements OnInit {
 
   asociarUsuario(empresaId: string): void {
     if (!this.usuarioParaAsociar) return;
-    this.srv.asociarUsuario(empresaId, { usuario_id: this.usuarioParaAsociar, rol: this.rolParaAsociar }).subscribe({
+    if (this.rolParaAsociar === 'cliente' && !this.clienteParaAsociar) return;
+
+    this.srv.asociarUsuario(empresaId, {
+      usuario_id: this.usuarioParaAsociar,
+      rol: this.rolParaAsociar,
+      cliente_id: this.rolParaAsociar === 'cliente' ? this.clienteParaAsociar : null,
+    }).subscribe({
       next: () => {
         this.usuarioParaAsociar = '';
         this.rolParaAsociar = 'tecnico';
+        this.clienteParaAsociar = '';
         this.cargarUsuariosDeEmpresa(empresaId);
       },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo asociar el usuario'),

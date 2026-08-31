@@ -74,7 +74,7 @@ async function login(req, res, next) {
     }
 
     const { rows: empresas } = await pool.query(
-      `select uer.empresa_id, uer.rol, e.nombre as empresa_nombre, e.logo as empresa_logo
+      `select uer.empresa_id, uer.rol, uer.cliente_id, e.nombre as empresa_nombre, e.logo as empresa_logo
        from usuarios_empresas_rol uer
        join empresas e on e.id = uer.empresa_id
        where uer.usuario_id = $1 and e.activo = true
@@ -116,6 +116,7 @@ async function login(req, res, next) {
       email: payload.email,
       rol: payload.rol,
       empresa_id: payload.empresa_id,
+      cliente_id: empresaActiva ? empresaActiva.cliente_id : null,
       es_super_admin: payload.es_super_admin,
     });
 
@@ -145,16 +146,17 @@ async function seleccionarEmpresa(req, res, next) {
     const usuario = usuarioRows[0];
 
     const { rows: relacion } = await pool.query(
-      `select uer.rol, e.nombre as empresa_nombre, e.logo as empresa_logo
+      `select uer.rol, uer.cliente_id, e.nombre as empresa_nombre, e.logo as empresa_logo
        from usuarios_empresas_rol uer
        join empresas e on e.id = uer.empresa_id
        where uer.usuario_id = $1 and uer.empresa_id = $2 and e.activo = true`,
       [req.usuario.id, empresa_id]
     );
 
-    let rol, empresaNombre, empresaLogo;
+    let rol, clienteId, empresaNombre, empresaLogo;
     if (relacion[0]) {
       rol = relacion[0].rol;
+      clienteId = relacion[0].cliente_id;
       empresaNombre = relacion[0].empresa_nombre;
       empresaLogo = relacion[0].empresa_logo;
     } else if (usuario.es_super_admin) {
@@ -165,6 +167,7 @@ async function seleccionarEmpresa(req, res, next) {
       const { rows: empresaRows } = await pool.query('select nombre, logo from empresas where id = $1 and activo = true', [empresa_id]);
       if (!empresaRows[0]) return res.status(404).json({ mensaje: 'Empresa no encontrada' });
       rol = 'admin';
+      clienteId = null;
       empresaNombre = empresaRows[0].nombre;
       empresaLogo = empresaRows[0].logo;
     } else {
@@ -188,6 +191,7 @@ async function seleccionarEmpresa(req, res, next) {
       email: payload.email,
       rol: payload.rol,
       empresa_id: payload.empresa_id,
+      cliente_id: clienteId,
       es_super_admin: payload.es_super_admin,
     });
 

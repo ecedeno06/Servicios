@@ -100,6 +100,9 @@ export class RegistroHorasComponent implements OnInit {
   documentosActuales = signal<Documento[]>([]);
   errorGuardar = signal<string | null>(null);
 
+  registroComentando = signal<RegistroHora | null>(null);
+  notaNueva = '';
+
   form = this.fb.group(
     {
       contrato_id: ['', Validators.required],
@@ -128,7 +131,11 @@ export class RegistroHorasComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
-    this.contratosSrv.listar().subscribe((data) => this.contratos.set(data));
+    // El rol cliente no tiene acceso a /contratos (no ejecuta ni registra
+    // trabajo, ver PORTAL-CLIENTE.md) -- no se pide para evitar un 403.
+    if (!this.auth.esCliente()) {
+      this.contratosSrv.listar().subscribe((data) => this.contratos.set(data));
+    }
     this.form.get('contrato_id')?.valueChanges.subscribe((contratoId) => this.alCambiarContrato(contratoId));
     this.form.valueChanges.subscribe(({ hora_inicio, hora_fin }) => {
       this.horasCalculadas.set(calcularHoras(hora_inicio, hora_fin));
@@ -234,6 +241,30 @@ export class RegistroHorasComponent implements OnInit {
 
   numeroServicio(r: RegistroHora): string {
     return r.id.slice(0, 8).toUpperCase();
+  }
+
+  abrirComentarios(r: RegistroHora): void {
+    this.registroComentando.set(r);
+    this.notaNueva = '';
+  }
+
+  cerrarComentarios(): void { this.registroComentando.set(null); }
+
+  comentariosOrdenados(r: RegistroHora): RegistroHora['comentarios'] {
+    return [...(r.comentarios ?? [])].reverse();
+  }
+
+  agregarComentario(): void {
+    const registro = this.registroComentando();
+    if (!registro || !this.notaNueva.trim()) return;
+    this.srv.agregarComentario(registro.id, this.notaNueva.trim()).subscribe({
+      next: (actualizado) => {
+        this.registroComentando.set(actualizado);
+        this.notaNueva = '';
+        this.cargar();
+      },
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo agregar el comentario'),
+    });
   }
 
   generarPdf(r: RegistroHora): void {

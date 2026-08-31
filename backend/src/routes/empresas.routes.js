@@ -12,6 +12,7 @@ router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);
 router.delete('/:id', ctrl.eliminar);
 
+router.get('/:id/clientes', ctrl.listarClientesDeEmpresa);
 router.get('/:id/usuarios', ctrl.listarUsuariosDeEmpresa);
 router.post('/:id/usuarios', ctrl.asociarUsuario);
 router.delete('/:id/usuarios/:usuarioId', ctrl.desasociarUsuario);

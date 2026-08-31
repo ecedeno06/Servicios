@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
+import { noClienteGuard } from './core/guards/no-cliente.guard';
 import { LayoutComponent } from './features/layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
@@ -22,13 +23,13 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'clientes', component: ClientesComponent },
-      { path: 'tipos-servicio', component: TiposServicioComponent },
-      { path: 'contratos', component: ContratosComponent },
-      { path: 'contratos/:id', component: ContratoDetalleComponent },
+      { path: 'clientes', component: ClientesComponent, canActivate: [noClienteGuard] },
+      { path: 'tipos-servicio', component: TiposServicioComponent, canActivate: [noClienteGuard] },
+      { path: 'contratos', component: ContratosComponent, canActivate: [noClienteGuard] },
+      { path: 'contratos/:id', component: ContratoDetalleComponent, canActivate: [noClienteGuard] },
       { path: 'horas', component: RegistroHorasComponent },
-      { path: 'reportes', component: ReporteHorasComponent },
-      { path: 'usuarios', component: UsuariosComponent },
+      { path: 'reportes', component: ReporteHorasComponent, canActivate: [noClienteGuard] },
+      { path: 'usuarios', component: UsuariosComponent, canActivate: [noClienteGuard] },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
     ],
   },

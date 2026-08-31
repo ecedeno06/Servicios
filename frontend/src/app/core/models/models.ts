@@ -1,4 +1,4 @@
-export type Rol = 'admin' | 'supervisor' | 'tecnico';
+export type Rol = 'admin' | 'supervisor' | 'tecnico' | 'cliente';
 
 export interface Usuario {
   id: string;
@@ -55,6 +55,8 @@ export interface UsuarioGlobal {
 // Usuario asociado a una empresa puntual, visto desde la pantalla de Empresas
 export interface UsuarioDeEmpresa extends UsuarioGlobal {
   rol: Rol;
+  cliente_id?: string | null;
+  cliente_nombre?: string | null;
 }
 
 export interface Cliente {
@@ -129,6 +131,13 @@ export interface ConsumoHoras {
   horas_disponibles: number;
 }
 
+export interface Comentario {
+  fecha: string;
+  usuario_id: string;
+  usuario_nombre: string;
+  nota: string;
+}
+
 export interface RegistroHora {
   id: string;
   empresa_id?: string;
@@ -145,5 +154,6 @@ export interface RegistroHora {
   horas: number;
   descripcion?: string;
   documentos?: Documento[];
+  comentarios?: Comentario[];
   created_at?: string;
 }

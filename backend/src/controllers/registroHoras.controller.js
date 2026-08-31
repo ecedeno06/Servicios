@@ -22,6 +22,10 @@ async function listar(req, res, next) {
     if (usuario_id) { valores.push(usuario_id); condiciones.push(`rh.usuario_id = $${valores.length}`); }
     if (desde) { valores.push(desde); condiciones.push(`rh.fecha >= $${valores.length}`); }
     if (hasta) { valores.push(hasta); condiciones.push(`rh.fecha <= $${valores.length}`); }
+    // Un usuario "cliente" solo ve horas de contratos de su propio cliente,
+    // sin importar que filtros haya pedido -- esto es lo que evita que un
+    // ?contrato_id= de otro cliente le muestre datos ajenos.
+    if (req.clienteId) { valores.push(req.clienteId); condiciones.push(`c.cliente_id = $${valores.length}`); }
 
     const where = `where ${condiciones.join(' and ')}`;
 
@@ -43,9 +47,15 @@ async function listar(req, res, next) {
 
 async function obtener(req, res, next) {
   try {
+    const valores = [req.params.id, req.empresaId];
+    let filtroCliente = '';
+    if (req.clienteId) {
+      valores.push(req.clienteId);
+      filtroCliente = 'and contrato_id in (select id from contratos where cliente_id = $3)';
+    }
     const { rows } = await pool.query(
-      'select * from registro_horas where id = $1 and empresa_id = $2',
-      [req.params.id, req.empresaId]
+      `select * from registro_horas where id = $1 and empresa_id = $2 ${filtroCliente}`,
+      valores
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
     res.json(rows[0]);
@@ -148,9 +158,12 @@ async function eliminar(req, res, next) {
 // GET /api/horas/consumo  -> resumen de horas por servicio de la empresa activa
 async function consumoGeneral(req, res, next) {
   try {
+    const valores = [req.empresaId];
+    let filtroCliente = '';
+    if (req.clienteId) { valores.push(req.clienteId); filtroCliente = 'and cliente_id = $2'; }
     const { rows } = await pool.query(
-      'select * from vista_consumo_horas where empresa_id = $1 order by cliente_nombre, tipo_servicio_nombre',
-      [req.empresaId]
+      `select * from vista_consumo_horas where empresa_id = $1 ${filtroCliente} order by cliente_nombre, tipo_servicio_nombre`,
+      valores
     );
     res.json(rows);
   } catch (err) { next(err); }
@@ -159,12 +172,50 @@ async function consumoGeneral(req, res, next) {
 // GET /api/horas/consumo/:contratoId  -> resumen de horas por servicio de un contrato
 async function consumoPorContrato(req, res, next) {
   try {
+    const valores = [req.params.contratoId, req.empresaId];
+    let filtroCliente = '';
+    if (req.clienteId) { valores.push(req.clienteId); filtroCliente = 'and cliente_id = $3'; }
     const { rows } = await pool.query(
-      'select * from vista_consumo_horas where contrato_id = $1 and empresa_id = $2 order by tipo_servicio_nombre',
-      [req.params.contratoId, req.empresaId]
+      `select * from vista_consumo_horas where contrato_id = $1 and empresa_id = $2 ${filtroCliente} order by tipo_servicio_nombre`,
+      valores
     );
     res.json(rows);
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral };
+// POST /api/horas/:id/comentarios  { nota }
+// Bitacora de solo-agregar: cualquier rol autenticado puede comentar un
+// registro de horas al que tenga acceso (para 'cliente', solo los suyos).
+async function agregarComentario(req, res, next) {
+  try {
+    const nota = (req.body.nota || '').trim();
+    if (!nota) return res.status(400).json({ mensaje: 'La nota no puede estar vacia' });
+
+    const valores = [req.params.id, req.empresaId];
+    let filtroCliente = '';
+    if (req.clienteId) {
+      valores.push(req.clienteId);
+      filtroCliente = 'and contrato_id in (select id from contratos where cliente_id = $3)';
+    }
+    const registro = await pool.query(
+      `select id from registro_horas where id = $1 and empresa_id = $2 ${filtroCliente}`,
+      valores
+    );
+    if (!registro.rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+
+    const comentario = {
+      fecha: new Date().toISOString(),
+      usuario_id: req.usuario.id,
+      usuario_nombre: req.usuario.nombre,
+      nota,
+    };
+
+    const { rows } = await pool.query(
+      `update registro_horas set comentarios = comentarios || $1::jsonb where id = $2 returning *`,
+      [JSON.stringify([comentario]), req.params.id]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) { next(err); }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral, agregarComentario };

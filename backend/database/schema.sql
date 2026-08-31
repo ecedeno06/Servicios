@@ -52,7 +52,15 @@ create table if not exists usuarios_empresas_rol (
     id              uuid primary key default gen_random_uuid(),
     usuario_id      uuid not null references usuarios(id) on delete cascade,
     empresa_id      uuid not null references empresas(id) on delete cascade,
-    rol             text not null check (rol in ('admin', 'supervisor', 'tecnico')) default 'tecnico',
+    rol             text not null check (rol in ('admin', 'supervisor', 'tecnico', 'cliente')) default 'tecnico',
+    -- Solo aplica (y es obligatorio) cuando rol = 'cliente': a que cliente
+    -- de la empresa representa este usuario. FK hacia clientes(id) se
+    -- agrega mas abajo, una vez que esa tabla ya existe.
+    cliente_id      uuid,
+    constraint chk_cliente_id_segun_rol check (
+        (rol = 'cliente' and cliente_id is not null) or
+        (rol <> 'cliente' and cliente_id is null)
+    ),
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now(),
     unique (usuario_id, empresa_id)
@@ -73,6 +81,10 @@ create table if not exists clientes (
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()
 );
+
+alter table usuarios_empresas_rol
+    add constraint usuarios_empresas_rol_cliente_id_fkey
+    foreign key (cliente_id) references clientes(id) on delete cascade;
 
 -- ---------------------------------------------------------
 -- Tabla: tipos_servicio (catalogo de servicios que se prestan)
@@ -141,6 +153,9 @@ create table if not exists registro_horas (
     descripcion         text,
     -- Documentos asociados (OneDrive u otro origen): [{ "nombre": "...", "url": "..." }, ...]
     documentos          jsonb not null default '[]'::jsonb,
+    -- Bitacora de comentarios de seguimiento (solo se agregan, no se editan
+    -- ni se borran): [{ fecha, usuario_id, usuario_nombre, nota }, ...]
+    comentarios         jsonb not null default '[]'::jsonb,
     created_at          timestamptz not null default now(),
     updated_at          timestamptz not null default now()
 );

@@ -20,4 +20,7 @@ export class RegistroHorasService {
   consumoPorContrato(contratoId: string): Observable<ConsumoHoras[]> {
     return this.http.get<ConsumoHoras[]>(`${this.base}/consumo/${contratoId}`);
   }
+  agregarComentario(id: string, nota: string): Observable<RegistroHora> {
+    return this.http.post<RegistroHora>(`${this.base}/${id}/comentarios`, { nota });
+  }
 }

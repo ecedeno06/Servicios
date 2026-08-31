@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Empresa, UsuarioGlobal, UsuarioDeEmpresa } from '../models/models';
 
+export interface ClienteDeEmpresa {
+  id: string;
+  nombre: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EmpresasService {
   private base = `${environment.apiUrl}/empresas`;
@@ -23,11 +28,15 @@ export class EmpresasService {
     return this.http.get<UsuarioDeEmpresa[]>(`${this.base}/${empresaId}/usuarios`);
   }
 
-  asociarUsuario(empresaId: string, data: { usuario_id: string; rol?: string }): Observable<UsuarioDeEmpresa> {
+  asociarUsuario(empresaId: string, data: { usuario_id: string; rol?: string; cliente_id?: string | null }): Observable<UsuarioDeEmpresa> {
     return this.http.post<UsuarioDeEmpresa>(`${this.base}/${empresaId}/usuarios`, data);
   }
 
   desasociarUsuario(empresaId: string, usuarioId: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${empresaId}/usuarios/${usuarioId}`);
+  }
+
+  clientesDeEmpresa(empresaId: string): Observable<ClienteDeEmpresa[]> {
+    return this.http.get<ClienteDeEmpresa[]>(`${this.base}/${empresaId}/clientes`);
   }
 }

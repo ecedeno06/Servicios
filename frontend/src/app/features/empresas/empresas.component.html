@@ -90,7 +90,12 @@
                     <tr>
                       <td>{{ u.nombre }}</td>
                       <td>{{ u.email }}</td>
-                      <td><span class="badge badge-slate">{{ u.rol }}</span></td>
+                      <td>
+                        <span class="badge badge-slate">{{ u.rol }}</span>
+                        @if (u.rol === 'cliente' && u.cliente_nombre) {
+                          <div class="text-muted text-sm">{{ u.cliente_nombre }}</div>
+                        }
+                      </td>
                       <td class="table-actions">
                         <button type="button" class="btn btn-danger btn-sm" (click)="desasociarUsuario(e.id, u)">Quitar</button>
                       </td>
@@ -117,9 +122,24 @@
                 <option value="tecnico">Tecnico</option>
                 <option value="supervisor">Supervisor</option>
                 <option value="admin">Administrador</option>
+                <option value="cliente">Cliente</option>
               </select>
             </div>
-            <button type="button" class="btn btn-outline btn-sm mt-16" [disabled]="!usuarioParaAsociar" (click)="asociarUsuario(e.id)">
+            @if (rolParaAsociar === 'cliente') {
+              <div class="form-group mt-16">
+                <label>Cliente que representa *</label>
+                <select class="input" [(ngModel)]="clienteParaAsociar" [ngModelOptions]="{ standalone: true }">
+                  <option [ngValue]="''" disabled>Selecciona un cliente</option>
+                  @for (c of clientesDeEmpresa(); track c.id) {
+                    <option [ngValue]="c.id">{{ c.nombre }}</option>
+                  }
+                </select>
+                <div class="hint">Este usuario solo vera la informacion de este cliente al iniciar sesion.</div>
+              </div>
+            }
+            <button type="button" class="btn btn-outline btn-sm mt-16"
+              [disabled]="!usuarioParaAsociar || (rolParaAsociar === 'cliente' && !clienteParaAsociar)"
+              (click)="asociarUsuario(e.id)">
               + Asociar usuario
             </button>
           </div>

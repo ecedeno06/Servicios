@@ -2,10 +2,11 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { ClientesService } from '../../core/services/clientes.service';
 import { ContratosService } from '../../core/services/contratos.service';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ConsumoHoras, Contrato, Cliente } from '../../core/models/models';
 
 @Component({
@@ -40,13 +41,18 @@ export class DashboardComponent implements OnInit {
   constructor(
     private clientesSrv: ClientesService,
     private contratosSrv: ContratosService,
-    private horasSrv: RegistroHorasService
+    private horasSrv: RegistroHorasService,
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
+    // El rol cliente no tiene acceso a /clientes ni /contratos (ver
+    // PORTAL-CLIENTE.md) -- no se piden para no romper el resto del
+    // resumen con un 403.
+    const esCliente = this.auth.esCliente();
     forkJoin({
-      clientes: this.clientesSrv.listar(),
-      contratos: this.contratosSrv.listar(),
+      clientes: esCliente ? of([]) : this.clientesSrv.listar(),
+      contratos: esCliente ? of([]) : this.contratosSrv.listar(),
       consumo: this.horasSrv.consumoGeneral(),
     }).subscribe(({ clientes, contratos, consumo }) => {
       this.clientes.set(clientes);

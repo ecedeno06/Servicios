@@ -3,7 +3,9 @@
     <h1>Registro de horas</h1>
     <div class="desc">Horas de servicio ejecutadas a cada cliente, por contrato y tipo de servicio</div>
   </div>
-  <button class="btn btn-accent" (click)="abrirNuevo()">+ Registrar horas</button>
+  @if (!auth.esCliente()) {
+    <button class="btn btn-accent" (click)="abrirNuevo()">+ Registrar horas</button>
+  }
 </div>
 
 @if (filtroContratoId()) {
@@ -58,6 +60,9 @@
           <td>{{ r.usuario_nombre }}</td>
           <td class="table-actions">
             <button class="btn btn-outline btn-sm" (click)="generarPdf(r)">PDF</button>
+            <button class="btn btn-outline btn-sm" (click)="abrirComentarios(r)">
+              Comentarios @if (r.comentarios?.length) { ({{ r.comentarios?.length }}) }
+            </button>
             @if (auth.puedeEditar()) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(r)">Editar</button>
               <button class="btn btn-danger btn-sm" (click)="eliminar(r)">Eliminar</button>
@@ -181,6 +186,46 @@
           <button type="button" class="btn btn-outline" (click)="cerrarPanel()">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+@if (registroComentando(); as r) {
+  <div class="overlay" (click)="cerrarComentarios()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Comentarios &middot; {{ numeroServicio(r) }}</h2>
+        <button class="close" (click)="cerrarComentarios()">&times;</button>
+      </div>
+
+      <div class="text-muted text-sm">{{ r.cliente_nombre }} &middot; {{ r.numero_contrato }} &middot; {{ r.tipo_servicio_nombre }}</div>
+
+      <div class="table-wrap mt-16">
+        <table class="data-table">
+          <thead><tr><th>Fecha</th><th>Usuario</th><th>Nota</th></tr></thead>
+          <tbody>
+            @for (c of comentariosOrdenados(r); track $index) {
+              <tr>
+                <td style="white-space: nowrap;">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ c.usuario_nombre }}</td>
+                <td style="white-space: pre-wrap;">{{ c.nota }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3"><div class="empty-state">Aun no hay comentarios en este registro.</div></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-group mt-16">
+        <label>Agregar comentario</label>
+        <textarea class="input" rows="3" [(ngModel)]="notaNueva" [ngModelOptions]="{ standalone: true }" placeholder="Escribe una nota de seguimiento..."></textarea>
+        <div class="hint">Los comentarios no se pueden editar ni borrar una vez agregados.</div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" [disabled]="!notaNueva.trim()" (click)="agregarComentario()">Agregar comentario</button>
+        <button type="button" class="btn btn-outline" (click)="cerrarComentarios()">Cerrar</button>
+      </div>
     </div>
   </div>
 }
