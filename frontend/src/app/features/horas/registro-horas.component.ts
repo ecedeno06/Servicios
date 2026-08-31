@@ -6,7 +6,7 @@ import { RegistroHorasService } from '../../core/services/registro-horas.service
 import { ContratosService } from '../../core/services/contratos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
-import { RegistroHora, Contrato, ConsumoHoras, Documento } from '../../core/models/models';
+import { RegistroHora, Contrato, ConsumoHoras, Documento, Comentario } from '../../core/models/models';
 
 @Component({
   selector: 'app-registro-horas',
@@ -101,6 +101,8 @@ export class RegistroHorasComponent implements OnInit {
   errorGuardar = signal<string | null>(null);
 
   registroComentando = signal<RegistroHora | null>(null);
+  comentariosDelRegistro = signal<Comentario[]>([]);
+  cargandoComentarios = signal(false);
   notaNueva = '';
 
   form = this.fb.group(
@@ -143,10 +145,33 @@ export class RegistroHorasComponent implements OnInit {
     this.route.queryParamMap.subscribe((params) => {
       this.filtroContratoId.set(params.get('contrato_id'));
       this.filtroTipoServicioId.set(params.get('tipo_servicio_id'));
+      const registroId = params.get('registro_id');
+      if (registroId) {
+        this.registroIdDesdeQuery = registroId;
+        this.intentarAbrirDesdeQuery();
+      }
     });
   }
 
-  cargar(): void { this.srv.listar().subscribe((data) => this.registros.set(data)); }
+  // Id de registro pedido por query param (ej. desde una notificacion de
+  // comentario nuevo) pendiente de abrir apenas carguen los registros.
+  private registroIdDesdeQuery: string | null = null;
+
+  private intentarAbrirDesdeQuery(): void {
+    if (!this.registroIdDesdeQuery) return;
+    const registro = this.registros().find((r) => r.id === this.registroIdDesdeQuery);
+    if (registro) {
+      this.registroIdDesdeQuery = null;
+      this.abrirComentarios(registro);
+    }
+  }
+
+  cargar(): void {
+    this.srv.listar().subscribe((data) => {
+      this.registros.set(data);
+      this.intentarAbrirDesdeQuery();
+    });
+  }
 
   ordenarPor(columna: keyof RegistroHora): void {
     if (this.columnaOrden() === columna) {
@@ -246,22 +271,38 @@ export class RegistroHorasComponent implements OnInit {
   abrirComentarios(r: RegistroHora): void {
     this.registroComentando.set(r);
     this.notaNueva = '';
+    this.comentariosDelRegistro.set([]);
+    this.cargandoComentarios.set(true);
+    this.srv.listarComentarios(r.id).subscribe({
+      next: (data) => {
+        this.comentariosDelRegistro.set(data);
+        this.cargandoComentarios.set(false);
+      },
+      error: () => this.cargandoComentarios.set(false),
+    });
+    // Se marca como visto al abrir -- no afecta el contador de este boton
+    // (ese es el total, no el de no-leidos), solo la campanita del header.
+    this.srv.marcarComentariosVistos(r.id).subscribe();
   }
 
   cerrarComentarios(): void { this.registroComentando.set(null); }
 
-  comentariosOrdenados(r: RegistroHora): RegistroHora['comentarios'] {
-    return [...(r.comentarios ?? [])].reverse();
+  comentariosOrdenados(): Comentario[] {
+    return [...this.comentariosDelRegistro()].reverse();
   }
 
   agregarComentario(): void {
     const registro = this.registroComentando();
-    if (!registro || !this.notaNueva.trim()) return;
-    this.srv.agregarComentario(registro.id, this.notaNueva.trim()).subscribe({
-      next: (actualizado) => {
-        this.registroComentando.set(actualizado);
+    const nota = this.notaNueva.trim();
+    if (!registro || !nota) return;
+    this.srv.agregarComentario(registro.id, nota).subscribe({
+      next: (comentario) => {
+        this.comentariosDelRegistro.update((lista) => [...lista, comentario]);
         this.notaNueva = '';
-        this.cargar();
+        // Refleja el nuevo total en el boton de la fila sin recargar todo.
+        this.registros.update((lista) =>
+          lista.map((r) => (r.id === registro.id ? { ...r, comentarios_count: (r.comentarios_count ?? 0) + 1 } : r))
+        );
       },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo agregar el comentario'),
     });

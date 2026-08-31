@@ -10,6 +10,23 @@ function calcularHoras(horaInicio, horaFin) {
   return Math.round((minutos / 60) * 100) / 100;
 }
 
+// Confirma que el registro de horas exista, sea de la empresa activa y (si
+// el rol activo es 'cliente') pertenezca a su cliente_id. Devuelve el id o
+// null. Se reusa en los endpoints de comentarios.
+async function idRegistroEnAlcance(req, id) {
+  const valores = [id, req.empresaId];
+  let filtroCliente = '';
+  if (req.clienteId) {
+    valores.push(req.clienteId);
+    filtroCliente = 'and contrato_id in (select id from contratos where cliente_id = $3)';
+  }
+  const { rows } = await pool.query(
+    `select id from registro_horas where id = $1 and empresa_id = $2 ${filtroCliente}`,
+    valores
+  );
+  return rows[0]?.id ?? null;
+}
+
 // GET /api/horas?contrato_id=&tipo_servicio_id=&usuario_id=&desde=&hasta=
 async function listar(req, res, next) {
   try {
@@ -31,12 +48,14 @@ async function listar(req, res, next) {
 
     const { rows } = await pool.query(
       `select rh.*, c.numero_contrato, cl.nombre as cliente_nombre,
-              ts.nombre as tipo_servicio_nombre, u.nombre as usuario_nombre
+              ts.nombre as tipo_servicio_nombre, u.nombre as usuario_nombre,
+              coalesce(cc.total, 0)::int as comentarios_count
        from registro_horas rh
        join contratos c on c.id = rh.contrato_id
        join clientes cl on cl.id = c.cliente_id
        join tipos_servicio ts on ts.id = rh.tipo_servicio_id
        join usuarios u on u.id = rh.usuario_id
+       left join lateral (select count(*) as total from comentarios where registro_horas_id = rh.id) cc on true
        ${where}
        order by rh.fecha desc, rh.created_at desc`,
       valores
@@ -183,6 +202,24 @@ async function consumoPorContrato(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/horas/:id/comentarios
+async function listarComentarios(req, res, next) {
+  try {
+    const id = await idRegistroEnAlcance(req, req.params.id);
+    if (!id) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+
+    const { rows } = await pool.query(
+      `select c.id, c.usuario_id, u.nombre as usuario_nombre, c.nota, c.created_at as fecha
+       from comentarios c
+       join usuarios u on u.id = c.usuario_id
+       where c.registro_horas_id = $1
+       order by c.created_at asc`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 // POST /api/horas/:id/comentarios  { nota }
 // Bitacora de solo-agregar: cualquier rol autenticado puede comentar un
 // registro de horas al que tenga acceso (para 'cliente', solo los suyos).
@@ -191,31 +228,112 @@ async function agregarComentario(req, res, next) {
     const nota = (req.body.nota || '').trim();
     if (!nota) return res.status(400).json({ mensaje: 'La nota no puede estar vacia' });
 
-    const valores = [req.params.id, req.empresaId];
-    let filtroCliente = '';
-    if (req.clienteId) {
-      valores.push(req.clienteId);
-      filtroCliente = 'and contrato_id in (select id from contratos where cliente_id = $3)';
-    }
-    const registro = await pool.query(
-      `select id from registro_horas where id = $1 and empresa_id = $2 ${filtroCliente}`,
-      valores
-    );
-    if (!registro.rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
-
-    const comentario = {
-      fecha: new Date().toISOString(),
-      usuario_id: req.usuario.id,
-      usuario_nombre: req.usuario.nombre,
-      nota,
-    };
+    const id = await idRegistroEnAlcance(req, req.params.id);
+    if (!id) return res.status(404).json({ mensaje: 'Registro no encontrado' });
 
     const { rows } = await pool.query(
-      `update registro_horas set comentarios = comentarios || $1::jsonb where id = $2 returning *`,
-      [JSON.stringify([comentario]), req.params.id]
+      `insert into comentarios (registro_horas_id, usuario_id, nota)
+       values ($1, $2, $3)
+       returning id, usuario_id, nota, created_at as fecha`,
+      [id, req.usuario.id, nota]
     );
-    res.status(201).json(rows[0]);
+
+    // Quien comenta, obviamente ya vio su propio comentario -- no debe
+    // notificarsele a si mismo.
+    await marcarVisto(req.usuario.id, id);
+
+    res.status(201).json({ ...rows[0], usuario_nombre: req.usuario.nombre });
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral, agregarComentario };
+// POST /api/horas/:id/comentarios/marcar-visto
+async function marcarComentariosVistos(req, res, next) {
+  try {
+    const id = await idRegistroEnAlcance(req, req.params.id);
+    if (!id) return res.status(404).json({ mensaje: 'Registro no encontrado' });
+    await marcarVisto(req.usuario.id, id);
+    res.status(204).send();
+  } catch (err) { next(err); }
+}
+
+async function marcarVisto(usuarioId, registroHorasId) {
+  await pool.query(
+    `insert into comentarios_vistos (usuario_id, registro_horas_id, visto_hasta)
+     values ($1, $2, now())
+     on conflict (usuario_id, registro_horas_id) do update set visto_hasta = now()`,
+    [usuarioId, registroHorasId]
+  );
+}
+
+// GET /api/horas/notificaciones/no-leidos
+// Cuenta registros (no comentarios individuales) con al menos un
+// comentario que este usuario todavia no vio, dentro de su alcance.
+async function contarComentariosNoLeidos(req, res, next) {
+  try {
+    const valores = [req.empresaId, req.usuario.id];
+    let filtroCliente = '';
+    if (req.clienteId) { valores.push(req.clienteId); filtroCliente = 'and c.cliente_id = $3'; }
+
+    const { rows } = await pool.query(
+      `select count(distinct rh.id)::int as no_leidos
+       from registro_horas rh
+       join contratos c on c.id = rh.contrato_id
+       join comentarios cm on cm.registro_horas_id = rh.id
+       left join comentarios_vistos cv on cv.registro_horas_id = rh.id and cv.usuario_id = $2
+       where rh.empresa_id = $1 ${filtroCliente}
+         and cm.created_at > coalesce(cv.visto_hasta, '-infinity'::timestamptz)`,
+      valores
+    );
+    res.json({ no_leidos: rows[0].no_leidos });
+  } catch (err) { next(err); }
+}
+
+// GET /api/horas/notificaciones  -> hasta 10 registros con comentarios sin leer
+async function listarNotificaciones(req, res, next) {
+  try {
+    const valores = [req.empresaId, req.usuario.id];
+    let filtroCliente = '';
+    if (req.clienteId) { valores.push(req.clienteId); filtroCliente = 'and c.cliente_id = $3'; }
+
+    const { rows } = await pool.query(
+      `select rh.id as registro_horas_id, c.numero_contrato, cl.nombre as cliente_nombre,
+              coalesce(cv.visto_hasta, '-infinity'::timestamptz) as visto_hasta
+       from registro_horas rh
+       join contratos c on c.id = rh.contrato_id
+       join clientes cl on cl.id = c.cliente_id
+       left join comentarios_vistos cv on cv.registro_horas_id = rh.id and cv.usuario_id = $2
+       where rh.empresa_id = $1 ${filtroCliente}
+         and exists (
+           select 1 from comentarios cm
+           where cm.registro_horas_id = rh.id and cm.created_at > coalesce(cv.visto_hasta, '-infinity'::timestamptz)
+         )
+       order by rh.updated_at desc
+       limit 10`,
+      valores
+    );
+
+    const notificaciones = await Promise.all(rows.map(async (r) => {
+      const nuevos = await pool.query(
+        `select c.usuario_id, u.nombre as usuario_nombre, c.nota, c.created_at as fecha
+         from comentarios c join usuarios u on u.id = c.usuario_id
+         where c.registro_horas_id = $1 and c.created_at > $2
+         order by c.created_at asc`,
+        [r.registro_horas_id, r.visto_hasta]
+      );
+      return {
+        registro_horas_id: r.registro_horas_id,
+        numero_contrato: r.numero_contrato,
+        cliente_nombre: r.cliente_nombre,
+        comentarios_nuevos: nuevos.rows,
+      };
+    }));
+
+    res.json(notificaciones);
+  } catch (err) { next(err); }
+}
+
+module.exports = {
+  listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral,
+  listarComentarios, agregarComentario, marcarComentariosVistos,
+  contarComentariosNoLeidos, listarNotificaciones,
+};

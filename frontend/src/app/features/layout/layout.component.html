@@ -99,27 +99,57 @@
         }
       </div>
 
-      <div class="user-menu">
-        <button class="user-pill user-pill-btn" (click)="menuAbierto.set(!menuAbierto())">
-          @if (auth.usuario()?.avatar) {
-            <img class="avatar-img" [src]="auth.usuario()?.avatar" alt="Avatar" />
-          } @else {
-            <div class="avatar">{{ iniciales() }}</div>
-          }
-          <div>
-            <div>{{ auth.usuario()?.nombre }}</div>
-            <div class="text-muted" style="font-size:11px;">{{ auth.usuario()?.rol }}</div>
-          </div>
-        </button>
+      <div class="flex items-center gap-16">
+        <div class="notif-bell">
+          <button type="button" class="notif-bell-btn" (click)="toggleNotificaciones()" title="Notificaciones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/>
+              <path d="M10 21a2 2 0 0 0 4 0"/>
+            </svg>
+            @if (noLeidos() > 0) {
+              <span class="notif-badge">{{ noLeidos() > 9 ? '9+' : noLeidos() }}</span>
+            }
+          </button>
 
-        @if (menuAbierto()) {
-          <div class="dropdown-backdrop" (click)="menuAbierto.set(false)"></div>
-          <div class="dropdown-menu">
-            <button type="button" class="dropdown-item" (click)="fileInput.click()">Cambiar foto de perfil</button>
-            <button type="button" class="dropdown-item" (click)="abrirCambioPassword()">Cambiar contrasena</button>
-            <button type="button" class="dropdown-item dropdown-item-danger" (click)="auth.logout()">Salir</button>
-          </div>
-        }
+          @if (notifAbiertas()) {
+            <div class="dropdown-backdrop" (click)="notifAbiertas.set(false)"></div>
+            <div class="dropdown-menu notif-dropdown">
+              @for (n of notificaciones(); track n.registro_horas_id) {
+                <button type="button" class="dropdown-item notif-item" (click)="irAComentario(n)">
+                  <strong>{{ n.cliente_nombre }} &middot; {{ n.numero_contrato }}</strong>
+                  @if (n.comentarios_nuevos[0]; as c) {
+                    <div class="text-muted text-sm">{{ c.usuario_nombre }}: {{ c.nota }}</div>
+                  }
+                </button>
+              } @empty {
+                <div class="dropdown-item text-muted">Sin comentarios nuevos.</div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="user-menu">
+          <button class="user-pill user-pill-btn" (click)="menuAbierto.set(!menuAbierto())">
+            @if (auth.usuario()?.avatar) {
+              <img class="avatar-img" [src]="auth.usuario()?.avatar" alt="Avatar" />
+            } @else {
+              <div class="avatar">{{ iniciales() }}</div>
+            }
+            <div>
+              <div>{{ auth.usuario()?.nombre }}</div>
+              <div class="text-muted" style="font-size:11px;">{{ auth.usuario()?.rol }}</div>
+            </div>
+          </button>
+
+          @if (menuAbierto()) {
+            <div class="dropdown-backdrop" (click)="menuAbierto.set(false)"></div>
+            <div class="dropdown-menu">
+              <button type="button" class="dropdown-item" (click)="fileInput.click()">Cambiar foto de perfil</button>
+              <button type="button" class="dropdown-item" (click)="abrirCambioPassword()">Cambiar contrasena</button>
+              <button type="button" class="dropdown-item dropdown-item-danger" (click)="auth.logout()">Salir</button>
+            </div>
+          }
+        </div>
       </div>
 
       <input #fileInput type="file" accept="image/*" style="display:none" (change)="onArchivoSeleccionado($event)" />

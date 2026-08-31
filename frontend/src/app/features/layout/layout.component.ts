@@ -1,10 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, AbstractControl } from '@angular/forms';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { RegistroHorasService } from '../../core/services/registro-horas.service';
+import { NotificacionComentario } from '../../core/models/models';
 
 const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
+const INTERVALO_NOTIFICACIONES_MS = 60000;
 
 @Component({
   selector: 'app-layout',
@@ -13,11 +17,15 @@ const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
   sidebarColapsado = signal(localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
+
+  noLeidos = signal(0);
+  notifAbiertas = signal(false);
+  notificaciones = signal<NotificacionComentario[]>([]);
 
   passwordForm = this.fb.group(
     {
@@ -28,7 +36,34 @@ export class LayoutComponent {
     { validators: passwordsCoincidenValidator }
   );
 
-  constructor(public auth: AuthService, private fb: FormBuilder) {}
+  constructor(
+    public auth: AuthService,
+    private fb: FormBuilder,
+    private horasSrv: RegistroHorasService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.cargarNoLeidos();
+    // Sondeo simple -- este proyecto no tiene websockets/SSE.
+    interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.cargarNoLeidos());
+  }
+
+  private cargarNoLeidos(): void {
+    this.horasSrv.notificacionesNoLeidas().subscribe((r) => this.noLeidos.set(r.no_leidos));
+  }
+
+  toggleNotificaciones(): void {
+    const abrir = !this.notifAbiertas();
+    this.notifAbiertas.set(abrir);
+    if (abrir) this.horasSrv.listarNotificaciones().subscribe((data) => this.notificaciones.set(data));
+  }
+
+  irAComentario(n: NotificacionComentario): void {
+    this.notifAbiertas.set(false);
+    this.horasSrv.marcarComentariosVistos(n.registro_horas_id).subscribe(() => this.cargarNoLeidos());
+    this.router.navigate(['/horas'], { queryParams: { registro_id: n.registro_horas_id } });
+  }
 
   toggleSidebar(): void {
     const nuevo = !this.sidebarColapsado();

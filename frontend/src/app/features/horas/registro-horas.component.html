@@ -61,7 +61,7 @@
           <td class="table-actions">
             <button class="btn btn-outline btn-sm" (click)="generarPdf(r)">PDF</button>
             <button class="btn btn-outline btn-sm" (click)="abrirComentarios(r)">
-              Comentarios @if (r.comentarios?.length) { ({{ r.comentarios?.length }}) }
+              Comentarios @if (r.comentarios_count) { ({{ r.comentarios_count }}) }
             </button>
             @if (auth.puedeEditar()) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(r)">Editar</button>
@@ -204,14 +204,18 @@
         <table class="data-table">
           <thead><tr><th>Fecha</th><th>Usuario</th><th>Nota</th></tr></thead>
           <tbody>
-            @for (c of comentariosOrdenados(r); track $index) {
-              <tr>
-                <td style="white-space: nowrap;">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td>{{ c.usuario_nombre }}</td>
-                <td style="white-space: pre-wrap;">{{ c.nota }}</td>
-              </tr>
-            } @empty {
-              <tr><td colspan="3"><div class="empty-state">Aun no hay comentarios en este registro.</div></td></tr>
+            @if (cargandoComentarios()) {
+              <tr><td colspan="3"><div class="empty-state">Cargando comentarios...</div></td></tr>
+            } @else {
+              @for (c of comentariosOrdenados(); track c.id) {
+                <tr>
+                  <td style="white-space: nowrap;">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ c.usuario_nombre }}</td>
+                  <td style="white-space: pre-wrap;">{{ c.nota }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3"><div class="empty-state">Aun no hay comentarios en este registro.</div></td></tr>
+              }
             }
           </tbody>
         </table>

@@ -153,11 +153,31 @@ create table if not exists registro_horas (
     descripcion         text,
     -- Documentos asociados (OneDrive u otro origen): [{ "nombre": "...", "url": "..." }, ...]
     documentos          jsonb not null default '[]'::jsonb,
-    -- Bitacora de comentarios de seguimiento (solo se agregan, no se editan
-    -- ni se borran): [{ fecha, usuario_id, usuario_nombre, nota }, ...]
-    comentarios         jsonb not null default '[]'::jsonb,
     created_at          timestamptz not null default now(),
     updated_at          timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------
+-- Tabla: comentarios (bitacora de seguimiento sobre un registro de
+-- horas: solo se agregan, nunca se editan ni se borran)
+-- ---------------------------------------------------------
+create table if not exists comentarios (
+    id                  uuid primary key default gen_random_uuid(),
+    registro_horas_id   uuid not null references registro_horas(id) on delete cascade,
+    usuario_id          uuid not null references usuarios(id) on delete restrict,
+    nota                text not null,
+    created_at          timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------
+-- Tabla: comentarios_vistos (hasta que fecha vio cada usuario los
+-- comentarios de cada registro de horas, para notificaciones de no-leidos)
+-- ---------------------------------------------------------
+create table if not exists comentarios_vistos (
+    usuario_id          uuid not null references usuarios(id) on delete cascade,
+    registro_horas_id   uuid not null references registro_horas(id) on delete cascade,
+    visto_hasta         timestamptz not null default now(),
+    primary key (usuario_id, registro_horas_id)
 );
 
 -- ---------------------------------------------------------
@@ -183,6 +203,7 @@ create index if not exists idx_registro_horas_contrato on registro_horas(contrat
 create index if not exists idx_registro_horas_tipo on registro_horas(tipo_servicio_id);
 create index if not exists idx_registro_horas_usuario on registro_horas(usuario_id);
 create index if not exists idx_registro_horas_fecha on registro_horas(fecha);
+create index if not exists idx_comentarios_registro on comentarios(registro_horas_id, created_at);
 
 -- ---------------------------------------------------------
 -- Vista: consumo de horas por servicio contratado

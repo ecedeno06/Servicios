@@ -134,10 +134,18 @@ export interface ConsumoHoras {
 }
 
 export interface Comentario {
+  id?: string;
   fecha: string;
   usuario_id: string;
   usuario_nombre: string;
   nota: string;
+}
+
+export interface NotificacionComentario {
+  registro_horas_id: string;
+  numero_contrato: string;
+  cliente_nombre: string;
+  comentarios_nuevos: Comentario[];
 }
 
 export interface RegistroHora {
@@ -156,6 +164,6 @@ export interface RegistroHora {
   horas: number;
   descripcion?: string;
   documentos?: Documento[];
-  comentarios?: Comentario[];
+  comentarios_count?: number;
   created_at?: string;
 }

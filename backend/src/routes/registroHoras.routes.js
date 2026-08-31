@@ -7,10 +7,16 @@ router.use(requireAuth, requireEmpresa);
 router.get('/', ctrl.listar);
 router.get('/consumo', ctrl.consumoGeneral);
 router.get('/consumo/:contratoId', ctrl.consumoPorContrato);
+// Rutas fijas de notificaciones antes de '/:id' para que express no las
+// confunda con un id de registro.
+router.get('/notificaciones', ctrl.listarNotificaciones);
+router.get('/notificaciones/no-leidos', ctrl.contarComentariosNoLeidos);
 router.get('/:id', ctrl.obtener);
 router.post('/', bloquearCliente, ctrl.crear); // un cliente no ejecuta trabajo, no registra horas
 router.put('/:id', requireRol('admin', 'supervisor'), ctrl.actualizar);
 router.delete('/:id', requireRol('admin', 'supervisor'), ctrl.eliminar);
+router.get('/:id/comentarios', ctrl.listarComentarios);
 router.post('/:id/comentarios', ctrl.agregarComentario); // cualquier rol autenticado puede comentar
+router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);
 
 module.exports = router;
