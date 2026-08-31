@@ -308,7 +308,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 
 .content {
   padding: 10px;
-  max-width: 1300px;
+  /*max-width: 1300px;*/
   width: 100%;
   margin: 0 auto;
   flex: 1;
