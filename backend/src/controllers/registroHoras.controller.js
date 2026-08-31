@@ -266,8 +266,8 @@ async function marcarVisto(usuarioId, registroHorasId) {
 }
 
 // GET /api/horas/notificaciones/no-leidos
-// Cuenta registros (no comentarios individuales) con al menos un
-// comentario que este usuario todavia no vio, dentro de su alcance.
+// Cuenta comentarios individuales que este usuario todavia no vio, dentro
+// de su alcance (sin importar en cuantos registros esten repartidos).
 async function contarComentariosNoLeidos(req, res, next) {
   try {
     const valores = [req.empresaId, req.usuario.id];
@@ -275,7 +275,7 @@ async function contarComentariosNoLeidos(req, res, next) {
     if (req.clienteId) { valores.push(req.clienteId); filtroCliente = 'and c.cliente_id = $3'; }
 
     const { rows } = await pool.query(
-      `select count(distinct rh.id)::int as no_leidos
+      `select count(*)::int as no_leidos
        from registro_horas rh
        join contratos c on c.id = rh.contrato_id
        join comentarios cm on cm.registro_horas_id = rh.id

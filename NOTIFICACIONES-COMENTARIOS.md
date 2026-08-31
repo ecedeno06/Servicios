@@ -1,11 +1,22 @@
 # Plan: notificaciones de comentarios no leidos (campanita + contador rojo)
 
 Fecha: 2026-08-31
-Documento de planificacion (no implementado). Depende directamente de la
-funcionalidad de comentarios en `registro_horas` (ver
-[PORTAL-CLIENTE.md](PORTAL-CLIENTE.md), seccion 3.5 y 5) que ya esta
-implementada: cada registro de horas tiene `comentarios: jsonb`, un
-arreglo de solo-agregar `{ fecha, usuario_id, usuario_nombre, nota }`.
+**Estado: implementado**, incluyendo la alternativa de la seccion 6 (tabla
+`comentarios` en vez de jsonb). Los bloques de codigo de abajo muestran el
+diseño original con `registro_horas.comentarios: jsonb` y
+`comentarios_vistos.cantidad_vista` (posicion) -- utiles para entender el
+razonamiento, pero **la version real que quedo en el codigo usa la tabla
+`comentarios` y `comentarios_vistos.visto_hasta` (fecha) de la seccion 6**,
+no el jsonb. Ante cualquier diferencia entre este documento y el codigo,
+manda el codigo (`registroHoras.controller.js`).
+
+Decisiones de la seccion 7 ya resueltas:
+- El contador de la campanita cuenta **comentarios individuales sin leer**
+  (no registros distintos) -- `count(*)` sobre `comentarios`, sin
+  `distinct`.
+- Sondeo cada 60 segundos.
+- Notifica a todo el que puede ver ese registro de horas (equipo de la
+  empresa + el cliente dueño del contrato).
 
 ## 1. El problema real: "no leido" no existe hoy en el modelo
 
