@@ -13,6 +13,8 @@ export interface Usuario {
   empresa_id?: string | null;
   empresa_nombre?: string | null;
   empresa_logo?: string | null;
+  cliente_id?: string | null;
+  cliente_nombre?: string | null;
   created_at?: string;
 }
 
