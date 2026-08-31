@@ -28,7 +28,7 @@
         <tbody>
           @for (s of c.servicios; track s.contrato_servicio_id) {
             <tr>
-              <td>
+              <td [title]="s.contactos?.length ? detalleContactos(s) : ''">
                 {{ s.tipo_servicio_nombre }}
                 @if (s.contactos?.length) {
                   <div class="text-muted text-sm">{{ nombresContactos(s) }}</div>

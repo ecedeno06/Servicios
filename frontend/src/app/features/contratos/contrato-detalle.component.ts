@@ -63,6 +63,12 @@ export class ContratoDetalleComponent implements OnInit {
     return (s.contactos ?? []).map((c) => c.nombre).filter(Boolean).join(', ');
   }
 
+  detalleContactos(s: ConsumoHoras): string {
+    return (s.contactos ?? [])
+      .map((c) => [c.nombre, c.correo, c.telefono].filter(Boolean).join(' - '))
+      .join('\n');
+  }
+
   private crearContactoGroup(c?: Contacto): FormGroup {
     return this.fb.group({
       nombre: [c?.nombre ?? ''],

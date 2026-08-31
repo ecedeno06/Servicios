@@ -60,7 +60,7 @@
         <tr>
           <td>{{ fila.cliente_nombre }}</td>
           <td><a [routerLink]="['/contratos', fila.contrato_id]" [title]="observaciones(fila.contrato_id)">{{ fila.numero_contrato }}</a></td>
-          <td>
+          <td [title]="fila.contactos?.length ? detalleContactos(fila) : ''">
             {{ fila.tipo_servicio_nombre }}
             @if (fila.contactos?.length) {
               <div class="text-muted text-sm">{{ nombresContactos(fila) }}</div>

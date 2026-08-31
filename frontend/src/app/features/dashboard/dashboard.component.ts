@@ -62,6 +62,12 @@ export class DashboardComponent implements OnInit {
     return (fila.contactos ?? []).map((c) => c.nombre).filter(Boolean).join(', ');
   }
 
+  detalleContactos(fila: ConsumoHoras): string {
+    return (fila.contactos ?? [])
+      .map((c) => [c.nombre, c.correo, c.telefono].filter(Boolean).join(' - '))
+      .join('\n');
+  }
+
   porcentaje(fila: ConsumoHoras): number {
     if (!fila.horas_contratadas) return 0;
     const pct = (fila.horas_ejecutadas / fila.horas_contratadas) * 100;
