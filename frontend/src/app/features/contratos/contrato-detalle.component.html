@@ -28,7 +28,12 @@
         <tbody>
           @for (s of c.servicios; track s.contrato_servicio_id) {
             <tr>
-              <td>{{ s.tipo_servicio_nombre }}</td>
+              <td>
+                {{ s.tipo_servicio_nombre }}
+                @if (s.contactos?.length) {
+                  <div class="text-muted text-sm">{{ nombresContactos(s) }}</div>
+                }
+              </td>
               <td>
                 <a [routerLink]="['/horas']" [queryParams]="{ contrato_id: c.id, tipo_servicio_id: s.tipo_servicio_id }">
                   {{ s.horas_contratadas | number:'1.0-1' }}
@@ -114,6 +119,38 @@
           <label>Horas contratadas *</label>
           <input class="input" type="number" min="0" step="0.5" formControlName="horas_contratadas" />
         </div>
+
+        <div class="card mt-16">
+          <div class="flex items-center gap-12" style="justify-content: space-between;">
+            <h3 style="margin:0;">Contactos del servicio</h3>
+            <button type="button" class="btn btn-outline btn-sm" (click)="agregarContactoForm()">+ Agregar contacto</button>
+          </div>
+          <div formArrayName="contactos">
+            @for (grupo of contactosArray.controls; track $index) {
+              <div [formGroupName]="$index" class="mt-16" style="border-top: 1px solid var(--slate-100); padding-top: 12px;">
+                <div class="flex items-center gap-12" style="justify-content: space-between;">
+                  <label class="text-muted text-sm">Contacto {{ $index + 1 }}</label>
+                  @if (contactosArray.length > 1) {
+                    <button type="button" class="btn btn-danger btn-sm" (click)="quitarContactoForm($index)">Quitar</button>
+                  }
+                </div>
+                <div class="form-group mt-16">
+                  <label>Nombre</label>
+                  <input class="input" formControlName="nombre" placeholder="Nombre del contacto" />
+                </div>
+                <div class="form-group mt-16">
+                  <label>Correo</label>
+                  <input class="input" type="email" formControlName="correo" placeholder="correo@cliente.com" />
+                </div>
+                <div class="form-group mt-16">
+                  <label>Telefono</label>
+                  <input class="input" formControlName="telefono" />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
           <button type="button" class="btn btn-outline" (click)="panelAbierto.set(false)">Cancelar</button>
@@ -127,7 +164,7 @@
   <div class="overlay" (click)="cancelarEdicion()">
     <div class="drawer" (click)="$event.stopPropagation()">
       <div class="drawer-header">
-        <h2>Editar horas contratadas</h2>
+        <h2>Editar servicio contratado</h2>
         <button class="close" (click)="cancelarEdicion()">&times;</button>
       </div>
       <form (ngSubmit)="guardarHoras(s.contrato_servicio_id)">
@@ -139,8 +176,40 @@
           <label>Horas contratadas *</label>
           <input class="input" type="number" min="0" step="0.5" [(ngModel)]="horasEdit" name="horasEdit" required />
         </div>
+
+        <div class="card mt-16" [formGroup]="contactosEditForm">
+          <div class="flex items-center gap-12" style="justify-content: space-between;">
+            <h3 style="margin:0;">Contactos del servicio</h3>
+            <button type="button" class="btn btn-outline btn-sm" (click)="agregarContactoEdit()">+ Agregar contacto</button>
+          </div>
+          <div formArrayName="contactos">
+            @for (grupo of contactosEditArray.controls; track $index) {
+              <div [formGroupName]="$index" class="mt-16" style="border-top: 1px solid var(--slate-100); padding-top: 12px;">
+                <div class="flex items-center gap-12" style="justify-content: space-between;">
+                  <label class="text-muted text-sm">Contacto {{ $index + 1 }}</label>
+                  @if (contactosEditArray.length > 1) {
+                    <button type="button" class="btn btn-danger btn-sm" (click)="quitarContactoEdit($index)">Quitar</button>
+                  }
+                </div>
+                <div class="form-group mt-16">
+                  <label>Nombre</label>
+                  <input class="input" formControlName="nombre" placeholder="Nombre del contacto" />
+                </div>
+                <div class="form-group mt-16">
+                  <label>Correo</label>
+                  <input class="input" type="email" formControlName="correo" placeholder="correo@cliente.com" />
+                </div>
+                <div class="form-group mt-16">
+                  <label>Telefono</label>
+                  <input class="input" formControlName="telefono" />
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="horasEdit < 0">Guardar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="horasEdit < 0 || contactosEditForm.invalid">Guardar</button>
           <button type="button" class="btn btn-outline" (click)="cancelarEdicion()">Cancelar</button>
         </div>
       </form>

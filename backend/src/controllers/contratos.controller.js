@@ -90,10 +90,12 @@ async function eliminar(req, res, next) {
 
 // ----- Horas establecidas por tipo de servicio dentro del contrato -----
 
-// POST /api/contratos/:id/servicios  { tipo_servicio_id, horas_contratadas }
+// POST /api/contratos/:id/servicios  { tipo_servicio_id, horas_contratadas, contactos }
+// contactos: arreglo [{ nombre, correo, telefono }, ...] -- un servicio puede
+// tener mas de un contacto asociado.
 async function agregarServicio(req, res, next) {
   try {
-    const { tipo_servicio_id, horas_contratadas } = req.body;
+    const { tipo_servicio_id, horas_contratadas, contactos } = req.body;
 
     const contrato = await pool.query('select id from contratos where id = $1 and empresa_id = $2', [req.params.id, req.empresaId]);
     if (!contrato.rows[0]) return res.status(404).json({ mensaje: 'Contrato no encontrado' });
@@ -102,9 +104,9 @@ async function agregarServicio(req, res, next) {
     if (!tipoServicio.rows[0]) return res.status(400).json({ mensaje: 'El tipo de servicio indicado no pertenece a esta empresa' });
 
     const { rows } = await pool.query(
-      `insert into contrato_servicios (contrato_id, tipo_servicio_id, horas_contratadas)
-       values ($1,$2,$3) returning *`,
-      [req.params.id, tipo_servicio_id, horas_contratadas]
+      `insert into contrato_servicios (contrato_id, tipo_servicio_id, horas_contratadas, contactos)
+       values ($1,$2,$3,$4) returning *`,
+      [req.params.id, tipo_servicio_id, horas_contratadas, contactos ? JSON.stringify(contactos) : null]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -113,13 +115,15 @@ async function agregarServicio(req, res, next) {
 // PUT /api/contratos/:id/servicios/:contratoServicioId
 async function actualizarServicio(req, res, next) {
   try {
-    const { horas_contratadas } = req.body;
+    const { horas_contratadas, contactos } = req.body;
     const { rows } = await pool.query(
-      `update contrato_servicios cs set horas_contratadas = coalesce($1, cs.horas_contratadas)
+      `update contrato_servicios cs set
+         horas_contratadas = coalesce($1, cs.horas_contratadas),
+         contactos = coalesce($2, cs.contactos)
        from contratos c
-       where cs.id = $2 and cs.contrato_id = $3 and cs.contrato_id = c.id and c.empresa_id = $4
+       where cs.id = $3 and cs.contrato_id = $4 and cs.contrato_id = c.id and c.empresa_id = $5
        returning cs.*`,
-      [horas_contratadas, req.params.contratoServicioId, req.params.id, req.empresaId]
+      [horas_contratadas, contactos !== undefined ? JSON.stringify(contactos) : null, req.params.contratoServicioId, req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Servicio de contrato no encontrado' });
     res.json(rows[0]);

@@ -58,6 +58,10 @@ export class DashboardComponent implements OnInit {
   aplicarFiltro(): void { this.filtro.set(this.filtroTexto()); }
   limpiarFiltro(): void { this.filtroTexto.set(''); this.filtro.set(''); }
 
+  nombresContactos(fila: ConsumoHoras): string {
+    return (fila.contactos ?? []).map((c) => c.nombre).filter(Boolean).join(', ');
+  }
+
   porcentaje(fila: ConsumoHoras): number {
     if (!fila.horas_contratadas) return 0;
     const pct = (fila.horas_ejecutadas / fila.horas_contratadas) * 100;

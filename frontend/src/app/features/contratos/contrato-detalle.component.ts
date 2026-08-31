@@ -1,11 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContratosService } from '../../core/services/contratos.service';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Contrato, Documento, TipoServicio } from '../../core/models/models';
+import { Contacto, ConsumoHoras, Contrato, Documento, TipoServicio } from '../../core/models/models';
 
 @Component({
   selector: 'app-contrato-detalle',
@@ -18,7 +18,7 @@ export class ContratoDetalleComponent implements OnInit {
   contrato = signal<Contrato | null>(null);
   tiposServicio = signal<TipoServicio[]>([]);
   panelAbierto = signal(false);
-  editandoServicio = signal<{ contrato_servicio_id: string; tipo_servicio_nombre: string; horas_contratadas: number } | null>(null);
+  editandoServicio = signal<ConsumoHoras | null>(null);
   horasEdit = 0;
   panelDocAbierto = signal(false);
   private contratoId = '';
@@ -26,6 +26,11 @@ export class ContratoDetalleComponent implements OnInit {
   form = this.fb.group({
     tipo_servicio_id: ['', Validators.required],
     horas_contratadas: [0, [Validators.required, Validators.min(0.5)]],
+    contactos: this.fb.array([this.crearContactoGroup()]),
+  });
+
+  contactosEditForm = this.fb.group({
+    contactos: this.fb.array([this.crearContactoGroup()]),
   });
 
   docForm = this.fb.group({
@@ -54,10 +59,53 @@ export class ContratoDetalleComponent implements OnInit {
     return Math.min(100, Math.round((s.horas_ejecutadas / s.horas_contratadas) * 100));
   }
 
+  nombresContactos(s: ConsumoHoras): string {
+    return (s.contactos ?? []).map((c) => c.nombre).filter(Boolean).join(', ');
+  }
+
+  private crearContactoGroup(c?: Contacto): FormGroup {
+    return this.fb.group({
+      nombre: [c?.nombre ?? ''],
+      correo: [c?.correo ?? '', Validators.email],
+      telefono: [c?.telefono ?? ''],
+    });
+  }
+
+  get contactosArray(): FormArray {
+    return this.form.get('contactos') as FormArray;
+  }
+
+  get contactosEditArray(): FormArray {
+    return this.contactosEditForm.get('contactos') as FormArray;
+  }
+
+  agregarContactoForm(): void {
+    this.contactosArray.push(this.crearContactoGroup());
+  }
+
+  quitarContactoForm(i: number): void {
+    this.contactosArray.removeAt(i);
+  }
+
+  agregarContactoEdit(): void {
+    this.contactosEditArray.push(this.crearContactoGroup());
+  }
+
+  quitarContactoEdit(i: number): void {
+    this.contactosEditArray.removeAt(i);
+  }
+
   guardarServicio(): void {
     if (this.form.invalid) return;
-    this.srv.agregarServicio(this.contratoId, this.form.getRawValue()).subscribe({
-      next: () => { this.panelAbierto.set(false); this.form.reset({ horas_contratadas: 0 }); this.cargar(); },
+    const { tipo_servicio_id, horas_contratadas, contactos } = this.form.getRawValue();
+    this.srv.agregarServicio(this.contratoId, { tipo_servicio_id, horas_contratadas, contactos: limpiarContactos(contactos) }).subscribe({
+      next: () => {
+        this.panelAbierto.set(false);
+        this.form.reset({ horas_contratadas: 0 });
+        this.contactosArray.clear();
+        this.contactosArray.push(this.crearContactoGroup());
+        this.cargar();
+      },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo asignar el servicio'),
     });
   }
@@ -67,16 +115,20 @@ export class ContratoDetalleComponent implements OnInit {
     this.srv.eliminarServicio(this.contratoId, contratoServicioId).subscribe(() => this.cargar());
   }
 
-  editarHoras(s: { contrato_servicio_id: string; tipo_servicio_nombre: string; horas_contratadas: number }): void {
+  editarHoras(s: ConsumoHoras): void {
     this.editandoServicio.set(s);
     this.horasEdit = s.horas_contratadas;
+    this.contactosEditArray.clear();
+    const contactos = s.contactos?.length ? s.contactos : [undefined];
+    contactos.forEach((c) => this.contactosEditArray.push(this.crearContactoGroup(c)));
   }
 
   cancelarEdicion(): void { this.editandoServicio.set(null); }
 
   guardarHoras(contratoServicioId: string): void {
     if (this.horasEdit < 0) return;
-    this.srv.actualizarServicio(this.contratoId, contratoServicioId, { horas_contratadas: this.horasEdit }).subscribe({
+    const { contactos } = this.contactosEditForm.getRawValue();
+    this.srv.actualizarServicio(this.contratoId, contratoServicioId, { horas_contratadas: this.horasEdit, contactos: limpiarContactos(contactos) }).subscribe({
       next: () => { this.editandoServicio.set(null); this.cargar(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudieron actualizar las horas contratadas'),
     });
@@ -96,4 +148,17 @@ export class ContratoDetalleComponent implements OnInit {
     const documentos = (this.contrato()?.documentos ?? []).filter((d) => d.url !== doc.url);
     this.srv.actualizar(this.contratoId, { documentos }).subscribe(() => this.cargar());
   }
+}
+
+type ContactoParcial = { nombre?: string | null; correo?: string | null; telefono?: string | null } | null | undefined;
+
+// Descarta las filas de contacto que el usuario dejo completamente vacias.
+function limpiarContactos(lista: ContactoParcial[] | null | undefined): Contacto[] {
+  return (lista ?? [])
+    .map((c) => ({
+      nombre: (c?.nombre ?? '').trim(),
+      correo: (c?.correo ?? '').trim(),
+      telefono: (c?.telefono ?? '').trim(),
+    }))
+    .filter((c) => c.nombre || c.correo || c.telefono);
 }

@@ -100,11 +100,18 @@ export interface Contrato {
   servicios?: ConsumoHoras[];
 }
 
+export interface Contacto {
+  nombre?: string;
+  correo?: string;
+  telefono?: string;
+}
+
 export interface ContratoServicio {
   id: string;
   contrato_id: string;
   tipo_servicio_id: string;
   horas_contratadas: number;
+  contactos?: Contacto[] | null;
 }
 
 export interface ConsumoHoras {
@@ -117,6 +124,7 @@ export interface ConsumoHoras {
   tipo_servicio_id: string;
   tipo_servicio_nombre: string;
   horas_contratadas: number;
+  contactos?: Contacto[] | null;
   horas_ejecutadas: number;
   horas_disponibles: number;
 }

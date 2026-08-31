@@ -60,7 +60,12 @@
         <tr>
           <td>{{ fila.cliente_nombre }}</td>
           <td><a [routerLink]="['/contratos', fila.contrato_id]" [title]="observaciones(fila.contrato_id)">{{ fila.numero_contrato }}</a></td>
-          <td>{{ fila.tipo_servicio_nombre }}</td>
+          <td>
+            {{ fila.tipo_servicio_nombre }}
+            @if (fila.contactos?.length) {
+              <div class="text-muted text-sm">{{ nombresContactos(fila) }}</div>
+            }
+          </td>
           <td>{{ fila.horas_contratadas | number:'1.0-1' }}</td>
           <td>
             <a [routerLink]="['/horas']" [queryParams]="{ contrato_id: fila.contrato_id, tipo_servicio_id: fila.tipo_servicio_id }">

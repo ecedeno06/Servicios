@@ -116,6 +116,9 @@ create table if not exists contrato_servicios (
     contrato_id         uuid not null references contratos(id) on delete cascade,
     tipo_servicio_id    uuid not null references tipos_servicio(id) on delete restrict,
     horas_contratadas   numeric(10,2) not null check (horas_contratadas >= 0),
+    -- Uno o mas contactos para este servicio dentro del contrato:
+    -- [{ nombre, correo, telefono }, ...]
+    contactos           jsonb,
     created_at          timestamptz not null default now(),
     updated_at          timestamptz not null default now(),
     unique (contrato_id, tipo_servicio_id)
@@ -182,6 +185,7 @@ select
     ts.id                   as tipo_servicio_id,
     ts.nombre               as tipo_servicio_nombre,
     cs.horas_contratadas,
+    cs.contactos,
     coalesce(sum(rh.horas), 0)                              as horas_ejecutadas,
     cs.horas_contratadas - coalesce(sum(rh.horas), 0)       as horas_disponibles
 from contrato_servicios cs
@@ -191,7 +195,7 @@ join tipos_servicio ts   on ts.id = cs.tipo_servicio_id
 left join registro_horas rh
        on rh.contrato_id = cs.contrato_id
       and rh.tipo_servicio_id = cs.tipo_servicio_id
-group by cs.id, c.id, c.empresa_id, c.numero_contrato, c.estado, cl.id, cl.nombre, ts.id, ts.nombre, cs.horas_contratadas;
+group by cs.id, c.id, c.empresa_id, c.numero_contrato, c.estado, cl.id, cl.nombre, ts.id, ts.nombre, cs.horas_contratadas, cs.contactos;
 
 -- ---------------------------------------------------------
 -- Trigger generico para actualizar updated_at
