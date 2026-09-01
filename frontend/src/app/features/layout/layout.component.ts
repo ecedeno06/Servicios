@@ -23,7 +23,6 @@ export class LayoutComponent implements OnInit {
   panelPasswordAbierto = signal(false);
   sidebarColapsado = signal(localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
 
-  noLeidos = signal(0);
   notifAbiertas = signal(false);
   notificaciones = signal<NotificacionComentario[]>([]);
 
@@ -43,14 +42,12 @@ export class LayoutComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit(): void {
-    this.cargarNoLeidos();
-    // Sondeo simple -- este proyecto no tiene websockets/SSE.
-    interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.cargarNoLeidos());
-  }
+  get noLeidos() { return this.horasSrv.noLeidos; }
 
-  private cargarNoLeidos(): void {
-    this.horasSrv.notificacionesNoLeidas().subscribe((r) => this.noLeidos.set(r.no_leidos));
+  ngOnInit(): void {
+    this.horasSrv.refrescarNoLeidos();
+    // Sondeo simple -- este proyecto no tiene websockets/SSE.
+    interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.horasSrv.refrescarNoLeidos());
   }
 
   toggleNotificaciones(): void {
@@ -61,7 +58,7 @@ export class LayoutComponent implements OnInit {
 
   irAComentario(n: NotificacionComentario): void {
     this.notifAbiertas.set(false);
-    this.horasSrv.marcarComentariosVistos(n.registro_horas_id).subscribe(() => this.cargarNoLeidos());
+    this.horasSrv.marcarComentariosVistos(n.registro_horas_id).subscribe();
     this.router.navigate(['/horas'], { queryParams: { registro_id: n.registro_horas_id } });
   }
 
