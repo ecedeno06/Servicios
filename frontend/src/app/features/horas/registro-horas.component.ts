@@ -232,8 +232,8 @@ export class RegistroHorasComponent implements OnInit {
     this.docForm.reset();
   }
 
-  quitarDocumento(doc: Documento): void {
-    this.documentosActuales.update((docs) => docs.filter((d) => d.url !== doc.url));
+  quitarDocumento(index: number): void {
+    this.documentosActuales.update((docs) => docs.filter((_, i) => i !== index));
   }
 
   cerrarPanel(): void { this.panelAbierto.set(false); }

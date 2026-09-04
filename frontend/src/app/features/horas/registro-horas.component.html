@@ -157,12 +157,12 @@
                 <tr><th>Nombre</th><th>URL</th><th></th></tr>
               </thead>
               <tbody>
-                @for (d of documentosActuales(); track d.url) {
+                @for (d of documentosActuales(); track $index) {
                   <tr>
                     <td>{{ d.nombre }}</td>
                     <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
                     <td class="table-actions">
-                      <button type="button" class="btn btn-danger btn-sm" (click)="quitarDocumento(d)">Quitar</button>
+                      <button type="button" class="btn btn-danger btn-sm" (click)="quitarDocumento($index)">Quitar</button>
                     </td>
                   </tr>
                 } @empty {

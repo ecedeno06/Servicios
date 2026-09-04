@@ -81,13 +81,13 @@
           <tr><th>Nombre</th><th>URL</th><th></th></tr>
         </thead>
         <tbody>
-          @for (d of c.documentos; track d.url) {
+          @for (d of c.documentos; track $index) {
             <tr>
               <td>{{ d.nombre }}</td>
               <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
               <td class="table-actions">
                 @if (auth.puedeEditar()) {
-                  <button class="btn btn-danger btn-sm" (click)="quitarDocumento(d)">Quitar</button>
+                  <button class="btn btn-danger btn-sm" (click)="quitarDocumento($index)">Quitar</button>
                 }
               </td>
             </tr>

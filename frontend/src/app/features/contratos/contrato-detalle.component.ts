@@ -149,9 +149,11 @@ export class ContratoDetalleComponent implements OnInit {
     });
   }
 
-  quitarDocumento(doc: Documento): void {
-    if (!confirm(`Quitar el documento "${doc.nombre}"?`)) return;
-    const documentos = (this.contrato()?.documentos ?? []).filter((d) => d.url !== doc.url);
+  quitarDocumento(index: number): void {
+    const actuales = this.contrato()?.documentos ?? [];
+    const doc = actuales[index];
+    if (!doc || !confirm(`Quitar el documento "${doc.nombre}"?`)) return;
+    const documentos = actuales.filter((_, i) => i !== index);
     this.srv.actualizar(this.contratoId, { documentos }).subscribe(() => this.cargar());
   }
 }
