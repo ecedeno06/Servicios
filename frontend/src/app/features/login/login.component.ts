@@ -17,6 +17,11 @@ export class LoginComponent {
   error = signal<string | null>(null);
   empresasParaElegir = signal<EmpresaSeleccionable[] | null>(null);
 
+  // "Olvidaste tu pista" -- consulta publica antes de autenticarse.
+  cargandoPista = signal(false);
+  pista = signal<string | null>(null);
+  pistaError = signal<string | null>(null);
+
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
@@ -61,5 +66,26 @@ export class LoginComponent {
   cancelarSeleccion() {
     this.empresasParaElegir.set(null);
     this.error.set(null);
+  }
+
+  verPista(): void {
+    const email = this.form.getRawValue().email;
+    if (!email) {
+      this.pistaError.set('Escribe tu correo primero.');
+      return;
+    }
+    this.pista.set(null);
+    this.pistaError.set(null);
+    this.cargandoPista.set(true);
+    this.auth.obtenerPista(email).subscribe({
+      next: (res) => {
+        this.cargandoPista.set(false);
+        this.pista.set(res.pista);
+      },
+      error: (err) => {
+        this.cargandoPista.set(false);
+        this.pistaError.set(err?.error?.mensaje || 'No se pudo obtener la pista');
+      },
+    });
   }
 }

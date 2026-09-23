@@ -23,6 +23,18 @@
           {{ cargando() ? 'Ingresando...' : 'Ingresar' }}
         </button>
       </form>
+
+      <div class="flex items-center gap-12 mt-16">
+        <button type="button" class="btn-link text-sm" (click)="verPista()" [disabled]="cargandoPista()">
+          {{ cargandoPista() ? 'Buscando pista...' : '¿Olvidaste tu pista?' }}
+        </button>
+      </div>
+      @if (pista()) {
+        <div class="auth-hint mt-8">Pista: {{ pista() }}</div>
+      }
+      @if (pistaError()) {
+        <div class="auth-error mt-8">{{ pistaError() }}</div>
+      }
     } @else {
       <h1>Selecciona una empresa</h1>
       <p class="text-muted text-sm">Tu cuenta tiene acceso a mas de una empresa.</p>

@@ -665,6 +665,15 @@ table.data-table {
   background: var(--red-100); color: var(--red-600);
   padding: 8px 12px; border-radius: 8px; font-size: 12.5px; margin-bottom: 12px;
 }
+.auth-hint {
+  background: var(--slate-100); color: var(--slate-700);
+  padding: 8px 12px; border-radius: 8px; font-size: 12.5px;
+}
+.btn-link {
+  background: none; border: none; padding: 0;
+  color: var(--teal-600); cursor: pointer; text-decoration: underline;
+}
+.btn-link:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ---------- Campo de password con iconos (mostrar/ocultar, generar) ---------- */
 .password-input-wrap {

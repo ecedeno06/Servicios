@@ -206,6 +206,22 @@ async function seleccionarEmpresa(req, res, next) {
   }
 }
 
+// GET /api/auth/pista?email=...  (publico, con rate-limit en la ruta)
+async function obtenerPista(req, res, next) {
+  try {
+    const email = String(req.query.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ mensaje: 'email es requerido' });
+
+    const { rows } = await pool.query('select pista from usuarios where email = $1 and activo = true', [email]);
+    const pista = rows[0]?.pista;
+    if (!pista) return res.status(404).json({ mensaje: 'No hay una pista configurada para ese usuario' });
+
+    res.json({ pista });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // GET /api/auth/mis-empresas
 // Un super-admin ve TODAS las empresas activas (para poder entrar a una
 // donde todavia no tiene membresia, ej. dar de alta a su primer usuario).
@@ -334,4 +350,4 @@ async function cambiarPassword(req, res, next) {
   }
 }
 
-module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword };
+module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista };

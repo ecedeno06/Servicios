@@ -109,6 +109,12 @@ export class AuthService {
     );
   }
 
+  // Publico (sin token) -- ver GET /auth/pista en el backend, con rate-limit
+  // por IP+email para que no se pueda usar para adivinar en bucle.
+  obtenerPista(email: string): Observable<{ pista: string }> {
+    return this.http.get<{ pista: string }>(`${environment.apiUrl}/auth/pista`, { params: { email } });
+  }
+
   private actualizarTrasCambioPassword(token: string): void {
     const raw = localStorage.getItem(STORAGE_KEY);
     const actual = raw ? JSON.parse(raw) : {};
