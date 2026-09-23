@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
+const { obtenerPolitica, validarPassword, validarPista } = require('../utils/politicaPassword');
 
 function firmarToken(payload, expiresIn) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: expiresIn || process.env.JWT_EXPIRES_IN || '8h' });
@@ -19,7 +20,7 @@ async function login(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      'select id, nombre, email, password_hash, activo, avatar, es_super_admin from usuarios where email = $1',
+      'select id, nombre, email, password_hash, activo, avatar, es_super_admin, debe_cambiar_password from usuarios where email = $1',
       [email]
     );
     const usuario = rows[0];
@@ -53,11 +54,11 @@ async function login(req, res, next) {
         const payload = {
           id: usuario.id, nombre: usuario.nombre, email: usuario.email,
           rol: null, empresa_id: null, empresa_nombre: null, empresa_logo: null,
-          es_super_admin: true, avatar: usuario.avatar,
+          es_super_admin: true, avatar: usuario.avatar, debe_cambiar_password: usuario.debe_cambiar_password,
         };
         const token = firmarToken({
           id: payload.id, nombre: payload.nombre, email: payload.email,
-          rol: null, empresa_id: null, es_super_admin: true,
+          rol: null, empresa_id: null, es_super_admin: true, debe_cambiar_password: usuario.debe_cambiar_password,
         });
         return res.json({ token, usuario: payload });
       }
@@ -109,6 +110,7 @@ async function login(req, res, next) {
       empresa_logo: empresaActiva ? empresaActiva.empresa_logo : null,
       es_super_admin: usuario.es_super_admin,
       avatar: usuario.avatar,
+      debe_cambiar_password: usuario.debe_cambiar_password,
     };
     const token = firmarToken({
       id: payload.id,
@@ -118,6 +120,7 @@ async function login(req, res, next) {
       empresa_id: payload.empresa_id,
       cliente_id: empresaActiva ? empresaActiva.cliente_id : null,
       es_super_admin: payload.es_super_admin,
+      debe_cambiar_password: payload.debe_cambiar_password,
     });
 
     res.json({ token, usuario: payload });
@@ -140,7 +143,7 @@ async function seleccionarEmpresa(req, res, next) {
     if (!empresa_id) return res.status(400).json({ mensaje: 'empresa_id es requerido' });
 
     const { rows: usuarioRows } = await pool.query(
-      'select id, nombre, email, avatar, es_super_admin from usuarios where id = $1',
+      'select id, nombre, email, avatar, es_super_admin, debe_cambiar_password from usuarios where id = $1',
       [req.usuario.id]
     );
     const usuario = usuarioRows[0];
@@ -184,6 +187,7 @@ async function seleccionarEmpresa(req, res, next) {
       empresa_logo: empresaLogo,
       es_super_admin: usuario.es_super_admin,
       avatar: usuario.avatar,
+      debe_cambiar_password: usuario.debe_cambiar_password,
     };
     const token = firmarToken({
       id: payload.id,
@@ -193,6 +197,7 @@ async function seleccionarEmpresa(req, res, next) {
       empresa_id: payload.empresa_id,
       cliente_id: clienteId,
       es_super_admin: payload.es_super_admin,
+      debe_cambiar_password: payload.debe_cambiar_password,
     });
 
     res.json({ token, usuario: payload });
@@ -239,7 +244,7 @@ async function misEmpresas(req, res, next) {
 async function me(req, res, next) {
   try {
     const { rows } = await pool.query(
-      'select id, nombre, email, activo, avatar, es_super_admin, created_at from usuarios where id = $1',
+      'select id, nombre, email, activo, avatar, es_super_admin, debe_cambiar_password, created_at from usuarios where id = $1',
       [req.usuario.id]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
@@ -265,15 +270,21 @@ async function actualizarPerfil(req, res, next) {
   }
 }
 
-// PUT /api/auth/password  { password_actual, password_nueva } -> cambia la password propia
+// PUT /api/auth/password  { password_actual, password_nueva, pista? } -> cambia la password propia
+// pista es opcional: si se omite, no se toca la pista ya guardada; si se
+// envia vacia o con texto, la reemplaza (validando similitud con la nueva
+// contrasena en el segundo caso).
 async function cambiarPassword(req, res, next) {
   try {
-    const { password_actual, password_nueva } = req.body;
+    const { password_actual, password_nueva, pista } = req.body;
     if (!password_actual || !password_nueva) {
       return res.status(400).json({ mensaje: 'password_actual y password_nueva son requeridos' });
     }
-    if (password_nueva.length < 6) {
-      return res.status(400).json({ mensaje: 'La nueva contrasena debe tener al menos 6 caracteres' });
+
+    const politica = await obtenerPolitica();
+    const erroresPassword = validarPassword(password_nueva, politica);
+    if (erroresPassword.length) {
+      return res.status(400).json({ mensaje: erroresPassword.join('. ') });
     }
 
     const { rows } = await pool.query('select password_hash from usuarios where id = $1', [req.usuario.id]);
@@ -284,10 +295,40 @@ async function cambiarPassword(req, res, next) {
       return res.status(401).json({ mensaje: 'La contrasena actual no es correcta' });
     }
 
-    const password_hash = await bcrypt.hash(password_nueva, 10);
-    await pool.query('update usuarios set password_hash = $1 where id = $2', [password_hash, req.usuario.id]);
+    let pistaFinal;
+    if (pista !== undefined) {
+      pistaFinal = String(pista).trim() || null;
+      if (pistaFinal) {
+        const erroresPista = validarPista(pistaFinal, password_nueva, politica);
+        if (erroresPista.length) {
+          return res.status(400).json({ mensaje: erroresPista.join('. ') });
+        }
+      }
+    }
 
-    res.json({ mensaje: 'Contrasena actualizada correctamente' });
+    const password_hash = await bcrypt.hash(password_nueva, 10);
+    if (pista !== undefined) {
+      await pool.query('update usuarios set password_hash = $1, pista = $2, debe_cambiar_password = false where id = $3', [password_hash, pistaFinal, req.usuario.id]);
+    } else {
+      await pool.query('update usuarios set password_hash = $1, debe_cambiar_password = false where id = $2', [password_hash, req.usuario.id]);
+    }
+
+    // Reemite el token con debe_cambiar_password=false para que, si este
+    // cambio era obligatorio, el frontend quede desbloqueado de inmediato
+    // (sin esto seguiria recibiendo el 403 de "debes cambiar tu
+    // contrasena" hasta volver a iniciar sesion).
+    const token = firmarToken({
+      id: req.usuario.id,
+      nombre: req.usuario.nombre,
+      email: req.usuario.email,
+      rol: req.usuario.rol,
+      empresa_id: req.usuario.empresa_id,
+      cliente_id: req.usuario.cliente_id,
+      es_super_admin: req.usuario.es_super_admin,
+      debe_cambiar_password: false,
+    });
+
+    res.json({ mensaje: 'Contrasena actualizada correctamente', token });
   } catch (err) {
     next(err);
   }

@@ -13,6 +13,7 @@ import { RegistroHorasComponent } from './features/horas/registro-horas.componen
 import { ReporteHorasComponent } from './features/reportes/reporte-horas.component';
 import { UsuariosComponent } from './features/usuarios/usuarios.component';
 import { EmpresasComponent } from './features/empresas/empresas.component';
+import { PoliticaPasswordComponent } from './features/politica-password/politica-password.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -31,6 +32,7 @@ export const routes: Routes = [
       { path: 'reportes', component: ReporteHorasComponent, canActivate: [noClienteGuard] },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [noClienteGuard] },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
+      { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
     ],
   },
   { path: '**', redirectTo: '' },

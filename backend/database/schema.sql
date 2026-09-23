@@ -40,9 +40,35 @@ create table if not exists usuarios (
     es_super_admin  boolean not null default false,
     -- Foto de perfil en base64 (data URI), ej: "data:image/jpeg;base64,..."
     avatar          text,
+    -- Se activa cuando un admin crea el usuario o le resetea la contrasena
+    -- (la conoce, es temporal); se limpia sola cuando el propio usuario
+    -- cambia su contrasena via /auth/password.
+    debe_cambiar_password boolean not null default false,
+    -- Pista de contrasena, opcional (solo almacenamiento; la pantalla de
+    -- login/recuperacion que la mostraria no esta implementada aqui).
+    pista           text,
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()
 );
+
+-- ---------------------------------------------------------
+-- Tabla: politica_password (singleton, una sola fila id=1) --
+-- reglas configurables por super-admin para cualquier contrasena que se
+-- defina en el sistema.
+-- ---------------------------------------------------------
+create table if not exists politica_password (
+    id                                smallint primary key default 1 check (id = 1),
+    longitud_minima                   integer not null default 6 check (longitud_minima >= 1),
+    requiere_mayuscula                boolean not null default false,
+    requiere_minuscula                boolean not null default false,
+    requiere_numero                   boolean not null default false,
+    requiere_caracter_especial        boolean not null default false,
+    pista_longitud_minima             integer not null default 4 check (pista_longitud_minima >= 1),
+    pista_similitud_maxima_porcentaje integer not null default 70 check (pista_similitud_maxima_porcentaje between 0 and 100),
+    updated_at                        timestamptz not null default now()
+);
+
+insert into politica_password (id) values (1) on conflict (id) do nothing;
 
 -- ---------------------------------------------------------
 -- Tabla: usuarios_empresas_rol (relacion N:M usuario <-> empresa,

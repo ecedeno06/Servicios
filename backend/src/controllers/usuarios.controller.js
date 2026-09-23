@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
+const { obtenerPolitica, validarPassword } = require('../utils/politicaPassword');
 
 // GET /api/usuarios  -> usuarios de la empresa activa, con su rol en esa empresa
 async function listar(req, res, next) {
@@ -84,10 +85,17 @@ async function crear(req, res, next) {
       if (!nombre || !password) {
         return res.status(400).json({ mensaje: 'nombre y password son requeridos para un usuario nuevo' });
       }
+      const politica = await obtenerPolitica();
+      const erroresPassword = validarPassword(password, politica);
+      if (erroresPassword.length) {
+        return res.status(400).json({ mensaje: erroresPassword.join('. ') });
+      }
       const password_hash = await bcrypt.hash(password, 10);
+      // debe_cambiar_password: el admin conoce esta contrasena inicial, asi
+      // que se fuerza a cambiarla en el primer login.
       const { rows } = await pool.query(
-        `insert into usuarios (nombre, email, password_hash, activo)
-         values ($1,$2,$3, coalesce($4, true)) returning id`,
+        `insert into usuarios (nombre, email, password_hash, activo, debe_cambiar_password)
+         values ($1,$2,$3, coalesce($4, true), true) returning id`,
         [nombre, email, password_hash, activo]
       );
       usuarioId = rows[0].id;
@@ -123,13 +131,25 @@ async function actualizar(req, res, next) {
     );
     if (!pertenece.rows[0]) return res.status(404).json({ mensaje: 'Usuario no encontrado en esta empresa' });
 
-    const password_hash = password ? await bcrypt.hash(password, 10) : null;
+    let password_hash = null;
+    if (password) {
+      const politica = await obtenerPolitica();
+      const erroresPassword = validarPassword(password, politica);
+      if (erroresPassword.length) {
+        return res.status(400).json({ mensaje: erroresPassword.join('. ') });
+      }
+      password_hash = await bcrypt.hash(password, 10);
+    }
+    // debe_cambiar_password se fuerza a true solo cuando el admin resetea
+    // la contrasena aqui (la conoce); se queda como esta en cualquier otra
+    // edicion (nombre, avatar, activo, rol).
     await pool.query(
       `update usuarios set
          nombre = coalesce($1, nombre),
          avatar = coalesce($2, avatar),
          activo = coalesce($3, activo),
-         password_hash = coalesce($4, password_hash)
+         password_hash = coalesce($4, password_hash),
+         debe_cambiar_password = case when $4::text is not null then true else debe_cambiar_password end
        where id = $5`,
       [nombre, avatar, activo, password_hash, req.params.id]
     );

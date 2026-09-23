@@ -15,7 +15,20 @@ export interface Usuario {
   empresa_logo?: string | null;
   cliente_id?: string | null;
   cliente_nombre?: string | null;
+  debe_cambiar_password?: boolean;
   created_at?: string;
+}
+
+export interface PoliticaPassword {
+  id?: number;
+  longitud_minima: number;
+  requiere_mayuscula: boolean;
+  requiere_minuscula: boolean;
+  requiere_numero: boolean;
+  requiere_caracter_especial: boolean;
+  pista_longitud_minima: number;
+  pista_similitud_maxima_porcentaje: number;
+  updated_at?: string;
 }
 
 export interface UsuarioForm {

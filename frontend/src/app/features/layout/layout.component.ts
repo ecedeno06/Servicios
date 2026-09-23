@@ -1,11 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, AbstractControl } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
-import { NotificacionComentario } from '../../core/models/models';
+import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
+import { SelectorFotoComponent } from '../../core/components/selector-foto/selector-foto.component';
+import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
+import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
+import { NotificacionComentario, PoliticaPassword } from '../../core/models/models';
 
 const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
 const INTERVALO_NOTIFICACIONES_MS = 60000;
@@ -13,7 +17,7 @@ const INTERVALO_NOTIFICACIONES_MS = 60000;
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
@@ -21,16 +25,28 @@ export class LayoutComponent implements OnInit {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
+  verPasswordNueva = signal(false);
+  verPasswordConfirmar = signal(false);
+  passwordGenerada = signal(false);
+  // Un admin marco esta cuenta con debe_cambiar_password (al crearla o al
+  // resetearle la contrasena) -- se fuerza el formulario, sin poder
+  // cancelarlo, hasta que el usuario ponga una contrasena propia.
+  cambioPasswordObligatorio = computed(() => !!this.auth.usuario()?.debe_cambiar_password);
   sidebarColapsado = signal(localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
 
   notifAbiertas = signal(false);
   notificaciones = signal<NotificacionComentario[]>([]);
 
+  // Se completa en ngOnInit (GET publico) -- hasta entonces el formulario
+  // solo valida "required"/coincidencia, sin la politica todavia.
+  politica = signal<PoliticaPassword | null>(null);
+
   passwordForm = this.fb.group(
     {
       password_actual: ['', Validators.required],
-      password_nueva: ['', [Validators.required, Validators.minLength(6)]],
+      password_nueva: ['', [Validators.required]],
       password_confirmar: ['', Validators.required],
+      pista: [''],
     },
     { validators: passwordsCoincidenValidator }
   );
@@ -39,6 +55,7 @@ export class LayoutComponent implements OnInit {
     public auth: AuthService,
     private fb: FormBuilder,
     private horasSrv: RegistroHorasService,
+    private politicaPasswordSrv: PoliticaPasswordService,
     private router: Router
   ) {}
 
@@ -48,6 +65,17 @@ export class LayoutComponent implements OnInit {
     this.horasSrv.refrescarNoLeidos();
     // Sondeo simple -- este proyecto no tiene websockets/SSE.
     interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.horasSrv.refrescarNoLeidos());
+
+    this.politicaPasswordSrv.obtener().subscribe({
+      next: (p) => {
+        this.politica.set(p);
+        this.passwordForm.get('password_nueva')?.addValidators(construirValidadorPolitica(p));
+        this.passwordForm.addValidators(construirValidadorPista(p));
+        this.passwordForm.get('password_nueva')?.updateValueAndValidity();
+        this.passwordForm.updateValueAndValidity();
+      },
+      error: () => {}, // sin la politica, el formulario sigue funcionando con las reglas base (required/coincidencia)
+    });
   }
 
   toggleNotificaciones(): void {
@@ -77,39 +105,65 @@ export class LayoutComponent implements OnInit {
       .join('');
   }
 
-  onArchivoSeleccionado(event: Event): void {
-    this.menuAbierto.set(false);
-    const input = event.target as HTMLInputElement;
-    const archivo = input.files?.[0];
-    if (!archivo) return;
-
-    if (!archivo.type.startsWith('image/')) {
-      alert('Selecciona un archivo de imagen valido.');
-      return;
-    }
-
-    redimensionarImagen(archivo, 200).then((base64) => {
-      this.auth.actualizarAvatar(base64).subscribe({
-        next: () => {},
-        error: (err) => alert(err?.error?.mensaje || 'No se pudo actualizar la foto de perfil'),
-      });
+  onFotoPerfilCambiada(base64: string): void {
+    this.auth.actualizarAvatar(base64).subscribe({
+      next: () => {},
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo actualizar la foto de perfil'),
     });
+  }
 
-    input.value = '';
+  eliminarFotoPerfil(): void {
+    this.menuAbierto.set(false);
+    if (!confirm('Eliminar tu foto de perfil?')) return;
+    this.auth.actualizarAvatar(null).subscribe({
+      next: () => {},
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
+    });
+  }
+
+  // El selector de foto ya pregunta su propia confirmacion antes de emitir
+  // esto -- no se vuelve a confirmar aqui (a diferencia de
+  // eliminarFotoPerfil(), llamado directo desde el item de menu).
+  onFotoPerfilEliminada(): void {
+    this.auth.actualizarAvatar(null).subscribe({
+      next: () => {},
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
+    });
   }
 
   abrirCambioPassword(): void {
     this.menuAbierto.set(false);
     this.passwordForm.reset();
+    this.verPasswordNueva.set(false);
+    this.verPasswordConfirmar.set(false);
+    this.passwordGenerada.set(false);
     this.panelPasswordAbierto.set(true);
   }
 
-  cerrarCambioPassword(): void { this.panelPasswordAbierto.set(false); }
+  generarPassword(): void {
+    const pol = this.politica();
+    if (!pol) return;
+    const nueva = generarPasswordSegunPolitica(pol);
+    this.passwordForm.patchValue({ password_nueva: nueva, password_confirmar: nueva });
+    this.passwordForm.get('password_nueva')?.markAsTouched();
+    this.passwordForm.get('password_confirmar')?.markAsTouched();
+    this.verPasswordNueva.set(true);
+    this.verPasswordConfirmar.set(true);
+    this.passwordGenerada.set(true);
+    navigator.clipboard?.writeText(nueva).catch(() => {});
+  }
+
+  cerrarCambioPassword(): void {
+    if (this.cambioPasswordObligatorio()) return;
+    this.panelPasswordAbierto.set(false);
+  }
 
   guardarPassword(): void {
     if (this.passwordForm.invalid) return;
-    const { password_actual, password_nueva } = this.passwordForm.getRawValue();
-    this.auth.cambiarPassword(password_actual!, password_nueva!).subscribe({
+    const { password_actual, password_nueva, pista } = this.passwordForm.getRawValue();
+    // Si se deja en blanco, no se toca la pista ya guardada (undefined).
+    const pistaTexto = pista?.trim() ? pista.trim() : undefined;
+    this.auth.cambiarPassword(password_actual!, password_nueva!, pistaTexto).subscribe({
       next: () => {
         this.cerrarCambioPassword();
         alert('Contrasena actualizada correctamente.');
@@ -117,33 +171,4 @@ export class LayoutComponent implements OnInit {
       error: (err) => alert(err?.error?.mensaje || 'No se pudo cambiar la contrasena'),
     });
   }
-}
-
-function passwordsCoincidenValidator(group: AbstractControl): ValidationErrors | null {
-  const nueva = group.get('password_nueva')?.value;
-  const confirmar = group.get('password_confirmar')?.value;
-  if (!nueva || !confirmar) return null;
-  return nueva === confirmar ? null : { noCoincide: true };
-}
-
-function redimensionarImagen(archivo: File, maxDimension: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const lector = new FileReader();
-    lector.onerror = () => reject(lector.error);
-    lector.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('No se pudo leer la imagen'));
-      img.onload = () => {
-        const escala = Math.min(1, maxDimension / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * escala);
-        canvas.height = Math.round(img.height * escala);
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = lector.result as string;
-    };
-    lector.readAsDataURL(archivo);
-  });
 }

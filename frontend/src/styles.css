@@ -666,13 +666,56 @@ table.data-table {
   padding: 8px 12px; border-radius: 8px; font-size: 12.5px; margin-bottom: 12px;
 }
 
+/* ---------- Campo de password con iconos (mostrar/ocultar, generar) ---------- */
+.password-input-wrap {
+  position: relative;
+}
+.password-input-wrap .input {
+  padding-right: 38px;
+}
+.password-input-wrap.has-generar .input {
+  padding-right: 68px;
+}
+.password-input-icons {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.password-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--slate-500);
+}
+.password-toggle:hover {
+  background: var(--slate-100);
+}
+
+.alert-warning {
+  background: var(--amber-100); color: var(--amber-500);
+  padding: 8px 12px; border-radius: 8px; font-size: 12.5px;
+}
+
 /* ---------- Utilidades ---------- */
 .flex { display: flex; }
 .items-center { align-items: center; }
 .gap-6 { gap: 6px; }
 .gap-8 { gap: 8px; }
 .gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
 .mt-16 { margin-top: 16px; }
+.mt-8 { margin-top: 8px; }
 .text-muted { color: var(--slate-500); }
 .text-sm { font-size: 12.5px; }
 .w-full { width: 100%; }

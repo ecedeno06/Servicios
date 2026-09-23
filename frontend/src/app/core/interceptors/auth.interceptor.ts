@@ -16,6 +16,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (err.status === 401) {
         auth.logout();
         router.navigate(['/login']);
+      } else if (err.status === 403 && err.error?.requiereCambioPassword) {
+        // El token en uso quedo "viejo" -- se emitio antes de que un admin
+        // reseteara esta contrasena. Fuerza el formulario obligatorio sin
+        // esperar a que el usuario recargue la pagina.
+        auth.marcarCambioPasswordObligatorio();
       }
       return throwError(() => err);
     })
