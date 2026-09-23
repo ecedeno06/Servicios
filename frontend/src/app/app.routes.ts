@@ -4,6 +4,7 @@ import { superAdminGuard } from './core/guards/super-admin.guard';
 import { noClienteGuard } from './core/guards/no-cliente.guard';
 import { LayoutComponent } from './features/layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
+import { RestablecerPasswordComponent } from './features/restablecer-password/restablecer-password.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ClientesComponent } from './features/clientes/clientes.component';
 import { TiposServicioComponent } from './features/tipos-servicio/tipos-servicio.component';
@@ -17,6 +18,7 @@ import { PoliticaPasswordComponent } from './features/politica-password/politica
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'restablecer-password', component: RestablecerPasswordComponent },
   {
     path: '',
     component: LayoutComponent,

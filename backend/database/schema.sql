@@ -44,8 +44,8 @@ create table if not exists usuarios (
     -- (la conoce, es temporal); se limpia sola cuando el propio usuario
     -- cambia su contrasena via /auth/password.
     debe_cambiar_password boolean not null default false,
-    -- Pista de contrasena, opcional (solo almacenamiento; la pantalla de
-    -- login/recuperacion que la mostraria no esta implementada aqui).
+    -- Pista de contrasena, opcional (ver GET /auth/pista, publico con
+    -- rate-limit, consultado desde la pantalla de login).
     pista           text,
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()
@@ -74,6 +74,23 @@ create table if not exists politica_password (
 );
 
 insert into politica_password (id) values (1) on conflict (id) do nothing;
+
+-- ---------------------------------------------------------
+-- Tabla: password_reset_tokens -- recuperar contrasena por correo
+-- (self-service). No tiene relacion con "pista" (esa solo muestra una
+-- ayuda, no restablece nada).
+-- ---------------------------------------------------------
+create table if not exists password_reset_tokens (
+    id          uuid primary key default gen_random_uuid(),
+    usuario_id  uuid not null references usuarios(id) on delete cascade,
+    token       text not null unique,
+    expira_en   timestamptz not null,
+    usado       boolean not null default false,
+    created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_password_reset_tokens_usuario on password_reset_tokens(usuario_id);
+create index if not exists idx_password_reset_tokens_token_activo on password_reset_tokens(token) where usado = false;
 
 -- ---------------------------------------------------------
 -- Tabla: usuarios_empresas_rol (relacion N:M usuario <-> empresa,

@@ -115,6 +115,18 @@ export class AuthService {
     return this.http.get<{ pista: string }>(`${environment.apiUrl}/auth/pista`, { params: { email } });
   }
 
+  // Publico (sin token) -- el mensaje de respuesta es siempre generico
+  // (nunca revela si el correo existe) tanto en exito como en error de
+  // formato; solo un fallo real de red muestra algo distinto.
+  olvidarPassword(email: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  // Publico (sin token) -- token viene del enlace que llega por correo.
+  restablecerPassword(token: string, passwordNueva: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/reset-password`, { token, password_nueva: passwordNueva });
+  }
+
   private actualizarTrasCambioPassword(token: string): void {
     const raw = localStorage.getItem(STORAGE_KEY);
     const actual = raw ? JSON.parse(raw) : {};
