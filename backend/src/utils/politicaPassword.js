@@ -8,17 +8,36 @@ async function obtenerPolitica() {
   return rows[0];
 }
 
+function contar(regex, texto) {
+  return (texto.match(regex) || []).length;
+}
+
+// caracteres_numericos/caracteres_especiales son sets configurables (ej.
+// "1234567890", "!@#$%^&*-_+=.,") -- no una restriccion sobre el resto
+// del password, solo de que clase de caracter cuenta para cumplir el
+// requisito.
+function contieneCaracterDe(texto, set) {
+  return [...texto].some((c) => (set || '').includes(c));
+}
+
 // Devuelve un arreglo de mensajes de error (vacio si cumple). Se usa en
 // cada punto del backend donde un password se define/reemplaza.
 function validarPassword(password, politica) {
   const errores = [];
-  if (!password || password.length < politica.longitud_minima) {
+  const pw = password || '';
+  if (pw.length < politica.longitud_minima) {
     errores.push(`Debe tener al menos ${politica.longitud_minima} caracteres`);
   }
-  if (politica.requiere_mayuscula && !/[A-Z]/.test(password || '')) errores.push('Debe incluir al menos una mayuscula');
-  if (politica.requiere_minuscula && !/[a-z]/.test(password || '')) errores.push('Debe incluir al menos una minuscula');
-  if (politica.requiere_numero && !/[0-9]/.test(password || '')) errores.push('Debe incluir al menos un numero');
-  if (politica.requiere_caracter_especial && !/[^A-Za-z0-9]/.test(password || '')) errores.push('Debe incluir al menos un caracter especial');
+  const mayusMin = politica.mayuscula_minima || 0;
+  if (mayusMin > 0 && contar(/[A-Z]/g, pw) < mayusMin) {
+    errores.push(`Debe incluir al menos ${mayusMin} mayuscula${mayusMin > 1 ? 's' : ''}`);
+  }
+  const minusMin = politica.minuscula_minima || 0;
+  if (minusMin > 0 && contar(/[a-z]/g, pw) < minusMin) {
+    errores.push(`Debe incluir al menos ${minusMin} minuscula${minusMin > 1 ? 's' : ''}`);
+  }
+  if (politica.requiere_numero && !contieneCaracterDe(pw, politica.caracteres_numericos)) errores.push('Debe incluir al menos un numero');
+  if (politica.requiere_caracter_especial && !contieneCaracterDe(pw, politica.caracteres_especiales)) errores.push('Debe incluir al menos un caracter especial');
   return errores;
 }
 
@@ -63,13 +82,15 @@ function barajar(arr) {
 // un usuario, donde el nuevo password se le comunica fuera de la API.
 function generarPasswordSegunPolitica(politica) {
   const obligatorios = [];
-  if (politica.requiere_mayuscula) obligatorios.push(elegirAlAzar(GEN_MAYUSCULAS));
-  if (politica.requiere_minuscula) obligatorios.push(elegirAlAzar(GEN_MINUSCULAS));
-  if (politica.requiere_numero) obligatorios.push(elegirAlAzar(GEN_NUMEROS));
-  if (politica.requiere_caracter_especial) obligatorios.push(elegirAlAzar(GEN_ESPECIALES));
+  for (let i = 0; i < (politica.mayuscula_minima || 0); i++) obligatorios.push(elegirAlAzar(GEN_MAYUSCULAS));
+  for (let i = 0; i < (politica.minuscula_minima || 0); i++) obligatorios.push(elegirAlAzar(GEN_MINUSCULAS));
+  const numeros = politica.caracteres_numericos || GEN_NUMEROS;
+  const especiales = politica.caracteres_especiales || GEN_ESPECIALES;
+  if (politica.requiere_numero) obligatorios.push(elegirAlAzar(numeros));
+  if (politica.requiere_caracter_especial) obligatorios.push(elegirAlAzar(especiales));
 
   const longitud = Math.max(politica.longitud_minima, obligatorios.length, 10);
-  const poolCompleto = GEN_MAYUSCULAS + GEN_MINUSCULAS + GEN_NUMEROS + GEN_ESPECIALES;
+  const poolCompleto = GEN_MAYUSCULAS + GEN_MINUSCULAS + numeros + especiales;
   const resto = [];
   for (let i = obligatorios.length; i < longitud; i++) resto.push(elegirAlAzar(poolCompleto));
 

@@ -22,10 +22,12 @@ export interface Usuario {
 export interface PoliticaPassword {
   id?: number;
   longitud_minima: number;
-  requiere_mayuscula: boolean;
-  requiere_minuscula: boolean;
+  mayuscula_minima: number;
+  minuscula_minima: number;
   requiere_numero: boolean;
   requiere_caracter_especial: boolean;
+  caracteres_numericos: string;
+  caracteres_especiales: string;
   pista_longitud_minima: number;
   pista_similitud_maxima_porcentaje: number;
   updated_at?: string;

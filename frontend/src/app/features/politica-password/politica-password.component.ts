@@ -15,11 +15,13 @@ export class PoliticaPasswordComponent implements OnInit {
   guardando = signal(false);
 
   form = this.fb.group({
-    longitud_minima: [6, [Validators.required, Validators.min(1)]],
-    requiere_mayuscula: [false],
-    requiere_minuscula: [false],
-    requiere_numero: [false],
-    requiere_caracter_especial: [false],
+    longitud_minima: [8, [Validators.required, Validators.min(1)]],
+    mayuscula_minima: [2, [Validators.required, Validators.min(0)]],
+    minuscula_minima: [2, [Validators.required, Validators.min(0)]],
+    requiere_numero: [true],
+    requiere_caracter_especial: [true],
+    caracteres_numericos: ['1234567890', Validators.required],
+    caracteres_especiales: ['!@#$%^&*-_+=.,', Validators.required],
     pista_longitud_minima: [4, [Validators.required, Validators.min(1)]],
     pista_similitud_maxima_porcentaje: [70, [Validators.required, Validators.min(0), Validators.max(100)]],
   });
@@ -32,10 +34,12 @@ export class PoliticaPasswordComponent implements OnInit {
       next: (p) => {
         this.form.reset({
           longitud_minima: p.longitud_minima,
-          requiere_mayuscula: p.requiere_mayuscula,
-          requiere_minuscula: p.requiere_minuscula,
+          mayuscula_minima: p.mayuscula_minima,
+          minuscula_minima: p.minuscula_minima,
           requiere_numero: p.requiere_numero,
           requiere_caracter_especial: p.requiere_caracter_especial,
+          caracteres_numericos: p.caracteres_numericos,
+          caracteres_especiales: p.caracteres_especiales,
           pista_longitud_minima: p.pista_longitud_minima,
           pista_similitud_maxima_porcentaje: p.pista_similitud_maxima_porcentaje,
         });

@@ -14,23 +14,26 @@ async function obtener(req, res, next) {
 async function actualizar(req, res, next) {
   try {
     const {
-      longitud_minima, requiere_mayuscula, requiere_minuscula, requiere_numero,
-      requiere_caracter_especial, pista_longitud_minima, pista_similitud_maxima_porcentaje,
+      longitud_minima, mayuscula_minima, minuscula_minima, requiere_numero,
+      requiere_caracter_especial, caracteres_numericos, caracteres_especiales,
+      pista_longitud_minima, pista_similitud_maxima_porcentaje,
     } = req.body;
 
     const { rows } = await pool.query(
       `update politica_password set
          longitud_minima = coalesce($1, longitud_minima),
-         requiere_mayuscula = coalesce($2, requiere_mayuscula),
-         requiere_minuscula = coalesce($3, requiere_minuscula),
+         mayuscula_minima = coalesce($2, mayuscula_minima),
+         minuscula_minima = coalesce($3, minuscula_minima),
          requiere_numero = coalesce($4, requiere_numero),
          requiere_caracter_especial = coalesce($5, requiere_caracter_especial),
-         pista_longitud_minima = coalesce($6, pista_longitud_minima),
-         pista_similitud_maxima_porcentaje = coalesce($7, pista_similitud_maxima_porcentaje),
+         caracteres_numericos = coalesce($6, caracteres_numericos),
+         caracteres_especiales = coalesce($7, caracteres_especiales),
+         pista_longitud_minima = coalesce($8, pista_longitud_minima),
+         pista_similitud_maxima_porcentaje = coalesce($9, pista_similitud_maxima_porcentaje),
          updated_at = now()
        where id = 1
        returning *`,
-      [longitud_minima, requiere_mayuscula, requiere_minuscula, requiere_numero, requiere_caracter_especial, pista_longitud_minima, pista_similitud_maxima_porcentaje]
+      [longitud_minima, mayuscula_minima, minuscula_minima, requiere_numero, requiere_caracter_especial, caracteres_numericos, caracteres_especiales, pista_longitud_minima, pista_similitud_maxima_porcentaje]
     );
     res.json(rows[0]);
   } catch (err) {

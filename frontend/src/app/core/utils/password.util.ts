@@ -27,13 +27,15 @@ function barajar<T>(arr: T[]): T[] {
 // una contrasena.
 export function generarPasswordSegunPolitica(politica: PoliticaPassword): string {
   const obligatorios: string[] = [];
-  if (politica.requiere_mayuscula) obligatorios.push(elegirAlAzar(GEN_MAYUSCULAS));
-  if (politica.requiere_minuscula) obligatorios.push(elegirAlAzar(GEN_MINUSCULAS));
-  if (politica.requiere_numero) obligatorios.push(elegirAlAzar(GEN_NUMEROS));
-  if (politica.requiere_caracter_especial) obligatorios.push(elegirAlAzar(GEN_ESPECIALES));
+  for (let i = 0; i < (politica.mayuscula_minima || 0); i++) obligatorios.push(elegirAlAzar(GEN_MAYUSCULAS));
+  for (let i = 0; i < (politica.minuscula_minima || 0); i++) obligatorios.push(elegirAlAzar(GEN_MINUSCULAS));
+  const numeros = politica.caracteres_numericos || GEN_NUMEROS;
+  const especiales = politica.caracteres_especiales || GEN_ESPECIALES;
+  if (politica.requiere_numero) obligatorios.push(elegirAlAzar(numeros));
+  if (politica.requiere_caracter_especial) obligatorios.push(elegirAlAzar(especiales));
 
   const longitud = Math.max(politica.longitud_minima, obligatorios.length, 10);
-  const poolCompleto = GEN_MAYUSCULAS + GEN_MINUSCULAS + GEN_NUMEROS + GEN_ESPECIALES;
+  const poolCompleto = GEN_MAYUSCULAS + GEN_MINUSCULAS + numeros + especiales;
   const resto: string[] = [];
   for (let i = obligatorios.length; i < longitud; i++) resto.push(elegirAlAzar(poolCompleto));
 
@@ -52,16 +54,26 @@ export function passwordsCoincidenValidator(group: AbstractControl): ValidationE
 // Validador de control: mismas reglas que
 // backend/src/utils/politicaPassword.js#validarPassword. Vacio no es
 // invalido aqui (eso es responsabilidad de un Validators.required aparte).
+function contar(regex: RegExp, texto: string): number {
+  return (texto.match(regex) || []).length;
+}
+
+function contieneCaracterDe(texto: string, set: string): boolean {
+  return [...texto].some((c) => (set || '').includes(c));
+}
+
 export function construirValidadorPolitica(politica: PoliticaPassword): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const v: string = control.value || '';
     if (!v) return null;
     const errores: string[] = [];
     if (v.length < politica.longitud_minima) errores.push(`al menos ${politica.longitud_minima} caracteres`);
-    if (politica.requiere_mayuscula && !/[A-Z]/.test(v)) errores.push('una mayuscula');
-    if (politica.requiere_minuscula && !/[a-z]/.test(v)) errores.push('una minuscula');
-    if (politica.requiere_numero && !/[0-9]/.test(v)) errores.push('un numero');
-    if (politica.requiere_caracter_especial && !/[^A-Za-z0-9]/.test(v)) errores.push('un caracter especial');
+    const mayusMin = politica.mayuscula_minima || 0;
+    if (mayusMin > 0 && contar(/[A-Z]/g, v) < mayusMin) errores.push(`al menos ${mayusMin} mayuscula${mayusMin > 1 ? 's' : ''}`);
+    const minusMin = politica.minuscula_minima || 0;
+    if (minusMin > 0 && contar(/[a-z]/g, v) < minusMin) errores.push(`al menos ${minusMin} minuscula${minusMin > 1 ? 's' : ''}`);
+    if (politica.requiere_numero && !contieneCaracterDe(v, politica.caracteres_numericos)) errores.push('un numero');
+    if (politica.requiere_caracter_especial && !contieneCaracterDe(v, politica.caracteres_especiales)) errores.push('un caracter especial');
     return errores.length ? { politica: `Debe incluir ${errores.join(', ')}.` } : null;
   };
 }
@@ -96,20 +108,22 @@ export function evaluarPoliticaPassword(password: string, politica: PoliticaPass
   const items: RequisitoPolitica[] = [
     { label: `Minimo ${politica.longitud_minima} caracteres`, cumple: v.length >= politica.longitud_minima, detalle: `tiene ${v.length}` },
   ];
-  if (politica.requiere_mayuscula) {
+  const mayusMin = politica.mayuscula_minima || 0;
+  if (mayusMin > 0) {
     const ejemplos = caracteresUnicos(v, (c) => /[A-Z]/.test(c));
-    items.push({ label: 'Al menos 1 mayuscula', cumple: ejemplos.length > 0, ejemplos: ejemplos.length ? ejemplos : undefined });
+    items.push({ label: `Al menos ${mayusMin} mayuscula${mayusMin > 1 ? 's' : ''}`, cumple: ejemplos.length >= mayusMin, detalle: `tiene ${ejemplos.length}`, ejemplos: ejemplos.length ? ejemplos : undefined });
   }
-  if (politica.requiere_minuscula) {
+  const minusMin = politica.minuscula_minima || 0;
+  if (minusMin > 0) {
     const ejemplos = caracteresUnicos(v, (c) => /[a-z]/.test(c));
-    items.push({ label: 'Al menos 1 minuscula', cumple: ejemplos.length > 0, ejemplos: ejemplos.length ? ejemplos : undefined });
+    items.push({ label: `Al menos ${minusMin} minuscula${minusMin > 1 ? 's' : ''}`, cumple: ejemplos.length >= minusMin, detalle: `tiene ${ejemplos.length}`, ejemplos: ejemplos.length ? ejemplos : undefined });
   }
   if (politica.requiere_numero) {
-    const ejemplos = caracteresUnicos(v, (c) => /[0-9]/.test(c));
+    const ejemplos = caracteresUnicos(v, (c) => politica.caracteres_numericos.includes(c));
     items.push({ label: 'Al menos 1 numero', cumple: ejemplos.length > 0, ejemplos: ejemplos.length ? ejemplos : undefined });
   }
   if (politica.requiere_caracter_especial) {
-    const ejemplos = caracteresUnicos(v, (c) => /[^A-Za-z0-9]/.test(c));
+    const ejemplos = caracteresUnicos(v, (c) => politica.caracteres_especiales.includes(c));
     items.push({ label: 'Al menos 1 caracter especial', cumple: ejemplos.length > 0, ejemplos: ejemplos.length ? ejemplos : undefined });
   }
   return items;

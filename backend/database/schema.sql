@@ -58,11 +58,16 @@ create table if not exists usuarios (
 -- ---------------------------------------------------------
 create table if not exists politica_password (
     id                                smallint primary key default 1 check (id = 1),
-    longitud_minima                   integer not null default 6 check (longitud_minima >= 1),
-    requiere_mayuscula                boolean not null default false,
-    requiere_minuscula                boolean not null default false,
-    requiere_numero                   boolean not null default false,
-    requiere_caracter_especial        boolean not null default false,
+    longitud_minima                   integer not null default 8 check (longitud_minima >= 1),
+    mayuscula_minima                  integer not null default 2 check (mayuscula_minima >= 0),
+    minuscula_minima                  integer not null default 2 check (minuscula_minima >= 0),
+    requiere_numero                   boolean not null default true,
+    requiere_caracter_especial        boolean not null default true,
+    -- Caracteres permitidos para satisfacer requiere_numero /
+    -- requiere_caracter_especial (no una restriccion sobre el resto del
+    -- password, solo de que clase cuenta como "cumple el requisito").
+    caracteres_numericos              text not null default '1234567890',
+    caracteres_especiales             text not null default '!@#$%^&*-_+=.,',
     pista_longitud_minima             integer not null default 4 check (pista_longitud_minima >= 1),
     pista_similitud_maxima_porcentaje integer not null default 70 check (pista_similitud_maxima_porcentaje between 0 and 100),
     updated_at                        timestamptz not null default now()
