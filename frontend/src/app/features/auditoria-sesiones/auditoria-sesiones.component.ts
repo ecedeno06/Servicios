@@ -269,6 +269,10 @@ export class AuditoriaSesionesComponent implements OnInit {
     switch (motivo) {
       case 'en_curso': return 'En curso';
       case 'logout_usuario': return 'Cierre manual';
+      case 'inactividad': return 'Inactividad';
+      case 'token_invalido': return 'Token invalido';
+      case 'expiracion_token': return 'Token expirado';
+      case 'expiracion_automatica': return 'Expiracion automatica';
       case 'expirada_sin_cerrar': return 'Expirada sin cerrar';
       case 'cerrada_por_admin': return 'Cerrada por admin';
       default: return motivo;
@@ -278,7 +282,9 @@ export class AuditoriaSesionesComponent implements OnInit {
   claseMotivo(motivo: MotivoSalida): string {
     switch (motivo) {
       case 'en_curso': return 'badge-green';
-      case 'expirada_sin_cerrar': return 'badge-amber';
+      case 'inactividad':
+      case 'expirada_sin_cerrar':
+      case 'expiracion_automatica': return 'badge-amber';
       case 'cerrada_por_admin': return 'badge-red';
       default: return 'badge-slate';
     }

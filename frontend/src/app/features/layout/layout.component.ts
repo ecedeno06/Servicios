@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
@@ -7,22 +7,25 @@ import { AuthService } from '../../core/services/auth.service';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { InactividadService } from '../../core/services/inactividad.service';
 import { SelectorFotoComponent } from '../../core/components/selector-foto/selector-foto.component';
 import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
+import { AvisoInactividadComponent } from '../../core/components/aviso-inactividad/aviso-inactividad.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { NotificacionComentario, PoliticaPassword } from '../../core/models/models';
 
 const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
+const SESSION_START_KEY = 'hs_session_start_time';
 const INTERVALO_NOTIFICACIONES_MS = 60000;
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
@@ -42,6 +45,13 @@ export class LayoutComponent implements OnInit {
   // solo valida "required"/coincidencia, sin la politica todavia.
   politica = signal<PoliticaPassword | null>(null);
 
+  // Cronometro de sesion activa (cuenta hacia arriba desde el login, no
+  // desde que se abrio esta pestana -- persiste en localStorage para
+  // sobrevivir a un F5). Se pinta en rojo/parpadeando cuando el aviso de
+  // inactividad esta visible (ver template).
+  tiempoSesionTexto = signal('00:00:00');
+  private tiempoSesionInterval: ReturnType<typeof setInterval> | null = null;
+
   passwordForm = this.fb.group(
     {
       password_actual: ['', Validators.required],
@@ -58,7 +68,8 @@ export class LayoutComponent implements OnInit {
     private horasSrv: RegistroHorasService,
     private politicaPasswordSrv: PoliticaPasswordService,
     private router: Router,
-    public theme: ThemeService
+    public theme: ThemeService,
+    public inactividad: InactividadService
   ) {}
 
   get noLeidos() { return this.horasSrv.noLeidos; }
@@ -78,6 +89,32 @@ export class LayoutComponent implements OnInit {
       },
       error: () => {}, // sin la politica, el formulario sigue funcionando con las reglas base (required/coincidencia)
     });
+
+    this.inactividad.init();
+    this.iniciarCronometroSesion();
+  }
+
+  ngOnDestroy(): void {
+    this.inactividad.cleanup();
+    if (this.tiempoSesionInterval) clearInterval(this.tiempoSesionInterval);
+  }
+
+  private iniciarCronometroSesion(): void {
+    let inicio = Number(localStorage.getItem(SESSION_START_KEY));
+    if (!inicio || isNaN(inicio)) {
+      inicio = Date.now();
+      localStorage.setItem(SESSION_START_KEY, String(inicio));
+    }
+    const actualizar = () => {
+      const totalSegundos = Math.floor((Date.now() - inicio) / 1000);
+      const horas = Math.floor(totalSegundos / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+      const pad = (n: number) => String(n).padStart(2, '0');
+      this.tiempoSesionTexto.set(`${pad(horas)}:${pad(minutos)}:${pad(segundos)}`);
+    };
+    actualizar();
+    this.tiempoSesionInterval = setInterval(actualizar, 1000);
   }
 
   toggleNotificaciones(): void {

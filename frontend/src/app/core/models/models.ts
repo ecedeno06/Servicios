@@ -35,6 +35,10 @@ export interface PoliticaPassword {
 
 export type MotivoSalida =
   | 'logout_usuario'
+  | 'inactividad'
+  | 'token_invalido'
+  | 'expiracion_token'
+  | 'expiracion_automatica'
   | 'cerrada_por_admin'
   | 'expirada_sin_cerrar'
   | 'en_curso';

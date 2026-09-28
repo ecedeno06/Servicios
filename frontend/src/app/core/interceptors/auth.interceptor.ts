@@ -14,7 +14,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((err) => {
       if (err.status === 401) {
-        auth.logout();
+        // El backend ya cerro la sesion del lado del servidor en este caso
+        // (token invalido/expirado, o cerrada/bloqueada desde Auditoria) --
+        // 'token_invalido' la distingue de un cierre manual en el reporte.
+        auth.logout('token_invalido');
         router.navigate(['/login']);
       } else if (err.status === 403 && err.error?.requiereCambioPassword) {
         // El token en uso quedo "viejo" -- se emitio antes de que un admin

@@ -1,0 +1,44 @@
+.aviso-inactividad-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.aviso-inactividad-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  padding: 26px;
+  border-top: 4px solid var(--amber-500);
+}
+
+.aviso-inactividad-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: var(--amber-500);
+}
+.aviso-inactividad-header svg { width: 24px; height: 24px; flex-shrink: 0; }
+.aviso-inactividad-header h2 { margin: 0; color: var(--text-heading); }
+
+.aviso-inactividad-countdown {
+  font-family: monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--amber-500);
+  background: var(--amber-100);
+  border: 1px dashed var(--amber-500);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 14px 0;
+  letter-spacing: 1px;
+}

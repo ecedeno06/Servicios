@@ -390,6 +390,28 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   padding: 0 3px;
 }
 
+.session-timer {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-surface-muted);
+  border: 1px solid var(--border-subtle);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+.session-timer.warning {
+  color: var(--red-600);
+  background: var(--red-100);
+  border-color: var(--red-600);
+  animation: session-timer-pulse 1.5s infinite alternate;
+}
+@keyframes session-timer-pulse {
+  from { opacity: 1; }
+  to { opacity: 0.55; }
+}
+
 .user-pill-btn {
   background: none;
   border: none;

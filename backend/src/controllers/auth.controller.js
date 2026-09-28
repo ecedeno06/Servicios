@@ -425,13 +425,63 @@ async function cambiarPassword(req, res, next) {
 }
 
 // POST /api/auth/logout
+// POST /api/auth/logout  { razon? }
+// razon identifica en Auditoria de sesiones por que se cerro: cierre
+// manual, inactividad, token invalido (401 de otra ruta), etc. Si se
+// omite, se asume cierre manual.
 async function logout(req, res, next) {
   try {
-    await cerrarSesionActual(req.token, 'logout_usuario');
+    const razon = String(req.body?.razon || '').trim() || 'logout_usuario';
+    await cerrarSesionActual(req.token, razon);
     res.json({ mensaje: 'Sesion cerrada' });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword, logout };
+// GET /api/auth/session-config  (publico -- se consulta antes de que el
+// inicio de sesion este completo)
+// Duraciones del sistema de inactividad, configurables por variables de
+// entorno sin necesitar redeploy de logica.
+async function sessionConfig(req, res, next) {
+  try {
+    const inactivityLimitMin = Number(process.env.SESSION_INACTIVITY_LIMIT_MINUTES) || 15;
+    const warningBeforeMin = Number(process.env.SESSION_WARNING_BEFORE_MINUTES) || 2;
+    const refreshIntervalMin = Number(process.env.SESSION_REFRESH_INTERVAL_MINUTES) || 10;
+
+    res.json({
+      inactivityLimitMs: inactivityLimitMin * 60 * 1000,
+      warningBeforeMs: warningBeforeMin * 60 * 1000,
+      refreshIntervalMs: refreshIntervalMin * 60 * 1000,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/refresh-session
+// "Sigo aqui": reemite el JWT (extiende su expiracion natural, ver
+// firmarToken/JWT_EXPIRES_IN) y actualiza la fila de sesion para que siga
+// identificada por el nuevo token. No tiene relacion con el temporizador
+// de inactividad (ese es puramente del cliente) -- esto evita que la
+// sesion expire "sola" mientras la pestana sigue abierta y en uso.
+async function refreshSession(req, res, next) {
+  try {
+    const token = firmarToken({
+      id: req.usuario.id,
+      nombre: req.usuario.nombre,
+      email: req.usuario.email,
+      rol: req.usuario.rol,
+      empresa_id: req.usuario.empresa_id,
+      cliente_id: req.usuario.cliente_id,
+      es_super_admin: req.usuario.es_super_admin,
+      debe_cambiar_password: req.usuario.debe_cambiar_password,
+    });
+    await reemplazarTokenSesion(req.token, token, expiracionDeToken(token));
+    res.json({ token });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword, logout, sessionConfig, refreshSession };

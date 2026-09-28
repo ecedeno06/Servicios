@@ -1,0 +1,17 @@
+@if (inactividad.mostrarAviso()) {
+  <div class="aviso-inactividad-overlay">
+    <div class="aviso-inactividad-card">
+      <div class="aviso-inactividad-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <h2>Sesion por expirar</h2>
+      </div>
+      <p>Tu sesion se cerrara automaticamente por inactividad en:</p>
+      <div class="aviso-inactividad-countdown">{{ inactividad.countdownText() }}</div>
+      <p class="text-muted text-sm">Deseas continuar trabajando y mantener tu sesion activa?</p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" (click)="continuar()">Continuar trabajando</button>
+        <button type="button" class="btn btn-outline" (click)="cerrarSesion()">Cerrar sesion</button>
+      </div>
+    </div>
+  </div>
+}

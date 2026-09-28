@@ -73,15 +73,18 @@ export class AuthService {
       );
   }
 
-  logout(): void {
-    // Fire-and-forget: cierra la sesion en el servidor (queda registrada en
-    // Auditoria como cierre manual) antes de borrar el token localmente --
-    // si la llamada falla (sin red, backend caido), igual se cierra la
-    // sesion local para no dejar al usuario atrapado.
+  // razon identifica en Auditoria de sesiones por que se cerro (cierre
+  // manual por defecto; el interceptor y el aviso de inactividad pasan
+  // 'token_invalido'/'inactividad' segun corresponda).
+  logout(razon: string = 'logout_usuario'): void {
+    // Fire-and-forget: cierra la sesion en el servidor antes de borrar el
+    // token localmente -- si la llamada falla (sin red, backend caido),
+    // igual se cierra la sesion local para no dejar al usuario atrapado.
     if (this.token) {
-      this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({ next: () => {}, error: () => {} });
+      this.http.post(`${environment.apiUrl}/auth/logout`, { razon }).subscribe({ next: () => {}, error: () => {} });
     }
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('hs_session_start_time');
     this._usuario.set(null);
     this._seleccionPendiente.set(null);
     this.router.navigate(['/login']);
@@ -140,6 +143,28 @@ export class AuthService {
     const usuarioActualizado = actual.usuario ? { ...actual.usuario, debe_cambiar_password: false } : actual.usuario;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...actual, token, usuario: usuarioActualizado }));
     if (usuarioActualizado) this._usuario.set(usuarioActualizado);
+  }
+
+  // "Sigo aqui": reemite el JWT (misma sesion, solo extiende su vigencia)
+  // sin tocar el resto del usuario guardado. Llamado por el aviso de
+  // inactividad, tanto en su ping periodico como al pulsar "Continuar
+  // trabajando".
+  renovarSesion(): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>(`${environment.apiUrl}/auth/refresh-session`, {}).pipe(
+      tap((res) => {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const actual = raw ? JSON.parse(raw) : {};
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...actual, token: res.token }));
+      })
+    );
+  }
+
+  // Publico (sin token) -- duraciones del sistema de inactividad,
+  // configurables por variable de entorno en el backend.
+  obtenerConfigSesion(): Observable<{ inactivityLimitMs: number; warningBeforeMs: number; refreshIntervalMs: number }> {
+    return this.http.get<{ inactivityLimitMs: number; warningBeforeMs: number; refreshIntervalMs: number }>(
+      `${environment.apiUrl}/auth/session-config`
+    );
   }
 
   // Llamado por el interceptor cuando el backend rechaza una peticion con

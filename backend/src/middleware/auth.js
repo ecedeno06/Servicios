@@ -41,6 +41,17 @@ async function requireAuth(req, res, next) {
 
     next();
   } catch (err) {
+    // Best-effort: si el JWT expiro solo (nadie hizo logout), deja la
+    // fila de sesion marcada para que Auditoria no la muestre para
+    // siempre como "en curso". No bloquea la respuesta 401 si esto falla.
+    if (err.name === 'TokenExpiredError' && token) {
+      pool.query(
+        `update sesiones set activo = false, razon_salida = 'expiracion_automatica',
+           duracion_segundos = extract(epoch from (now() - creado_en))::integer
+         where token = $1 and activo = true`,
+        [token]
+      ).catch(() => {});
+    }
     return res.status(401).json({ mensaje: 'Token invalido o expirado' });
   }
 }
