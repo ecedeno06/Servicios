@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { obtenerPolitica, validarPassword } = require('../utils/politicaPassword');
+const { crearTokenReset } = require('../utils/passwordResetToken');
+const { enviarCorreo } = require('../utils/correo');
 
 // GET /api/usuarios  -> usuarios de la empresa activa, con su rol en esa empresa
 async function listar(req, res, next) {
@@ -181,6 +183,44 @@ async function actualizar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// POST /api/usuarios/:id/resetear-password
+// A diferencia de PUT /:id con un password nuevo (donde el admin escribe y
+// conoce la contrasena), esto es self-service por correo: se le envia al
+// propio usuario un enlace para que el elija su nueva contrasena (mismo
+// mecanismo que "olvide mi contrasena"). Ademas se marca
+// debe_cambiar_password = true de inmediato, para que si inicia sesion
+// con la contrasena vieja antes de revisar su correo, igual quede
+// forzado a cambiarla desde la app.
+async function resetearPassword(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      `select u.id, u.nombre, u.email
+       from usuarios u
+       join usuarios_empresas_rol uer on uer.usuario_id = u.id
+       where u.id = $1 and uer.empresa_id = $2`,
+      [req.params.id, req.empresaId]
+    );
+    const usuario = rows[0];
+    if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado en esta empresa' });
+
+    await pool.query('update usuarios set debe_cambiar_password = true where id = $1', [usuario.id]);
+
+    const token = await crearTokenReset(usuario.id);
+    const enlace = `${process.env.CORS_ORIGIN || 'http://localhost:4200'}/restablecer-password?token=${token}`;
+
+    await enviarCorreo({
+      destinatario: usuario.email,
+      asunto: 'Restablece tu contrasena',
+      texto: `Hola ${usuario.nombre},\n\nUn administrador solicito restablecer tu contrasena. Este enlace es valido por 1 hora:\n${enlace}\n\nSi no esperabas este correo, contacta a tu administrador.`,
+      html: `<p>Hola ${usuario.nombre},</p><p>Un administrador solicito restablecer tu contrasena. Este enlace es valido por 1 hora:</p><p><a href="${enlace}">${enlace}</a></p><p>Si no esperabas este correo, contacta a tu administrador.</p>`,
+    });
+
+    res.json({ mensaje: `Se envio un enlace para restablecer la contrasena a ${usuario.email}.` });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // DELETE /api/usuarios/:id  -> quita al usuario de la empresa activa
 // (borra la relacion, nunca la fila global de usuarios).
 async function eliminar(req, res, next) {
@@ -194,4 +234,4 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar, buscarPorEmail };
+module.exports = { listar, obtener, crear, actualizar, eliminar, buscarPorEmail, resetearPassword };

@@ -23,6 +23,7 @@ export class UsuariosComponent implements OnInit {
   usuarioExistente = signal<{ nombre: string } | null>(null);
   verPassword = signal(false);
   politica = signal<PoliticaPassword | null>(null);
+  reseteandoId = signal<string | null>(null);
 
   form = this.fb.group({
     nombre: [''],
@@ -115,6 +116,21 @@ export class UsuariosComponent implements OnInit {
     this.srv.eliminar(u.id).subscribe({
       next: () => this.cargar(),
       error: (err) => alert(err?.error?.mensaje || 'No se pudo quitar al usuario'),
+    });
+  }
+
+  resetearPassword(u: Usuario): void {
+    if (!confirm(`Enviar un enlace para restablecer la contrasena a ${u.nombre} (${u.email})? Debera definir una nueva contrasena antes de poder usar el sistema.`)) return;
+    this.reseteandoId.set(u.id);
+    this.srv.resetearPassword(u.id).subscribe({
+      next: (res) => {
+        this.reseteandoId.set(null);
+        alert(res.mensaje);
+      },
+      error: (err) => {
+        this.reseteandoId.set(null);
+        alert(err?.error?.mensaje || 'No se pudo enviar el enlace de restablecimiento');
+      },
     });
   }
 }

@@ -1,11 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { pool } = require('../config/db');
 const { obtenerPolitica, validarPassword, validarPista } = require('../utils/politicaPassword');
 const { enviarCorreo } = require('../utils/correo');
 const { obtenerIpCliente } = require('../utils/geoip');
 const { crearSesion, reemplazarTokenSesion, cerrarSesionActual } = require('../utils/sesiones');
+const { crearTokenReset } = require('../utils/passwordResetToken');
 
 function firmarToken(payload, expiresIn) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: expiresIn || process.env.JWT_EXPIRES_IN || '8h' });
@@ -238,10 +238,6 @@ async function obtenerPista(req, res, next) {
   }
 }
 
-function generarTokenReset() {
-  return 'rst_' + crypto.randomBytes(32).toString('hex');
-}
-
 // POST /api/auth/forgot-password  { email }  (publico, con rate-limit en la ruta)
 // Nunca revela si el correo existe o no (evita enumeracion de usuarios) --
 // la respuesta es siempre el mismo mensaje generico, exista o no la cuenta.
@@ -254,13 +250,7 @@ async function olvidoPassword(req, res, next) {
     const usuario = rows[0];
 
     if (usuario) {
-      const token = generarTokenReset();
-      const expiraEn = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
-      await pool.query(
-        'insert into password_reset_tokens (usuario_id, token, expira_en) values ($1, $2, $3)',
-        [usuario.id, token, expiraEn]
-      );
-
+      const token = await crearTokenReset(usuario.id);
       const enlace = `${process.env.CORS_ORIGIN || 'http://localhost:4200'}/restablecer-password?token=${token}`;
       // El envio de correo no debe tumbar la respuesta si falla (Graph
       // caido, credenciales mal configuradas, etc.) -- de todas formas el
