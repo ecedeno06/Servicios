@@ -34,8 +34,8 @@
 </div>
 
 @if (panelAbierto()) {
-  <div class="overlay" (click)="cerrarPanel()">
-    <div class="drawer" (click)="$event.stopPropagation()">
+  <div class="overlay">
+    <div class="drawer">
       <div class="drawer-header">
         <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
         <button class="close" (click)="cerrarPanel()">&times;</button>
