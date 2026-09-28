@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
+const { pool } = require('../config/db');
 
 // Rutas que siguen accesibles aunque el token traiga debe_cambiar_password
 // -- sin esto el usuario quedaria atrapado sin poder ni cambiar su propia
 // contrasena ni cerrar sesion.
 const RUTAS_EXENTAS_CAMBIO_PASSWORD = ['/api/auth/password', '/api/auth/me'];
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
@@ -16,6 +17,20 @@ function requireAuth(req, res, next) {
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.usuario = payload; // { id, nombre, email, rol, empresa_id, cliente_id, es_super_admin, debe_cambiar_password } o { id, nombre, email, parcial: true }
+    req.token = token;
+
+    // Un token parcial (login pendiente de seleccionar empresa) todavia no
+    // tiene fila en sesiones -- se crea recien cuando el login se completa
+    // (ver seleccionarEmpresa). Para el resto, valida en BD ademas de la
+    // firma del JWT: esto es lo que permite que "cerrar sesion" o
+    // "bloquear usuario" desde Auditoria tengan efecto de inmediato, en
+    // vez de esperar a que el JWT expire solo.
+    if (!payload.parcial) {
+      const { rows } = await pool.query('select activo from sesiones where token = $1', [token]);
+      if (!rows[0] || !rows[0].activo) {
+        return res.status(401).json({ mensaje: 'La sesion fue cerrada. Vuelve a iniciar sesion.' });
+      }
+    }
 
     if (payload.debe_cambiar_password) {
       const ruta = (req.originalUrl || '').split('?')[0];

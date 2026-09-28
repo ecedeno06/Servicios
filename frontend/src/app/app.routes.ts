@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 import { noClienteGuard } from './core/guards/no-cliente.guard';
+import { adminGuard } from './core/guards/admin.guard';
 import { LayoutComponent } from './features/layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { RestablecerPasswordComponent } from './features/restablecer-password/restablecer-password.component';
@@ -15,6 +16,7 @@ import { ReporteHorasComponent } from './features/reportes/reporte-horas.compone
 import { UsuariosComponent } from './features/usuarios/usuarios.component';
 import { EmpresasComponent } from './features/empresas/empresas.component';
 import { PoliticaPasswordComponent } from './features/politica-password/politica-password.component';
+import { AuditoriaSesionesComponent } from './features/auditoria-sesiones/auditoria-sesiones.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -35,6 +37,7 @@ export const routes: Routes = [
       { path: 'usuarios', component: UsuariosComponent, canActivate: [noClienteGuard] },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
+      { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [adminGuard] },
     ],
   },
   { path: '**', redirectTo: '' },

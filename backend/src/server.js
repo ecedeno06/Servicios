@@ -8,6 +8,11 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Necesario detras del proxy de Render para que req.ip sea la IP real del
+// cliente (si no, siempre seria la IP interna del proxy) -- usado por la
+// auditoria de sesiones para geolocalizar cada login.
+app.set('trust proxy', true);
+
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json({ limit: '5mb' }));
 app.use(morgan('dev'));

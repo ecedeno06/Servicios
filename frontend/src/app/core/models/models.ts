@@ -33,6 +33,33 @@ export interface PoliticaPassword {
   updated_at?: string;
 }
 
+export type MotivoSalida =
+  | 'logout_usuario'
+  | 'cerrada_por_admin'
+  | 'expirada_sin_cerrar'
+  | 'en_curso';
+
+export interface SesionAuditoria {
+  id: string;
+  usuario_id: string;
+  usuario_nombre: string;
+  usuario_email: string;
+  rol: string | null;
+  empresa_nombre: string | null;
+  ip_address: string | null;
+  geo_pais: string | null;
+  geo_region: string | null;
+  geo_ciudad: string | null;
+  geo_lat: number | null;
+  geo_lon: number | null;
+  es_sesion_actual: boolean;
+  login_en: string;
+  logout_en: string | null;
+  duracion_segundos: number | null;
+  motivo_salida: MotivoSalida;
+  activo: boolean;
+}
+
 export interface UsuarioForm {
   nombre?: string;
   email: string;

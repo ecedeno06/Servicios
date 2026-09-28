@@ -1,0 +1,161 @@
+<div class="page-header">
+  <div>
+    <h1>Auditoria de sesiones</h1>
+    <div class="desc">Historial de inicios y cierres de sesion. Permite cerrar sesiones activas de forma forzada.</div>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="auth-error mt-16">{{ error() }}</div>
+}
+@if (mensajeExito()) {
+  <div class="auth-hint mt-16">{{ mensajeExito() }}</div>
+}
+
+<div class="card mt-16">
+  <div class="flex items-center gap-12" style="flex-wrap:wrap;">
+    <div class="form-group" style="flex:1; min-width:200px;">
+      <label>Usuario</label>
+      <input class="input" type="text" [ngModel]="usuarioTexto()" (ngModelChange)="usuarioTexto.set($event)" placeholder="Nombre o correo..." />
+    </div>
+    <div class="form-group" style="min-width:160px;">
+      <label>Desde</label>
+      <input class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </div>
+    <div class="form-group" style="min-width:160px;">
+      <label>Hasta</label>
+      <input class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </div>
+    <button type="button" class="btn btn-primary" (click)="buscar()" [disabled]="cargando()">
+      {{ cargando() ? 'Buscando...' : 'Buscar' }}
+    </button>
+  </div>
+</div>
+
+<div class="page-header mt-16">
+  <div>
+    <h2 style="margin:0;">Resultados</h2>
+    <div class="desc">{{ sesionesFiltradas().length }} de {{ sesiones().length }} sesion(es).</div>
+  </div>
+  <div class="flex items-center gap-8">
+    @if (hayFiltrosColumna()) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
+    }
+    @if (totalSeleccionadas() > 0) {
+      <button type="button" class="btn-icon btn-icon-danger" [disabled]="cerrandoSesiones()" [title]="cerrandoSesiones() ? 'Cerrando...' : 'Terminar ' + totalSeleccionadas() + ' sesion(es) seleccionada(s)'" (click)="cerrarSeleccionadas()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span class="btn-icon-badge">{{ totalSeleccionadas() }}</span>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th class="th-narrow">
+          <input type="checkbox" [disabled]="!hayEnCurso()" (change)="toggleSeleccionarTodas()" title="Seleccionar todas las sesiones en curso" />
+        </th>
+        <th>Usuario</th>
+        <th>Rol</th>
+        <th>IP / Ubicacion</th>
+        <th>Pais</th>
+        <th>Inicio de sesion</th>
+        <th>Cierre de sesion</th>
+        <th>Duracion</th>
+        <th>Motivo</th>
+        <th></th>
+      </tr>
+      <tr class="filter-row">
+        <th></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroUsuario()" (ngModelChange)="filtroUsuario.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroIpUbicacion()" (ngModelChange)="filtroIpUbicacion.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroPais()" (ngModelChange)="filtroPais.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroInicio()" (ngModelChange)="filtroInicio.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCierre()" (ngModelChange)="filtroCierre.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroDuracion()" (ngModelChange)="filtroDuracion.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroMotivo()" (ngModelChange)="filtroMotivo.set($event)" /></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of sesionesFiltradas(); track s.id) {
+        <tr>
+          <td class="th-narrow">
+            @if (esSeleccionable(s)) {
+              <input type="checkbox" [checked]="estaSeleccionada(s.id)" (change)="toggleSeleccion(s.id)" />
+            }
+          </td>
+          <td>
+            <strong>{{ s.usuario_nombre }}</strong>
+            @if (s.es_sesion_actual) { <span class="badge badge-green">Tu</span> }
+            <div class="text-muted text-sm">{{ s.usuario_email }}</div>
+          </td>
+          <td>{{ s.rol || '-' }}</td>
+          <td>
+            <div class="flex items-center gap-8" style="justify-content:space-between;">
+              <div>
+                {{ s.ip_address || '-' }}
+                <div class="text-muted text-sm">{{ ubicacionTexto(s) }}</div>
+              </div>
+              <button type="button" class="btn-icon" [disabled]="!tieneCoordenadas(s)" [title]="tieneCoordenadas(s) ? 'Ver ubicacion en el mapa' : 'Sin coordenadas disponibles'" (click)="abrirMapa(s)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5-2.1A1 1 0 0 1 3 17V4.6a1 1 0 0 1 1.4-.9L9 6m0 14l6-2m-6 2V6m6 12l4.6 1.7a1 1 0 0 0 1.4-.9V6a1 1 0 0 0-.6-.9L15 3m0 15V3m0 0L9 6"/></svg>
+              </button>
+            </div>
+          </td>
+          <td>{{ s.geo_pais || '-' }}</td>
+          <td>{{ s.login_en | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ s.logout_en ? (s.logout_en | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
+          <td>{{ formatoDuracion(s.duracion_segundos) }}</td>
+          <td><span class="badge" [class]="claseMotivo(s.motivo_salida)">{{ etiquetaMotivo(s.motivo_salida) }}</span></td>
+          <td class="table-actions">
+            @if (esSeleccionable(s)) {
+              <button type="button" class="btn-icon btn-icon-danger" [disabled]="cerrandoSesiones()" title="Terminar sesion" (click)="cerrarSesionUnica(s)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="10">
+            <div class="empty-state">
+              @if (cargando()) {
+                Cargando sesiones...
+              } @else if (buscado() && sesiones().length === 0) {
+                No se encontraron sesiones para el filtro seleccionado.
+              } @else if (sesiones().length > 0) {
+                Ningun resultado coincide con los filtros de columna.
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (sesionMapaAbierta(); as s) {
+  <div class="mapa-modal-overlay" (click)="cerrarMapa()">
+    <div class="mapa-modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Ubicacion de la sesion</h2>
+        <button class="close" (click)="cerrarMapa()">&times;</button>
+      </div>
+      <div class="flex items-center gap-12" style="justify-content:space-between; align-items:flex-start;">
+        <p class="text-muted text-sm">
+          <strong>{{ s.usuario_nombre }}</strong> &mdash; {{ ubicacionTexto(s) }}<br />
+          IP: {{ s.ip_address || '-' }}
+        </p>
+        @if (!esPropiaCuenta(s)) {
+          <button type="button" class="btn-icon btn-icon-danger" title="Ubicacion sospechosa? Bloquear el acceso de este usuario y cerrar todas sus sesiones" [disabled]="bloqueandoAcceso()" (click)="bloquearAccesoUsuario(s)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+          </button>
+        }
+      </div>
+      <div id="auditoria-mapa-popup" class="mapa-modal-mapa"></div>
+    </div>
+  </div>
+}

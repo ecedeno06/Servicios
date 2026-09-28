@@ -93,6 +93,35 @@ create index if not exists idx_password_reset_tokens_usuario on password_reset_t
 create index if not exists idx_password_reset_tokens_token_activo on password_reset_tokens(token) where usado = false;
 
 -- ---------------------------------------------------------
+-- Tabla: sesiones -- auditoria de sesiones (login/logout), portada de
+-- "agro 1.1". requireAuth valida contra esta tabla en cada peticion
+-- (ademas de la firma del JWT), lo que permite cerrar sesiones activas o
+-- bloquear el acceso de un usuario de verdad, no solo cosmeticamente.
+-- ---------------------------------------------------------
+create table if not exists sesiones (
+    id                 uuid primary key default gen_random_uuid(),
+    token              text not null unique,
+    usuario_id         uuid not null references usuarios(id) on delete cascade,
+    empresa_id         uuid references empresas(id) on delete set null,
+    rol                text,
+    activo             boolean not null default true,
+    razon_salida       text,
+    duracion_segundos  integer,
+    ip_address         text,
+    geo_pais           text,
+    geo_region         text,
+    geo_ciudad         text,
+    geo_lat            double precision,
+    geo_lon            double precision,
+    creado_en          timestamptz not null default now(),
+    expira_en          timestamptz not null
+);
+
+create index if not exists idx_sesiones_usuario on sesiones(usuario_id);
+create index if not exists idx_sesiones_empresa on sesiones(empresa_id);
+create index if not exists idx_sesiones_token_activo on sesiones(token) where activo = true;
+
+-- ---------------------------------------------------------
 -- Tabla: usuarios_empresas_rol (relacion N:M usuario <-> empresa,
 -- el rol es un atributo de esta relacion, no del usuario)
 -- ---------------------------------------------------------

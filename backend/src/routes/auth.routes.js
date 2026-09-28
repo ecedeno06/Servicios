@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword } = require('../controllers/auth.controller');
+const { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword, logout } = require('../controllers/auth.controller');
 const { requireAuth } = require('../middleware/auth');
 const rateLimitPista = require('../middleware/rateLimitPista');
 const rateLimitOlvidoPassword = require('../middleware/rateLimitOlvidoPassword');
@@ -15,5 +15,6 @@ router.post('/reset-password', restablecerPassword);
 router.get('/me', requireAuth, me);
 router.put('/me', requireAuth, actualizarPerfil);
 router.put('/password', requireAuth, cambiarPassword);
+router.post('/logout', requireAuth, logout);
 
 module.exports = router;

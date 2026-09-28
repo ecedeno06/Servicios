@@ -4,9 +4,15 @@ const crypto = require('crypto');
 const { pool } = require('../config/db');
 const { obtenerPolitica, validarPassword, validarPista } = require('../utils/politicaPassword');
 const { enviarCorreo } = require('../utils/correo');
+const { obtenerIpCliente } = require('../utils/geoip');
+const { crearSesion, reemplazarTokenSesion, cerrarSesionActual } = require('../utils/sesiones');
 
 function firmarToken(payload, expiresIn) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: expiresIn || process.env.JWT_EXPIRES_IN || '8h' });
+}
+
+function expiracionDeToken(token) {
+  return new Date(jwt.decode(token).exp * 1000);
 }
 
 // POST /api/auth/login
@@ -36,6 +42,8 @@ async function login(req, res, next) {
       return res.status(401).json({ mensaje: 'Credenciales invalidas' });
     }
 
+    const ip = obtenerIpCliente(req);
+
     // Un super-admin elige SIEMPRE la empresa activa al iniciar sesion (incluso
     // si solo tiene una), viendo todas las empresas del sistema -- la unica
     // forma de cambiar de empresa activa es cerrando sesion y volviendo a
@@ -62,6 +70,7 @@ async function login(req, res, next) {
           id: payload.id, nombre: payload.nombre, email: payload.email,
           rol: null, empresa_id: null, es_super_admin: true, debe_cambiar_password: usuario.debe_cambiar_password,
         });
+        await crearSesion({ token, usuarioId: usuario.id, empresaId: null, rol: null, ip, expiraEn: expiracionDeToken(token) });
         return res.json({ token, usuario: payload });
       }
 
@@ -124,6 +133,7 @@ async function login(req, res, next) {
       es_super_admin: payload.es_super_admin,
       debe_cambiar_password: payload.debe_cambiar_password,
     });
+    await crearSesion({ token, usuarioId: usuario.id, empresaId: payload.empresa_id, rol: payload.rol, ip, expiraEn: expiracionDeToken(token) });
 
     res.json({ token, usuario: payload });
   } catch (err) {
@@ -200,6 +210,10 @@ async function seleccionarEmpresa(req, res, next) {
       cliente_id: clienteId,
       es_super_admin: payload.es_super_admin,
       debe_cambiar_password: payload.debe_cambiar_password,
+    });
+    await crearSesion({
+      token, usuarioId: usuario.id, empresaId: empresa_id, rol,
+      ip: obtenerIpCliente(req), expiraEn: expiracionDeToken(token),
     });
 
     res.json({ token, usuario: payload });
@@ -412,6 +426,7 @@ async function cambiarPassword(req, res, next) {
       es_super_admin: req.usuario.es_super_admin,
       debe_cambiar_password: false,
     });
+    await reemplazarTokenSesion(req.token, token, expiracionDeToken(token));
 
     res.json({ mensaje: 'Contrasena actualizada correctamente', token });
   } catch (err) {
@@ -419,4 +434,14 @@ async function cambiarPassword(req, res, next) {
   }
 }
 
-module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword };
+// POST /api/auth/logout
+async function logout(req, res, next) {
+  try {
+    await cerrarSesionActual(req.token, 'logout_usuario');
+    res.json({ mensaje: 'Sesion cerrada' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, seleccionarEmpresa, misEmpresas, me, actualizarPerfil, cambiarPassword, obtenerPista, olvidoPassword, restablecerPassword, logout };

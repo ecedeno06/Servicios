@@ -74,6 +74,13 @@ export class AuthService {
   }
 
   logout(): void {
+    // Fire-and-forget: cierra la sesion en el servidor (queda registrada en
+    // Auditoria como cierre manual) antes de borrar el token localmente --
+    // si la llamada falla (sin red, backend caido), igual se cierra la
+    // sesion local para no dejar al usuario atrapado.
+    if (this.token) {
+      this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({ next: () => {}, error: () => {} });
+    }
     localStorage.removeItem(STORAGE_KEY);
     this._usuario.set(null);
     this._seleccionPendiente.set(null);

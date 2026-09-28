@@ -61,6 +61,14 @@
           <span class="nav-label">Usuarios</span>
         </a>
       }
+      @if (auth.usuario()?.rol === 'admin' || auth.esSuperAdmin()) {
+        <a routerLink="/auditoria-sesiones" routerLinkActive="active" title="Auditoria de sesiones">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><circle cx="12" cy="11" r="2.5"/></svg>
+          </span>
+          <span class="nav-label">Auditoria de sesiones</span>
+        </a>
+      }
       @if (auth.esSuperAdmin()) {
         <a routerLink="/empresas" routerLinkActive="active" title="Empresas">
           <span class="nav-icon">
