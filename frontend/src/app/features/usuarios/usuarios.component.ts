@@ -4,7 +4,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsuariosService } from '../../core/services/usuarios.service';
 import { ClientesService } from '../../core/services/clientes.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Usuario, Cliente, Rol } from '../../core/models/models';
+import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
+import { Usuario, Cliente, Rol, PoliticaPassword } from '../../core/models/models';
+import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
 
 @Component({
   selector: 'app-usuarios',
@@ -19,6 +21,8 @@ export class UsuariosComponent implements OnInit {
   panelAbierto = signal(false);
   editando = signal<Usuario | null>(null);
   usuarioExistente = signal<{ nombre: string } | null>(null);
+  verPassword = signal(false);
+  politica = signal<PoliticaPassword | null>(null);
 
   form = this.fb.group({
     nombre: [''],
@@ -33,18 +37,24 @@ export class UsuariosComponent implements OnInit {
     private fb: FormBuilder,
     private srv: UsuariosService,
     private clientesSrv: ClientesService,
+    private politicaPasswordSrv: PoliticaPasswordService,
     public auth: AuthService
   ) {}
 
   ngOnInit(): void {
     this.cargar();
     this.clientesSrv.listar().subscribe((data) => this.clientes.set(data));
+    this.politicaPasswordSrv.obtener().subscribe({
+      next: (p) => this.politica.set(p),
+      error: () => {},
+    });
   }
   cargar(): void { this.srv.listar().subscribe((data) => this.usuarios.set(data)); }
 
   abrirNuevo(): void {
     this.editando.set(null);
     this.usuarioExistente.set(null);
+    this.verPassword.set(false);
     this.form.reset({ rol: 'tecnico', cliente_id: '', activo: true });
     // nombre/password no son obligatorios aqui: si el email ya existe en el
     // sistema (otra empresa), el backend solo lo asocia a esta empresa (como
@@ -55,6 +65,7 @@ export class UsuariosComponent implements OnInit {
   abrirEditar(u: Usuario): void {
     this.editando.set(u);
     this.usuarioExistente.set(null);
+    this.verPassword.set(false);
     this.form.reset({ ...u, password: '', cliente_id: u.cliente_id ?? '' });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
@@ -62,6 +73,15 @@ export class UsuariosComponent implements OnInit {
   }
 
   cerrarPanel(): void { this.panelAbierto.set(false); }
+
+  generarPassword(): void {
+    const pol = this.politica();
+    const nueva = pol ? generarPasswordSegunPolitica(pol) : Math.random().toString(36).slice(-10);
+    this.form.get('password')?.setValue(nueva);
+    this.form.get('password')?.markAsTouched();
+    this.verPassword.set(true);
+    navigator.clipboard?.writeText(nueva).catch(() => {});
+  }
 
   onEmailBlur(): void {
     if (this.editando()) return;
