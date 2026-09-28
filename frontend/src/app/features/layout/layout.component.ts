@@ -6,6 +6,7 @@ import { interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { SelectorFotoComponent } from '../../core/components/selector-foto/selector-foto.component';
 import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
@@ -56,7 +57,8 @@ export class LayoutComponent implements OnInit {
     private fb: FormBuilder,
     private horasSrv: RegistroHorasService,
     private politicaPasswordSrv: PoliticaPasswordService,
-    private router: Router
+    private router: Router,
+    public theme: ThemeService
   ) {}
 
   get noLeidos() { return this.horasSrv.noLeidos; }

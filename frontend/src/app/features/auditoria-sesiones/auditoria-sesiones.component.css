@@ -12,7 +12,7 @@
 .mapa-modal-card {
   width: 100%;
   max-width: 560px;
-  background: var(--white);
+  background: var(--bg-surface);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   padding: 22px;
