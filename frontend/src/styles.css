@@ -568,6 +568,45 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   overflow: auto;
 }
 
+/* Variante compacta: ~5 filas visibles + scroll interno, con el
+   encabezado (incluida la fila de filtros) fijo mientras se recorre. */
+.table-wrap-compact {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.table-wrap-compact thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.table-wrap-compact thead tr.filter-row th {
+  top: 38px;
+}
+
+.row-clickable { cursor: pointer; }
+.row-selected { background: var(--teal-100) !important; }
+
+/* ---------- Tabs ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 4px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--text-body); }
+.tab-btn.active { color: var(--teal-600); border-bottom-color: var(--teal-600); }
+
 table.data-table {
   width: 100%;
   border-collapse: collapse;

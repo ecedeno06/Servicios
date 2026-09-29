@@ -5,6 +5,8 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { Categoria, Producto } from '../../core/models/models';
 
+type Pestana = 'categorias' | 'productos';
+
 @Component({
   selector: 'app-equipos',
   standalone: true,
@@ -13,12 +15,13 @@ import { Categoria, Producto } from '../../core/models/models';
   styleUrl: './equipos.component.css',
 })
 export class EquiposComponent implements OnInit {
+  pestanaActiva = signal<Pestana>('categorias');
+
   categorias = signal<Categoria[]>([]);
   productos = signal<Producto[]>([]);
 
   // ---------- Categorias ----------
-  panelCategoriaAbierto = signal(false);
-  editandoCategoria = signal<Categoria | null>(null);
+  categoriaSeleccionada = signal<Categoria | null>(null);
   filtroCategoria = signal('');
 
   formCategoria = this.fb.group({ nombre: ['', Validators.required] });
@@ -30,8 +33,7 @@ export class EquiposComponent implements OnInit {
   });
 
   // ---------- Productos ----------
-  panelProductoAbierto = signal(false);
-  editandoProducto = signal<Producto | null>(null);
+  productoSeleccionado = signal<Producto | null>(null);
   filtroProductoCategoria = signal('');
   filtroProductoNombre = signal('');
 
@@ -71,71 +73,71 @@ export class EquiposComponent implements OnInit {
     this.filtroProductoNombre.set('');
   }
 
-  // ---------- Categorias: acciones ----------
-  abrirNuevaCategoria(): void {
-    this.editandoCategoria.set(null);
-    this.formCategoria.reset();
-    this.panelCategoriaAbierto.set(true);
-  }
-
-  abrirEditarCategoria(c: Categoria): void {
-    this.editandoCategoria.set(c);
+  // ---------- Categorias: mantenimiento ----------
+  seleccionarCategoria(c: Categoria): void {
+    const yaSeleccionada = this.categoriaSeleccionada()?.id === c.id;
+    if (yaSeleccionada) { this.nuevaCategoria(); return; }
+    this.categoriaSeleccionada.set(c);
     this.formCategoria.reset({ nombre: c.nombre });
-    this.panelCategoriaAbierto.set(true);
   }
 
-  cerrarPanelCategoria(): void { this.panelCategoriaAbierto.set(false); }
+  nuevaCategoria(): void {
+    this.categoriaSeleccionada.set(null);
+    this.formCategoria.reset({ nombre: '' });
+  }
 
   guardarCategoria(): void {
     if (this.formCategoria.invalid) return;
     const data = this.formCategoria.getRawValue() as { nombre: string };
-    const actual = this.editandoCategoria();
+    const actual = this.categoriaSeleccionada();
     const req = actual ? this.categoriasSrv.actualizar(actual.id, data) : this.categoriasSrv.crear(data);
     req.subscribe({
-      next: () => { this.cerrarPanelCategoria(); this.cargarCategorias(); },
+      next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar la categoria'),
     });
   }
 
-  eliminarCategoria(c: Categoria): void {
-    if (!confirm(`Eliminar la categoria "${c.nombre}"? Esto falla si todavia tiene productos asociados.`)) return;
-    this.categoriasSrv.eliminar(c.id).subscribe({
-      next: () => this.cargarCategorias(),
+  eliminarCategoria(): void {
+    const actual = this.categoriaSeleccionada();
+    if (!actual) return;
+    if (!confirm(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`)) return;
+    this.categoriasSrv.eliminar(actual.id).subscribe({
+      next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
     });
   }
 
-  // ---------- Productos: acciones ----------
-  abrirNuevoProducto(): void {
-    this.editandoProducto.set(null);
-    this.formProducto.reset({ categoria_id: '', nombre: '' });
-    this.panelProductoAbierto.set(true);
-  }
-
-  abrirEditarProducto(p: Producto): void {
-    this.editandoProducto.set(p);
+  // ---------- Productos: mantenimiento ----------
+  seleccionarProducto(p: Producto): void {
+    const yaSeleccionado = this.productoSeleccionado()?.id === p.id;
+    if (yaSeleccionado) { this.nuevoProducto(); return; }
+    this.productoSeleccionado.set(p);
     this.formProducto.reset({ categoria_id: String(p.categoria_id), nombre: p.nombre });
-    this.panelProductoAbierto.set(true);
   }
 
-  cerrarPanelProducto(): void { this.panelProductoAbierto.set(false); }
+  nuevoProducto(): void {
+    this.productoSeleccionado.set(null);
+    this.formProducto.reset({ categoria_id: '', nombre: '' });
+  }
 
   guardarProducto(): void {
     if (this.formProducto.invalid) return;
     const raw = this.formProducto.getRawValue();
     const data = { categoria_id: Number(raw.categoria_id), nombre: raw.nombre! };
-    const actual = this.editandoProducto();
+    const actual = this.productoSeleccionado();
     const req = actual ? this.productosSrv.actualizar(actual.id, data) : this.productosSrv.crear(data);
     req.subscribe({
-      next: () => { this.cerrarPanelProducto(); this.cargarProductos(); },
+      next: () => { this.nuevoProducto(); this.cargarProductos(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el producto'),
     });
   }
 
-  eliminarProducto(p: Producto): void {
-    if (!confirm(`Eliminar el producto "${p.nombre}"?`)) return;
-    this.productosSrv.eliminar(p.id).subscribe({
-      next: () => this.cargarProductos(),
+  eliminarProducto(): void {
+    const actual = this.productoSeleccionado();
+    if (!actual) return;
+    if (!confirm(`Eliminar el producto "${actual.nombre}"?`)) return;
+    this.productosSrv.eliminar(actual.id).subscribe({
+      next: () => { this.nuevoProducto(); this.cargarProductos(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el producto'),
     });
   }
