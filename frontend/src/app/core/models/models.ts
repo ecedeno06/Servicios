@@ -64,6 +64,20 @@ export interface SesionAuditoria {
   activo: boolean;
 }
 
+// Catalogo global de equipos (no depende de empresa_id) -- ids numericos
+// (serial), a diferencia del resto del sistema que usa uuid.
+export interface Categoria {
+  id: number;
+  nombre: string;
+}
+
+export interface Producto {
+  id: number;
+  categoria_id: number;
+  nombre: string;
+  categoria_nombre?: string;
+}
+
 export interface UsuarioForm {
   nombre?: string;
   email: string;

@@ -9,5 +9,7 @@ router.use('/contratos', require('./contratos.routes'));
 router.use('/horas', require('./registroHoras.routes'));
 router.use('/politica-password', require('./politicaPassword.routes'));
 router.use('/auditoria', require('./auditoria.routes'));
+router.use('/categorias', require('./categorias.routes'));
+router.use('/productos', require('./productos.routes'));
 
 module.exports = router;

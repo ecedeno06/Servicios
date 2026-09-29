@@ -70,6 +70,9 @@
         </a>
       }
       @if (auth.esSuperAdmin()) {
+        @if (!sidebarColapsado()) {
+          <div class="nav-section-label">Configuracion</div>
+        }
         <a routerLink="/empresas" routerLinkActive="active" title="Empresas">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>
@@ -81,6 +84,12 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </span>
           <span class="nav-label">Politica de password</span>
+        </a>
+        <a routerLink="/equipos" routerLinkActive="active" title="Equipos">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </span>
+          <span class="nav-label">Equipos</span>
         </a>
       }
     </nav>

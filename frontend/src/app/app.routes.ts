@@ -17,6 +17,7 @@ import { UsuariosComponent } from './features/usuarios/usuarios.component';
 import { EmpresasComponent } from './features/empresas/empresas.component';
 import { PoliticaPasswordComponent } from './features/politica-password/politica-password.component';
 import { AuditoriaSesionesComponent } from './features/auditoria-sesiones/auditoria-sesiones.component';
+import { EquiposComponent } from './features/equipos/equipos.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
       { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [adminGuard] },
+      { path: 'equipos', component: EquiposComponent, canActivate: [superAdminGuard] },
     ],
   },
   { path: '**', redirectTo: '' },

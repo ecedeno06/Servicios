@@ -231,6 +231,15 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   display: none;
 }
 
+.nav-section-label {
+  padding: 14px 12px 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--slate-500);
+}
+
 .sidebar-nav a:hover { background: var(--slate-800); color: white; }
 .sidebar-nav a.active {
   background: var(--slate-800);
