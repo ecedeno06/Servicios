@@ -26,10 +26,32 @@ async function requireAuth(req, res, next) {
     // "bloquear usuario" desde Auditoria tengan efecto de inmediato, en
     // vez de esperar a que el JWT expire solo.
     if (!payload.parcial) {
-      const { rows } = await pool.query('select activo from sesiones where token = $1', [token]);
-      if (!rows[0] || !rows[0].activo) {
+      const { rows } = await pool.query('select activo, ultima_actividad from sesiones where token = $1', [token]);
+      const sesion = rows[0];
+      if (!sesion || !sesion.activo) {
         return res.status(401).json({ mensaje: 'La sesion fue cerrada. Vuelve a iniciar sesion.' });
       }
+
+      // El temporizador de inactividad es del cliente (JS en el
+      // navegador) -- si se cierra la pestana, se pierde la red o la
+      // maquina se suspende antes de que ese JS pueda avisarle al
+      // backend, la fila se quedaba "activo = true" para siempre (ver
+      // migracion 020). Esto la cierra de verdad la proxima vez que se
+      // intente usar ese token, usando el mismo limite configurable que
+      // usa el cliente.
+      const inactivityLimitMs = (Number(process.env.SESSION_INACTIVITY_LIMIT_MINUTES) || 15) * 60 * 1000;
+      if (Date.now() - new Date(sesion.ultima_actividad).getTime() > inactivityLimitMs) {
+        await pool.query(
+          `update sesiones set activo = false, razon_salida = 'inactividad',
+             duracion_segundos = extract(epoch from (ultima_actividad - creado_en))::integer
+           where token = $1`,
+          [token]
+        );
+        return res.status(401).json({ mensaje: 'La sesion se cerro por inactividad. Vuelve a iniciar sesion.' });
+      }
+
+      // Best-effort, no bloquea la respuesta si falla.
+      pool.query('update sesiones set ultima_actividad = now() where token = $1', [token]).catch(() => {});
     }
 
     if (payload.debe_cambiar_password) {

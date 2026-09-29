@@ -10,12 +10,15 @@ function puedeVerAuditoria(req) {
 /**
  * GET /api/auditoria/sesiones?desde=&hasta=&usuario=
  *
- * Como no hay un job que cierre sesiones cuando el JWT simplemente expira
- * sin que el usuario haga logout explicito, se calculan 3 situaciones
- * posibles en vez de confiar solo en las columnas guardadas:
- *   1) activo = false             -> ya se cerro, se usa razon_salida/duracion_segundos tal cual.
- *   2) activo = true, sin expirar -> sesion todavia en curso.
- *   3) activo = true, expirada    -> quedo abandonada (nadie hizo logout) antes de vencer.
+ * requireAuth ya cierra de verdad una sesion inactiva (activo = false) la
+ * proxima vez que alguien intenta usar su token (ver migracion 020), pero
+ * una sesion abandonada (navegador cerrado) puede no volver a intentarlo
+ * nunca -- por eso aqui se calculan 4 situaciones en vez de confiar solo
+ * en las columnas guardadas:
+ *   1) activo = false                          -> ya se cerro, se usa razon_salida/duracion_segundos tal cual.
+ *   2) activo = true, inactiva hace mas del limite configurado -> abandonada, se muestra como cerrada por inactividad aunque nadie la haya cerrado todavia.
+ *   3) activo = true, dentro del limite pero con el JWT ya vencido -> quedo abandonada (nadie hizo logout) antes de vencer.
+ *   4) activo = true, dentro del limite y sin vencer -> sesion todavia en curso.
  *
  * Un 'admin' (no super-admin) solo ve las sesiones de su propia empresa.
  */
@@ -25,9 +28,10 @@ async function listarSesiones(req, res, next) {
       return res.status(403).json({ mensaje: 'No tienes permiso para consultar la auditoria de sesiones' });
     }
 
+    const inactivityLimitMin = Number(process.env.SESSION_INACTIVITY_LIMIT_MINUTES) || 15;
     const { desde, hasta, usuario } = req.query;
     const condiciones = [];
-    const valores = [req.token];
+    const valores = [req.token, inactivityLimitMin];
 
     if (!req.usuario.es_super_admin) {
       valores.push(req.usuario.empresa_id);
@@ -65,16 +69,21 @@ async function listarSesiones(req, res, next) {
          (s.token = $1) as es_sesion_actual,
          s.creado_en as login_en,
          s.activo,
-         case when s.activo = false
-           then s.creado_en + (coalesce(s.duracion_segundos, 0) || ' seconds')::interval
+         case
+           when s.activo = false
+             then s.creado_en + (coalesce(s.duracion_segundos, 0) || ' seconds')::interval
+           when now() - s.ultima_actividad > ($2 * interval '1 minute') then s.ultima_actividad
          end as logout_en,
          case
            when s.activo = false then s.duracion_segundos
+           when now() - s.ultima_actividad > ($2 * interval '1 minute')
+             then extract(epoch from (s.ultima_actividad - s.creado_en))::integer
            when s.expira_en <= now() then extract(epoch from (s.expira_en - s.creado_en))::integer
            else extract(epoch from (now() - s.creado_en))::integer
          end as duracion_segundos,
          case
            when s.activo = false then coalesce(s.razon_salida, 'logout_usuario')
+           when now() - s.ultima_actividad > ($2 * interval '1 minute') then 'inactividad'
            when s.expira_en <= now() then 'expirada_sin_cerrar'
            else 'en_curso'
          end as motivo_salida

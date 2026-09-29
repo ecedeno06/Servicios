@@ -114,7 +114,12 @@ create table if not exists sesiones (
     geo_lat            double precision,
     geo_lon            double precision,
     creado_en          timestamptz not null default now(),
-    expira_en          timestamptz not null
+    expira_en          timestamptz not null,
+    -- Ultima peticion autenticada real de esta sesion (requireAuth la
+    -- actualiza en cada request). Permite detectar/cerrar una sesion
+    -- abandonada (navegador cerrado, sin red) por inactividad real sin
+    -- esperar a que el JWT expire solo.
+    ultima_actividad   timestamptz not null default now()
 );
 
 create index if not exists idx_sesiones_usuario on sesiones(usuario_id);

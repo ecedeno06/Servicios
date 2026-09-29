@@ -7,11 +7,14 @@
   gap: 10px;
 }
 
+/* column, no row: si fuera row (flex-wrap) la observacion de abajo
+   quedaria como un elemento mas en la misma linea (a la derecha de
+   "por Fulano"), en vez de en su propia linea alineada a la izquierda. */
 .historial-lista li {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border-subtle);
 }
