@@ -1,0 +1,119 @@
+<div class="page-header">
+  <div>
+    <h1>Equipos asignados</h1>
+    <div class="desc">Inventario de equipos de esta empresa: estado, vida util y a quien estan asignados</div>
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="desc">{{ equiposFiltrados().length }} de {{ equipos().length }} equipo(s). Haz clic en una fila para editarla.</div>
+  @if (hayFiltros()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Limpiar filtros</button> }
+</div>
+
+<div class="table-wrap table-wrap-compact">
+  <table class="data-table">
+    <thead>
+      <tr><th>Categoria</th><th>Marca / Modelo</th><th>Estado</th><th>Asignado a</th><th>Entrada</th><th>Vida util</th></tr>
+      <tr class="filter-row">
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)" /></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of equiposFiltrados(); track e.id) {
+        <tr class="row-clickable" [class.row-selected]="seleccionado()?.id === e.id" (click)="seleccionar(e)">
+          <td>{{ e.categoria_nombre }}</td>
+          <td>{{ e.marca }} {{ e.modelo }}</td>
+          <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
+          <td>{{ e.asignada_a || '-' }}</td>
+          <td>{{ e.fecha_entrada | date:'dd/MM/yyyy' }}</td>
+          <td>{{ e.vida_util_meses ? e.vida_util_meses + ' m' : '-' }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="card mt-16">
+  <h2>{{ seleccionado() ? 'Editar equipo' : 'Nuevo equipo' }}</h2>
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
+          <option value="" disabled>Selecciona una categoria</option>
+          @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Producto *</label>
+        <select class="input" formControlName="producto_id" (change)="onProductoChange()">
+          <option value="" disabled>Selecciona un producto</option>
+          @for (p of productosDeCategoria(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-grid mt-16">
+      <div class="form-group">
+        <label>Marca *</label>
+        <input class="input" formControlName="marca" />
+      </div>
+      <div class="form-group">
+        <label>Modelo *</label>
+        <input class="input" formControlName="modelo" />
+      </div>
+    </div>
+
+    <div class="form-grid mt-16">
+      <div class="form-group">
+        <label>Fecha de entrada *</label>
+        <input class="input" type="date" formControlName="fecha_entrada" />
+      </div>
+      <div class="form-group">
+        <label>Vida util (meses)</label>
+        <input class="input" type="number" min="1" formControlName="vida_util_meses" />
+      </div>
+      <div class="form-group">
+        <label>Estado *</label>
+        <select class="input" formControlName="estado">
+          @for (op of estados; track op.valor) { <option [value]="op.valor">{{ op.etiqueta }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group mt-16">
+      <label>Asignado a</label>
+      <input class="input" formControlName="asignada_a" placeholder="Nombre de la persona, area o ubicacion" />
+      <div class="hint">Usualmente se completa cuando el estado es "En uso".</div>
+    </div>
+
+    <div class="form-group mt-16">
+      <label>Observacion</label>
+      <textarea class="input" rows="2" formControlName="observacion"></textarea>
+    </div>
+
+    @if (seleccionado(); as s) {
+      <div class="text-muted text-sm mt-8">
+        Creado por {{ s.creado_por_nombre }} el {{ s.created_at | date:'dd/MM/yyyy HH:mm' }}
+        @if (s.modificado_por_nombre) {
+          &middot; Modificado por {{ s.modificado_por_nombre }} el {{ s.updated_at | date:'dd/MM/yyyy HH:mm' }}
+        }
+      </div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
+      @if (seleccionado()) {
+        <button type="button" class="btn btn-danger" (click)="eliminar()">Eliminar</button>
+        <button type="button" class="btn btn-outline" (click)="nuevo()">Nuevo equipo</button>
+      }
+    </div>
+  </form>
+</div>

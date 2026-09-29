@@ -800,6 +800,34 @@ join categorias c on c.nombre = v.categoria
 on conflict (categoria_id, nombre) do nothing;
 
 -- ---------------------------------------------------------
+-- Tabla: equipos_asignados -- tabla intermedia entre el catalogo global
+-- de productos y empresas. Registra cada unidad fisica de equipo que una
+-- empresa tiene, con su estado y a quien esta asignada.
+-- ---------------------------------------------------------
+create table if not exists equipos_asignados (
+    id                uuid primary key default gen_random_uuid(),
+    empresa_id        uuid not null references empresas(id) on delete cascade,
+    producto_id       integer not null references productos(id) on delete restrict,
+    marca             text not null,
+    modelo            text not null,
+    fecha_entrada     date not null default current_date,
+    vida_util_meses   integer check (vida_util_meses is null or vida_util_meses > 0),
+    estado            text not null default 'stock' check (estado in ('en_uso', 'stock', 'reparacion', 'descarte', 'vendida')),
+    asignada_a        text,
+    observacion       text,
+    creado_por        uuid not null references usuarios(id),
+    modificado_por    uuid references usuarios(id),
+    created_at        timestamptz not null default now(),
+    updated_at        timestamptz not null default now()
+);
+
+create index if not exists idx_equipos_asignados_empresa on equipos_asignados(empresa_id);
+create index if not exists idx_equipos_asignados_producto on equipos_asignados(producto_id);
+
+drop trigger if exists trg_set_updated_at on equipos_asignados;
+create trigger trg_set_updated_at before update on equipos_asignados for each row execute function set_updated_at();
+
+-- ---------------------------------------------------------
 -- Nota sobre RLS (Row Level Security):
 -- Este proyecto usa un backend Node.js/Express que se conecta
 -- con la cadena de conexion directa de Postgres (o el rol de

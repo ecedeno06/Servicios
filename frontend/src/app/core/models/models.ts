@@ -78,6 +78,31 @@ export interface Producto {
   categoria_nombre?: string;
 }
 
+export type EstadoEquipo = 'en_uso' | 'stock' | 'reparacion' | 'descarte' | 'vendida';
+
+// Tabla intermedia entre el catalogo global (categorias/productos) y una
+// empresa: cada unidad fisica de equipo que la empresa tiene.
+export interface EquipoAsignado {
+  id: string;
+  empresa_id: string;
+  producto_id: number;
+  producto_nombre: string;
+  categoria_nombre: string;
+  marca: string;
+  modelo: string;
+  fecha_entrada: string;
+  vida_util_meses: number | null;
+  estado: EstadoEquipo;
+  asignada_a: string | null;
+  observacion: string | null;
+  creado_por: string;
+  creado_por_nombre: string;
+  modificado_por: string | null;
+  modificado_por_nombre: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UsuarioForm {
   nombre?: string;
   email: string;

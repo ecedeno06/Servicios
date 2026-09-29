@@ -18,6 +18,7 @@ import { EmpresasComponent } from './features/empresas/empresas.component';
 import { PoliticaPasswordComponent } from './features/politica-password/politica-password.component';
 import { AuditoriaSesionesComponent } from './features/auditoria-sesiones/auditoria-sesiones.component';
 import { EquiposComponent } from './features/equipos/equipos.component';
+import { EquiposAsignadosComponent } from './features/equipos-asignados/equipos-asignados.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: 'horas', component: RegistroHorasComponent },
       { path: 'reportes', component: ReporteHorasComponent, canActivate: [noClienteGuard] },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [noClienteGuard] },
+      { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [noClienteGuard] },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
       { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [adminGuard] },
