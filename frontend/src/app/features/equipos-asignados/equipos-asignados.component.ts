@@ -30,6 +30,27 @@ export class EquiposAsignadosComponent implements OnInit {
 
   seleccionado = signal<EquipoAsignado | null>(null);
   historial = signal<MovimientoEquipo[]>([]);
+  filtroHistorial = signal('');
+
+  historialFiltrado = computed(() => {
+    const f = this.filtroHistorial().trim().toLowerCase();
+    if (!f) return this.historial();
+    return this.historial().filter((m) =>
+      this.etiquetaEstado(m.estado_nuevo).toLowerCase().includes(f) ||
+      (m.estado_anterior && this.etiquetaEstado(m.estado_anterior).toLowerCase().includes(f)) ||
+      (m.asignada_a ?? '').toLowerCase().includes(f) ||
+      (m.observacion ?? '').toLowerCase().includes(f) ||
+      m.registrado_por_nombre.toLowerCase().includes(f)
+    );
+  });
+
+  // Popup de cambio rapido de estado desde el boton-icono de una fila.
+  accionPendiente = signal<{ equipo: EquipoAsignado; estado: EstadoEquipo } | null>(null);
+  guardandoAccion = signal(false);
+  formMovimiento = this.fb.group({
+    asignada_a: [''],
+    observacion: [''],
+  });
 
   // Filtros por columna
   filtroCategoria = signal('');
@@ -138,6 +159,13 @@ export class EquiposAsignadosComponent implements OnInit {
   seleccionar(e: EquipoAsignado): void {
     const yaSeleccionado = this.seleccionado()?.id === e.id;
     if (yaSeleccionado) { this.nuevo(); return; }
+    this.abrirParaEditar(e);
+  }
+
+  // Separado de seleccionar() para poder refrescar el formulario y el
+  // historico de un equipo que YA esta abierto (ej. tras cambiarle el
+  // estado desde el boton-icono) sin disparar el "toggle" que lo cerraria.
+  private abrirParaEditar(e: EquipoAsignado): void {
     this.seleccionado.set(e);
     const catId = this.productos().find((p) => p.id === e.producto_id)?.categoria_id ?? null;
     this.categoriaIdForm.set(catId);
@@ -194,6 +222,50 @@ export class EquiposAsignadosComponent implements OnInit {
     this.srv.eliminar(actual.id).subscribe({
       next: () => { this.nuevo(); this.cargar(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el equipo'),
+    });
+  }
+
+  // ---------- Cambio rapido de estado (boton-icono por fila) ----------
+  abrirAccion(e: EquipoAsignado, estado: EstadoEquipo): void {
+    this.accionPendiente.set({ equipo: e, estado });
+    // Si ya estaba asignado (ej. reasignar sin cambiar de "En uso" a otra
+    // cosa), se precarga el nombre actual para editarlo en vez de partir
+    // de cero.
+    this.formMovimiento.reset({ asignada_a: estado === 'en_uso' ? (e.asignada_a ?? '') : '', observacion: '' });
+  }
+
+  cerrarAccion(): void {
+    if (this.guardandoAccion()) return;
+    this.accionPendiente.set(null);
+  }
+
+  confirmarAccion(): void {
+    const pendiente = this.accionPendiente();
+    if (!pendiente) return;
+    const { asignada_a, observacion } = this.formMovimiento.getRawValue();
+    if (pendiente.estado === 'en_uso' && !asignada_a?.trim()) {
+      alert('Debes indicar a quien se asigna el equipo.');
+      return;
+    }
+
+    this.guardandoAccion.set(true);
+    this.srv.cambiarEstado(pendiente.equipo.id, {
+      estado: pendiente.estado,
+      asignada_a: asignada_a?.trim() || undefined,
+      observacion: observacion?.trim() || undefined,
+    }).subscribe({
+      next: (actualizado) => {
+        this.guardandoAccion.set(false);
+        this.accionPendiente.set(null);
+        this.cargar();
+        // Si el equipo afectado es el que esta abierto en el formulario de
+        // mantenimiento, se refresca tambien (estado/asignada_a/historico).
+        if (this.seleccionado()?.id === actualizado.id) this.abrirParaEditar(actualizado);
+      },
+      error: (err) => {
+        this.guardandoAccion.set(false);
+        alert(err?.error?.mensaje || 'No se pudo cambiar el estado');
+      },
     });
   }
 }

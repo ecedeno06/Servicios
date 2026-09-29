@@ -584,7 +584,18 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 
 .row-clickable { cursor: pointer; }
+/* Texto oscuro fijo, no var(--text-body): ese token es claro en modo
+   oscuro y quedaria ilegible contra el chip de teal claro de abajo. Los
+   botones-icono tienen su propio color (var(--text-body)) que no hereda
+   del td, asi que tambien hay que fijarlo o quedan invisibles (icono
+   claro sobre el mismo fondo teal claro). */
 .row-selected { background: var(--teal-100) !important; }
+.row-selected td { color: var(--slate-900) !important; }
+.row-selected .btn-icon:not(.btn-icon-danger) {
+  color: var(--slate-900);
+  border-color: var(--slate-300);
+}
+.row-selected .btn-icon:not(.btn-icon-danger):hover { background: rgba(13, 148, 136, 0.18); }
 
 /* ---------- Tabs ---------- */
 .tabs {
@@ -756,6 +767,24 @@ table.data-table {
 .drawer-header button.close {
   background: none; border: none; cursor: pointer;
   font-size: 18px; color: var(--text-muted);
+}
+
+/* Modal centrado (popup chico), a diferencia del drawer que sale desde la
+   derecha -- para confirmaciones o formularios cortos. */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 60;
+  padding: 16px;
+}
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  padding: 22px;
 }
 
 /* ---------- Login ---------- */

@@ -111,6 +111,52 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+const ESTADOS_VALIDOS = ['en_uso', 'stock', 'reparacion', 'descarte', 'vendida'];
+
+// POST /api/equipos-asignados/:id/movimiento  { estado, asignada_a?, observacion? }
+// Cambio rapido de estado desde el boton-icono de la fila (sin pasar por
+// el formulario completo). asignada_a solo tiene sentido para 'en_uso' --
+// para el resto de los estados se limpia. observacion es la nota de ESE
+// movimiento puntual (queda en el historico, no en el equipo).
+async function cambiarEstado(req, res, next) {
+  try {
+    const { estado, asignada_a, observacion } = req.body;
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+      return res.status(400).json({ mensaje: 'Estado invalido' });
+    }
+    if (estado === 'en_uso' && !asignada_a?.trim()) {
+      return res.status(400).json({ mensaje: 'Asignado a es requerido para pasar a "En uso"' });
+    }
+
+    const { rows: actual } = await pool.query(
+      'select estado from equipos_asignados where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+    const estadoAnterior = actual[0].estado;
+
+    const asignadaFinal = estado === 'en_uso' ? asignada_a.trim() : null;
+
+    const { rows } = await pool.query(
+      `update equipos_asignados set estado = $1, asignada_a = $2, modificado_por = $3
+       where id = $4 and empresa_id = $5
+       returning id`,
+      [estado, asignadaFinal, req.usuario.id, req.params.id, req.empresaId]
+    );
+
+    if (estado !== estadoAnterior) {
+      await pool.query(
+        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, observacion, registrado_por)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [req.params.id, estadoAnterior, estado, asignadaFinal, observacion?.trim() || null, req.usuario.id]
+      );
+    }
+
+    const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
 // GET /api/equipos-asignados/:id/historial
 async function historial(req, res, next) {
   try {
@@ -132,4 +178,4 @@ async function historial(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, crear, actualizar, eliminar, historial };
+module.exports = { listar, crear, actualizar, eliminar, historial, cambiarEstado };

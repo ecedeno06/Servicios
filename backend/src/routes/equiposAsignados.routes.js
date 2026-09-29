@@ -12,5 +12,6 @@ router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);
 router.delete('/:id', ctrl.eliminar);
 router.get('/:id/historial', ctrl.historial);
+router.post('/:id/movimiento', ctrl.cambiarEstado);
 
 module.exports = router;
