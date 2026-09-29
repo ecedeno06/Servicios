@@ -117,3 +117,32 @@
     </div>
   </form>
 </div>
+
+@if (seleccionado()) {
+  <div class="card mt-16">
+    <h2>Historico de movimientos</h2>
+    @if (historial().length === 0) {
+      <p class="text-muted text-sm">Sin movimientos registrados.</p>
+    } @else {
+      <ul class="historial-lista">
+        @for (m of historial(); track m.id) {
+          <li>
+            <span class="text-muted text-sm">{{ m.fecha_cambio | date:'dd/MM/yyyy HH:mm' }}</span>
+            &middot;
+            @if (m.estado_anterior) {
+              <span class="badge" [class]="claseEstado(m.estado_anterior)">{{ etiquetaEstado(m.estado_anterior) }}</span>
+              <span class="text-muted">&rarr;</span>
+            } @else {
+              <span class="text-muted text-sm">Alta:</span>
+            }
+            <span class="badge" [class]="claseEstado(m.estado_nuevo)">{{ etiquetaEstado(m.estado_nuevo) }}</span>
+            @if (m.asignada_a) {
+              <span class="text-muted text-sm">asignado a {{ m.asignada_a }}</span>
+            }
+            <span class="text-muted text-sm">&middot; por {{ m.registrado_por_nombre }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

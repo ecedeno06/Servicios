@@ -30,13 +30,22 @@ async function crear(req, res, next) {
     if (!producto_id || !marca || !modelo) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
     }
+    const estadoFinal = estado || 'stock';
     const { rows } = await pool.query(
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, coalesce($7, 'stock'), $8, $9, $10)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10)
        returning id`,
-      [req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignada_a || null, observacion || null, req.usuario.id]
+      [req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null, req.usuario.id]
     );
+
+    // Primer movimiento del historico: sin estado anterior.
+    await pool.query(
+      `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, registrado_por)
+       values ($1, null, $2, $3, $4)`,
+      [rows[0].id, estadoFinal, asignada_a || null, req.usuario.id]
+    );
+
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
     res.status(201).json(completo[0]);
   } catch (err) { next(err); }
@@ -52,6 +61,14 @@ async function actualizar(req, res, next) {
     if (!producto_id || !marca || !modelo || !estado) {
       return res.status(400).json({ mensaje: 'producto_id, marca, modelo y estado son requeridos' });
     }
+
+    const { rows: actual } = await pool.query(
+      'select estado from equipos_asignados where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+    const estadoAnterior = actual[0].estado;
+
     const { rows } = await pool.query(
       `update equipos_asignados set
          producto_id = $1,
@@ -67,7 +84,17 @@ async function actualizar(req, res, next) {
        returning id`,
       [producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignada_a || null, observacion || null, req.usuario.id, req.params.id, req.empresaId]
     );
-    if (!rows[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    // Un movimiento nuevo en el historico solo si el estado realmente
+    // cambio (editar otros campos, como observacion, no genera uno).
+    if (estado !== estadoAnterior) {
+      await pool.query(
+        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, registrado_por)
+         values ($1, $2, $3, $4, $5)`,
+        [req.params.id, estadoAnterior, estado, asignada_a || null, req.usuario.id]
+      );
+    }
+
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
     res.json(completo[0]);
   } catch (err) { next(err); }
@@ -84,4 +111,25 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, crear, actualizar, eliminar };
+// GET /api/equipos-asignados/:id/historial
+async function historial(req, res, next) {
+  try {
+    const { rows: equipo } = await pool.query(
+      'select id from equipos_asignados where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!equipo[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rows } = await pool.query(
+      `select h.*, u.nombre as registrado_por_nombre
+       from equipos_historial h
+       join usuarios u on u.id = h.registrado_por
+       where h.equipo_asignado_id = $1
+       order by h.fecha_cambio desc`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+module.exports = { listar, crear, actualizar, eliminar, historial };

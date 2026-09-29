@@ -11,5 +11,6 @@ router.get('/', ctrl.listar);
 router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);
 router.delete('/:id', ctrl.eliminar);
+router.get('/:id/historial', ctrl.historial);
 
 module.exports = router;

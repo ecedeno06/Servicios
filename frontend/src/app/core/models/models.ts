@@ -103,6 +103,21 @@ export interface EquipoAsignado {
   updated_at: string;
 }
 
+// Un movimiento del historico de un equipo (cambio de estado). Se genera
+// solo, desde el backend, al crear el equipo (estado_anterior = null) y
+// cada vez que el estado cambia al editarlo.
+export interface MovimientoEquipo {
+  id: string;
+  equipo_asignado_id: string;
+  estado_anterior: EstadoEquipo | null;
+  estado_nuevo: EstadoEquipo;
+  asignada_a: string | null;
+  observacion: string | null;
+  registrado_por: string;
+  registrado_por_nombre: string;
+  fecha_cambio: string;
+}
+
 export interface UsuarioForm {
   nombre?: string;
   email: string;

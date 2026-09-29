@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { EquiposAsignadosService } from '../../core/services/equipos-asignados.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
-import { Categoria, EquipoAsignado, EstadoEquipo, Producto } from '../../core/models/models';
+import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Producto } from '../../core/models/models';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -29,6 +29,7 @@ export class EquiposAsignadosComponent implements OnInit {
   productos = signal<Producto[]>([]);
 
   seleccionado = signal<EquipoAsignado | null>(null);
+  historial = signal<MovimientoEquipo[]>([]);
 
   // Filtros por columna
   filtroCategoria = signal('');
@@ -151,11 +152,17 @@ export class EquiposAsignadosComponent implements OnInit {
       asignada_a: e.asignada_a ?? '',
       observacion: e.observacion ?? '',
     });
+    this.cargarHistorial(e.id);
+  }
+
+  cargarHistorial(id: string): void {
+    this.srv.historial(id).subscribe((data) => this.historial.set(data));
   }
 
   nuevo(): void {
     this.seleccionado.set(null);
     this.categoriaIdForm.set(null);
+    this.historial.set([]);
     this.form.reset({ categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '', estado: 'stock', asignada_a: '', observacion: '' });
   }
 

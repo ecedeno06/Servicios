@@ -828,6 +828,25 @@ drop trigger if exists trg_set_updated_at on equipos_asignados;
 create trigger trg_set_updated_at before update on equipos_asignados for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------
+-- Tabla: equipos_historial -- historico de cambios de estado de un
+-- equipo asignado. Se llena desde el backend (no con un trigger): un
+-- movimiento al crear el equipo, y uno nuevo cada vez que el estado
+-- cambia al editarlo.
+-- ---------------------------------------------------------
+create table if not exists equipos_historial (
+    id                  uuid primary key default gen_random_uuid(),
+    equipo_asignado_id  uuid not null references equipos_asignados(id) on delete cascade,
+    estado_anterior     text,
+    estado_nuevo        text not null,
+    asignada_a          text,
+    observacion         text,
+    registrado_por      uuid not null references usuarios(id),
+    fecha_cambio        timestamptz not null default now()
+);
+
+create index if not exists idx_equipos_historial_equipo on equipos_historial(equipo_asignado_id);
+
+-- ---------------------------------------------------------
 -- Nota sobre RLS (Row Level Security):
 -- Este proyecto usa un backend Node.js/Express que se conecta
 -- con la cadena de conexion directa de Postgres (o el rol de
