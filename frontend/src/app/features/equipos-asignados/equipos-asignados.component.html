@@ -112,6 +112,40 @@
       <div class="hint">Usualmente se completa cuando el estado es "En uso".</div>
     </div>
 
+    <h3 class="mt-16">Especificaciones tecnicas</h3>
+    <div class="form-grid mt-16">
+      <div class="form-group">
+        <label>Procesador</label>
+        <select class="input" formControlName="procesador_id">
+          <option value="">Sin especificar</option>
+          @for (p of procesadores(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Memoria RAM</label>
+        <input class="input" formControlName="memoria_ram" placeholder="Ej: 16GB" />
+      </div>
+      <div class="form-group">
+        <label>Disco duro</label>
+        <input class="input" formControlName="disco_duro" placeholder="Ej: 512GB SSD" />
+      </div>
+    </div>
+
+    <div class="form-grid mt-16">
+      <div class="form-group">
+        <label>Numero de serie</label>
+        <input class="input" formControlName="numero_serie" />
+      </div>
+      <div class="form-group">
+        <label>Numero de puertos</label>
+        <input class="input" type="number" min="0" formControlName="numero_puertos" />
+      </div>
+      <div class="form-group">
+        <label>Puertos HDMI</label>
+        <input class="input" type="number" min="0" formControlName="numero_puertos_hdmi" />
+      </div>
+    </div>
+
     <div class="form-group mt-16">
       <label>Observacion</label>
       <textarea class="input" rows="2" formControlName="observacion"></textarea>

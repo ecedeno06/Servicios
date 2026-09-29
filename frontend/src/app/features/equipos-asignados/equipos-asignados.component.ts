@@ -4,7 +4,8 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { EquiposAsignadosService } from '../../core/services/equipos-asignados.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
-import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Producto } from '../../core/models/models';
+import { ProcesadoresService } from '../../core/services/procesadores.service';
+import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Procesador, Producto } from '../../core/models/models';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -27,6 +28,7 @@ export class EquiposAsignadosComponent implements OnInit {
   equipos = signal<EquipoAsignado[]>([]);
   categorias = signal<Categoria[]>([]);
   productos = signal<Producto[]>([]);
+  procesadores = signal<Procesador[]>([]);
 
   seleccionado = signal<EquipoAsignado | null>(null);
   historial = signal<MovimientoEquipo[]>([]);
@@ -84,6 +86,12 @@ export class EquiposAsignadosComponent implements OnInit {
     estado: ['stock' as EstadoEquipo, Validators.required],
     asignada_a: [''],
     observacion: [''],
+    procesador_id: [''],
+    memoria_ram: [''],
+    disco_duro: [''],
+    numero_serie: [''],
+    numero_puertos: [''],
+    numero_puertos_hdmi: [''],
   });
 
   // Senal propia (no el FormControl.value directo, que no es una senal y
@@ -101,13 +109,15 @@ export class EquiposAsignadosComponent implements OnInit {
     private fb: FormBuilder,
     private srv: EquiposAsignadosService,
     private categoriasSrv: CategoriasService,
-    private productosSrv: ProductosService
+    private productosSrv: ProductosService,
+    private procesadoresSrv: ProcesadoresService
   ) {}
 
   ngOnInit(): void {
     this.cargar();
     this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data));
     this.productosSrv.listar().subscribe((data) => this.productos.set(data));
+    this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data));
   }
 
   // Disparado solo por la interaccion real del usuario con el <select>
@@ -179,6 +189,12 @@ export class EquiposAsignadosComponent implements OnInit {
       estado: e.estado,
       asignada_a: e.asignada_a ?? '',
       observacion: e.observacion ?? '',
+      procesador_id: e.procesador_id != null ? String(e.procesador_id) : '',
+      memoria_ram: e.memoria_ram ?? '',
+      disco_duro: e.disco_duro ?? '',
+      numero_serie: e.numero_serie ?? '',
+      numero_puertos: e.numero_puertos != null ? String(e.numero_puertos) : '',
+      numero_puertos_hdmi: e.numero_puertos_hdmi != null ? String(e.numero_puertos_hdmi) : '',
     });
     this.cargarHistorial(e.id);
   }
@@ -191,7 +207,11 @@ export class EquiposAsignadosComponent implements OnInit {
     this.seleccionado.set(null);
     this.categoriaIdForm.set(null);
     this.historial.set([]);
-    this.form.reset({ categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '', estado: 'stock', asignada_a: '', observacion: '' });
+    this.form.reset({
+      categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
+      estado: 'stock', asignada_a: '', observacion: '',
+      procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
+    });
   }
 
   guardar(): void {
@@ -206,6 +226,12 @@ export class EquiposAsignadosComponent implements OnInit {
       estado: raw.estado,
       asignada_a: raw.asignada_a?.trim() || null,
       observacion: raw.observacion?.trim() || null,
+      procesador_id: raw.procesador_id ? Number(raw.procesador_id) : null,
+      memoria_ram: raw.memoria_ram?.trim() || null,
+      disco_duro: raw.disco_duro?.trim() || null,
+      numero_serie: raw.numero_serie?.trim() || null,
+      numero_puertos: raw.numero_puertos !== '' && raw.numero_puertos != null ? Number(raw.numero_puertos) : null,
+      numero_puertos_hdmi: raw.numero_puertos_hdmi !== '' && raw.numero_puertos_hdmi != null ? Number(raw.numero_puertos_hdmi) : null,
     };
     const actual = this.seleccionado();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);

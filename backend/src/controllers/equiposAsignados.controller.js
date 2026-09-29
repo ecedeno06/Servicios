@@ -5,11 +5,13 @@ const SELECT_BASE = `
     ea.*,
     p.nombre as producto_nombre,
     c.nombre as categoria_nombre,
+    pr.nombre as procesador_nombre,
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre
   from equipos_asignados ea
   join productos p on p.id = ea.producto_id
   join categorias c on c.id = p.categoria_id
+  left join procesadores pr on pr.id = ea.procesador_id
   join usuarios uc on uc.id = ea.creado_por
   left join usuarios um on um.id = ea.modificado_por
 `;
@@ -26,17 +28,25 @@ async function listar(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion } = req.body;
+    const {
+      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
+      procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
+    } = req.body;
     if (!producto_id || !marca || !modelo) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
     }
     const estadoFinal = estado || 'stock';
     const { rows } = await pool.query(
       `insert into equipos_asignados
-         (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10)
+         (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
+          procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi, creado_por)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        returning id`,
-      [req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null, req.usuario.id]
+      [
+        req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
+        procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
+        req.usuario.id,
+      ]
     );
 
     // Primer movimiento del historico: sin estado anterior.
@@ -57,7 +67,10 @@ async function crear(req, res, next) {
 // observacion con null cuando el usuario los deja vacios.
 async function actualizar(req, res, next) {
   try {
-    const { producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion } = req.body;
+    const {
+      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
+      procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
+    } = req.body;
     if (!producto_id || !marca || !modelo || !estado) {
       return res.status(400).json({ mensaje: 'producto_id, marca, modelo y estado son requeridos' });
     }
@@ -79,10 +92,20 @@ async function actualizar(req, res, next) {
          estado = $6,
          asignada_a = $7,
          observacion = $8,
-         modificado_por = $9
-       where id = $10 and empresa_id = $11
+         procesador_id = $9,
+         memoria_ram = $10,
+         disco_duro = $11,
+         numero_serie = $12,
+         numero_puertos = $13,
+         numero_puertos_hdmi = $14,
+         modificado_por = $15
+       where id = $16 and empresa_id = $17
        returning id`,
-      [producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignada_a || null, observacion || null, req.usuario.id, req.params.id, req.empresaId]
+      [
+        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignada_a || null, observacion || null,
+        procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
+        req.usuario.id, req.params.id, req.empresaId,
+      ]
     );
 
     // Un movimiento nuevo en el historico solo si el estado realmente

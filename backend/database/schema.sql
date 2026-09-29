@@ -800,29 +800,62 @@ join categorias c on c.nombre = v.categoria
 on conflict (categoria_id, nombre) do nothing;
 
 -- ---------------------------------------------------------
+-- Tabla: procesadores -- catalogo global de tipos de CPU, administrado
+-- igual que categorias/productos. Se usa en las especificaciones
+-- tecnicas de un equipo asignado.
+-- ---------------------------------------------------------
+create table if not exists procesadores (
+    id      serial primary key,
+    nombre  varchar(100) not null unique
+);
+
+insert into procesadores (nombre) values
+    ('Intel Core i3'),
+    ('Intel Core i5'),
+    ('Intel Core i7'),
+    ('Intel Core i9'),
+    ('AMD Ryzen 5'),
+    ('AMD Ryzen 7'),
+    ('AMD Ryzen 9'),
+    ('Apple M1'),
+    ('Apple M2'),
+    ('Apple M3'),
+    ('Apple M4'),
+    ('Apple M5')
+on conflict (nombre) do nothing;
+
+-- ---------------------------------------------------------
 -- Tabla: equipos_asignados -- tabla intermedia entre el catalogo global
 -- de productos y empresas. Registra cada unidad fisica de equipo que una
 -- empresa tiene, con su estado y a quien esta asignada.
 -- ---------------------------------------------------------
 create table if not exists equipos_asignados (
-    id                uuid primary key default gen_random_uuid(),
-    empresa_id        uuid not null references empresas(id) on delete cascade,
-    producto_id       integer not null references productos(id) on delete restrict,
-    marca             text not null,
-    modelo            text not null,
-    fecha_entrada     date not null default current_date,
-    vida_util_meses   integer check (vida_util_meses is null or vida_util_meses > 0),
-    estado            text not null default 'stock' check (estado in ('en_uso', 'stock', 'reparacion', 'descarte', 'vendida')),
-    asignada_a        text,
-    observacion       text,
-    creado_por        uuid not null references usuarios(id),
-    modificado_por    uuid references usuarios(id),
-    created_at        timestamptz not null default now(),
-    updated_at        timestamptz not null default now()
+    id                    uuid primary key default gen_random_uuid(),
+    empresa_id            uuid not null references empresas(id) on delete cascade,
+    producto_id           integer not null references productos(id) on delete restrict,
+    marca                 text not null,
+    modelo                text not null,
+    fecha_entrada         date not null default current_date,
+    vida_util_meses       integer check (vida_util_meses is null or vida_util_meses > 0),
+    estado                text not null default 'stock' check (estado in ('en_uso', 'stock', 'reparacion', 'descarte', 'vendida')),
+    asignada_a            text,
+    observacion           text,
+    -- Especificaciones tecnicas, todas opcionales.
+    procesador_id         integer references procesadores(id) on delete set null,
+    memoria_ram           text,
+    disco_duro            text,
+    numero_serie          text,
+    numero_puertos        integer check (numero_puertos is null or numero_puertos >= 0),
+    numero_puertos_hdmi   integer check (numero_puertos_hdmi is null or numero_puertos_hdmi >= 0),
+    creado_por            uuid not null references usuarios(id),
+    modificado_por        uuid references usuarios(id),
+    created_at            timestamptz not null default now(),
+    updated_at            timestamptz not null default now()
 );
 
 create index if not exists idx_equipos_asignados_empresa on equipos_asignados(empresa_id);
 create index if not exists idx_equipos_asignados_producto on equipos_asignados(producto_id);
+create index if not exists idx_equipos_asignados_procesador on equipos_asignados(procesador_id);
 
 drop trigger if exists trg_set_updated_at on equipos_asignados;
 create trigger trg_set_updated_at before update on equipos_asignados for each row execute function set_updated_at();

@@ -78,6 +78,11 @@ export interface Producto {
   categoria_nombre?: string;
 }
 
+export interface Procesador {
+  id: number;
+  nombre: string;
+}
+
 export type EstadoEquipo = 'en_uso' | 'stock' | 'reparacion' | 'descarte' | 'vendida';
 
 // Tabla intermedia entre el catalogo global (categorias/productos) y una
@@ -95,6 +100,14 @@ export interface EquipoAsignado {
   estado: EstadoEquipo;
   asignada_a: string | null;
   observacion: string | null;
+  // Especificaciones tecnicas, todas opcionales.
+  procesador_id: number | null;
+  procesador_nombre: string | null;
+  memoria_ram: string | null;
+  disco_duro: string | null;
+  numero_serie: string | null;
+  numero_puertos: number | null;
+  numero_puertos_hdmi: number | null;
   creado_por: string;
   creado_por_nombre: string;
   modificado_por: string | null;

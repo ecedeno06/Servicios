@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
-import { Categoria, Producto } from '../../core/models/models';
+import { ProcesadoresService } from '../../core/services/procesadores.service';
+import { Categoria, Procesador, Producto } from '../../core/models/models';
 
-type Pestana = 'categorias' | 'productos';
+type Pestana = 'categorias' | 'productos' | 'procesadores';
 
 @Component({
   selector: 'app-equipos',
@@ -19,6 +20,7 @@ export class EquiposComponent implements OnInit {
 
   categorias = signal<Categoria[]>([]);
   productos = signal<Producto[]>([]);
+  procesadores = signal<Procesador[]>([]);
 
   // ---------- Categorias ----------
   categoriaSeleccionada = signal<Categoria | null>(null);
@@ -54,19 +56,34 @@ export class EquiposComponent implements OnInit {
     });
   });
 
+  // ---------- Procesadores ----------
+  procesadorSeleccionado = signal<Procesador | null>(null);
+  filtroProcesador = signal('');
+
+  formProcesador = this.fb.group({ nombre: ['', Validators.required] });
+
+  procesadoresFiltrados = computed(() => {
+    const f = this.filtroProcesador().trim().toLowerCase();
+    if (!f) return this.procesadores();
+    return this.procesadores().filter((p) => p.nombre.toLowerCase().includes(f));
+  });
+
   constructor(
     private fb: FormBuilder,
     private categoriasSrv: CategoriasService,
-    private productosSrv: ProductosService
+    private productosSrv: ProductosService,
+    private procesadoresSrv: ProcesadoresService
   ) {}
 
   ngOnInit(): void {
     this.cargarCategorias();
     this.cargarProductos();
+    this.cargarProcesadores();
   }
 
   cargarCategorias(): void { this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data)); }
   cargarProductos(): void { this.productosSrv.listar().subscribe((data) => this.productos.set(data)); }
+  cargarProcesadores(): void { this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data)); }
 
   limpiarFiltrosProducto(): void {
     this.filtroProductoCategoria.set('');
@@ -139,6 +156,40 @@ export class EquiposComponent implements OnInit {
     this.productosSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoProducto(); this.cargarProductos(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el producto'),
+    });
+  }
+
+  // ---------- Procesadores: mantenimiento ----------
+  seleccionarProcesador(p: Procesador): void {
+    const yaSeleccionado = this.procesadorSeleccionado()?.id === p.id;
+    if (yaSeleccionado) { this.nuevoProcesador(); return; }
+    this.procesadorSeleccionado.set(p);
+    this.formProcesador.reset({ nombre: p.nombre });
+  }
+
+  nuevoProcesador(): void {
+    this.procesadorSeleccionado.set(null);
+    this.formProcesador.reset({ nombre: '' });
+  }
+
+  guardarProcesador(): void {
+    if (this.formProcesador.invalid) return;
+    const data = this.formProcesador.getRawValue() as { nombre: string };
+    const actual = this.procesadorSeleccionado();
+    const req = actual ? this.procesadoresSrv.actualizar(actual.id, data) : this.procesadoresSrv.crear(data);
+    req.subscribe({
+      next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el procesador'),
+    });
+  }
+
+  eliminarProcesador(): void {
+    const actual = this.procesadorSeleccionado();
+    if (!actual) return;
+    if (!confirm(`Eliminar el procesador "${actual.nombre}"?`)) return;
+    this.procesadoresSrv.eliminar(actual.id).subscribe({
+      next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el procesador'),
     });
   }
 }

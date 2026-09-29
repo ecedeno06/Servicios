@@ -8,6 +8,7 @@
 <div class="tabs">
   <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'categorias'" (click)="pestanaActiva.set('categorias')">Categorias</button>
   <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'productos'" (click)="pestanaActiva.set('productos')">Productos</button>
+  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'procesadores'" (click)="pestanaActiva.set('procesadores')">Procesadores</button>
 </div>
 
 @if (pestanaActiva() === 'categorias') {
@@ -100,6 +101,49 @@
         @if (productoSeleccionado()) {
           <button type="button" class="btn btn-danger" (click)="eliminarProducto()">Eliminar</button>
           <button type="button" class="btn btn-outline" (click)="nuevoProducto()">Nuevo producto</button>
+        }
+      </div>
+    </form>
+  </div>
+}
+
+@if (pestanaActiva() === 'procesadores') {
+  <div class="page-header mt-16">
+    <div class="desc">{{ procesadoresFiltrados().length }} de {{ procesadores().length }} procesador(es). Haz clic en una fila para editarla.</div>
+  </div>
+
+  <div class="table-wrap table-wrap-compact">
+    <table class="data-table">
+      <thead>
+        <tr><th>Nombre</th></tr>
+        <tr class="filter-row">
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProcesador()" (ngModelChange)="filtroProcesador.set($event)" /></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of procesadoresFiltrados(); track p.id) {
+          <tr class="row-clickable" [class.row-selected]="procesadorSeleccionado()?.id === p.id" (click)="seleccionarProcesador(p)">
+            <td>{{ p.nombre }}</td>
+          </tr>
+        } @empty {
+          <tr><td><div class="empty-state">{{ filtroProcesador() ? 'Ningun procesador coincide con el filtro.' : 'No hay procesadores registrados.' }}</div></td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card mt-16">
+    <h2>{{ procesadorSeleccionado() ? 'Editar procesador' : 'Nuevo procesador' }}</h2>
+    <form [formGroup]="formProcesador" (ngSubmit)="guardarProcesador()">
+      <div class="form-group mt-16">
+        <label>Nombre *</label>
+        <input class="input" formControlName="nombre" placeholder="Ej: AMD Ryzen 9" />
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="formProcesador.invalid">Guardar</button>
+        @if (procesadorSeleccionado()) {
+          <button type="button" class="btn btn-danger" (click)="eliminarProcesador()">Eliminar</button>
+          <button type="button" class="btn btn-outline" (click)="nuevoProcesador()">Nuevo procesador</button>
         }
       </div>
     </form>
