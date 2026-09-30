@@ -27,73 +27,70 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th class="th-sortable" (click)="ordenarPor('categoria')">Categoria <span class="orden-icono">{{ iconoOrden('categoria') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('marcaModelo')">Marca / Modelo <span class="orden-icono">{{ iconoOrden('marcaModelo') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('asignadaA')">Asignado a <span class="orden-icono">{{ iconoOrden('asignadaA') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('entrada')">Entrada <span class="orden-icono">{{ iconoOrden('entrada') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('vidaUtil')">Vida util <span class="orden-icono">{{ iconoOrden('vidaUtil') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('cpu')">CPU <span class="orden-icono">{{ iconoOrden('cpu') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('ram')">Memoria RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></th>
-        <th class="th-sortable" (click)="ordenarPor('disco')">Disco duro <span class="orden-icono">{{ iconoOrden('disco') }}</span></th>
-        <th>Acciones</th>
-      </tr>
-      <tr class="filter-row">
         <th>
-          <select class="input" [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('categoria')">Categoria <span class="orden-icono">{{ iconoOrden('categoria') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)">
             <option value="">Todos</option>
             @for (v of valoresCategoria(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('marcaModelo')">Marca / Modelo <span class="orden-icono">{{ iconoOrden('marcaModelo') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)">
             <option value="">Todos</option>
             @for (v of valoresMarcaModelo(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
             <option value="">Todos</option>
             @for (v of valoresEstado(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('asignadaA')">Asignado a <span class="orden-icono">{{ iconoOrden('asignadaA') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)">
             <option value="">Todos</option>
             @for (v of valoresAsignadaA(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroEntrada()" (ngModelChange)="filtroEntrada.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('entrada')">Entrada <span class="orden-icono">{{ iconoOrden('entrada') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroEntrada()" (ngModelChange)="filtroEntrada.set($event)">
             <option value="">Todos</option>
             @for (v of valoresEntrada(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroVidaUtil()" (ngModelChange)="filtroVidaUtil.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('vidaUtil')">Vida util <span class="orden-icono">{{ iconoOrden('vidaUtil') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroVidaUtil()" (ngModelChange)="filtroVidaUtil.set($event)">
             <option value="">Todos</option>
             @for (v of valoresVidaUtil(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroCpu()" (ngModelChange)="filtroCpu.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('cpu')">CPU <span class="orden-icono">{{ iconoOrden('cpu') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroCpu()" (ngModelChange)="filtroCpu.set($event)">
             <option value="">Todos</option>
             @for (v of valoresCpu(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroRam()" (ngModelChange)="filtroRam.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('ram')">Memoria RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroRam()" (ngModelChange)="filtroRam.set($event)">
             <option value="">Todos</option>
             @for (v of valoresRam(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
         <th>
-          <select class="input" [ngModel]="filtroDisco()" (ngModelChange)="filtroDisco.set($event)">
+          <span class="th-sortable" (click)="ordenarPor('disco')">Disco duro <span class="orden-icono">{{ iconoOrden('disco') }}</span></span>
+          <select class="input input-th-filtro" [ngModel]="filtroDisco()" (ngModelChange)="filtroDisco.set($event)">
             <option value="">Todos</option>
             @for (v of valoresDisco(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
-        <th></th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
