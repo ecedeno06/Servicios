@@ -748,6 +748,10 @@ table.data-table {
   color: var(--text-heading);
   width: 100%;
 }
+/* Solo vertical: el ancho ya es 100% del contenedor -- permitir "both" (el
+   default del navegador) deja arrastrar el ancho tambien, lo que rompe el
+   layout en formularios angostos como los popups. */
+textarea.input { resize: vertical; min-height: 60px; }
 .input:focus { border-color: var(--teal-500); }
 .input.invalid { border-color: var(--red-600); }
 .error-text { font-size: 11.5px; color: var(--red-600); }
