@@ -80,27 +80,24 @@ export class EquiposAsignadosComponent implements OnInit {
 
   // Buscador general: busca el texto en cualquier dato del registro (no
   // solo en las columnas visibles -- incluye numero de serie, puertos,
-  // precio, locacion/pais, observacion, etc.).
+  // precio, locacion/pais, observacion, etc.). Filtra la tabla al tipear
+  // (sin abrir nada todavia -- mover el foco a la fila en cada tecla le
+  // quitaba el foco al input y cortaba lo que el usuario estaba
+  // escribiendo). Abrir el primer resultado y darle foco a su fila queda
+  // para una accion explicita: Enter o el boton de la lupa.
   busquedaGeneral = signal('');
-  private debounceBusquedaGeneral?: ReturnType<typeof setTimeout>;
 
-  // Al escribir en el buscador general, ademas de filtrar la tabla se abre
-  // en el formulario el primer resultado encontrado y se le da foco/scroll
-  // a esa fila -- asi el usuario no tiene que hacer clic aparte. Con
-  // debounce para no recargar el historico (llamada al backend) en cada
-  // tecla mientras todavia esta escribiendo.
   onBusquedaGeneralChange(valor: string): void {
     this.busquedaGeneral.set(valor);
-    if (this.debounceBusquedaGeneral) clearTimeout(this.debounceBusquedaGeneral);
-    if (!valor.trim()) return;
-    this.debounceBusquedaGeneral = setTimeout(() => {
-      const primero = this.equiposFiltrados()[0];
-      if (!primero) return;
-      if (this.seleccionado()?.id !== primero.id) {
-        this.abrirParaEditar(primero);
-      }
-      this.enfocarFila(primero.id);
-    }, 300);
+  }
+
+  buscarYAbrirPrimero(): void {
+    const primero = this.equiposFiltrados()[0];
+    if (!primero) return;
+    if (this.seleccionado()?.id !== primero.id) {
+      this.abrirParaEditar(primero);
+    }
+    this.enfocarFila(primero.id);
   }
 
   private enfocarFila(id: string): void {
