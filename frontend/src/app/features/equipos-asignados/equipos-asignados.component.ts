@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EquiposAsignadosService } from '../../core/services/equipos-asignados.service';
 import { CategoriasService } from '../../core/services/categorias.service';
@@ -19,6 +19,7 @@ const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   selector: 'app-equipos-asignados',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  providers: [DatePipe],
   templateUrl: './equipos-asignados.component.html',
   styleUrl: './equipos-asignados.component.css',
 })
@@ -81,22 +82,44 @@ export class EquiposAsignadosComponent implements OnInit {
   filtroMarcaModelo = signal('');
   filtroEstado = signal('');
   filtroAsignadaA = signal('');
+  filtroEntrada = signal('');
+  filtroVidaUtil = signal('');
+  filtroCpu = signal('');
+  filtroRam = signal('');
+  filtroDisco = signal('');
 
-  hayFiltros = computed(() => !!(this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA()));
+  hayFiltros = computed(() => !!(
+    this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA() ||
+    this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco()
+  ));
 
   equiposFiltrados = computed(() => {
     const fCat = this.filtroCategoria().trim().toLowerCase();
     const fMarcaModelo = this.filtroMarcaModelo().trim().toLowerCase();
     const fEstado = this.filtroEstado().trim().toLowerCase();
     const fAsignada = this.filtroAsignadaA().trim().toLowerCase();
+    const fEntrada = this.filtroEntrada().trim().toLowerCase();
+    const fVidaUtil = this.filtroVidaUtil().trim().toLowerCase();
+    const fCpu = this.filtroCpu().trim().toLowerCase();
+    const fRam = this.filtroRam().trim().toLowerCase();
+    const fDisco = this.filtroDisco().trim().toLowerCase();
     return this.equipos().filter((e) => {
       if (fCat && !e.categoria_nombre.toLowerCase().includes(fCat)) return false;
       if (fMarcaModelo && !`${e.marca} ${e.modelo}`.toLowerCase().includes(fMarcaModelo)) return false;
       if (fEstado && !this.etiquetaEstado(e.estado).toLowerCase().includes(fEstado)) return false;
       if (fAsignada && !(e.asignada_a ?? '').toLowerCase().includes(fAsignada)) return false;
+      if (fEntrada && !(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy') ?? '').toLowerCase().includes(fEntrada)) return false;
+      if (fVidaUtil && !this.textoVidaUtil(e.vida_util_meses).toLowerCase().includes(fVidaUtil)) return false;
+      if (fCpu && !(e.procesador_nombre ?? '-').toLowerCase().includes(fCpu)) return false;
+      if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
+      if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
       return true;
     });
   });
+
+  textoVidaUtil(meses: number | null): string {
+    return meses != null ? `${meses} m` : '-';
+  }
 
   form = this.fb.group({
     categoria_id: ['', Validators.required],
@@ -132,7 +155,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private srv: EquiposAsignadosService,
     private categoriasSrv: CategoriasService,
     private productosSrv: ProductosService,
-    private procesadoresSrv: ProcesadoresService
+    private procesadoresSrv: ProcesadoresService,
+    private datePipe: DatePipe
   ) {}
 
   ngOnInit(): void {
@@ -173,6 +197,11 @@ export class EquiposAsignadosComponent implements OnInit {
     this.filtroMarcaModelo.set('');
     this.filtroEstado.set('');
     this.filtroAsignadaA.set('');
+    this.filtroEntrada.set('');
+    this.filtroVidaUtil.set('');
+    this.filtroCpu.set('');
+    this.filtroRam.set('');
+    this.filtroDisco.set('');
   }
 
   etiquetaEstado(estado: EstadoEquipo): string {

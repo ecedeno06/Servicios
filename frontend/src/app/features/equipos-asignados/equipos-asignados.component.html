@@ -22,11 +22,11 @@
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)" /></th>
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" /></th>
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)" /></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroEntrada()" (ngModelChange)="filtroEntrada.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroVidaUtil()" (ngModelChange)="filtroVidaUtil.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCpu()" (ngModelChange)="filtroCpu.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroRam()" (ngModelChange)="filtroRam.set($event)" /></th>
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroDisco()" (ngModelChange)="filtroDisco.set($event)" /></th>
         <th></th>
       </tr>
     </thead>
@@ -38,7 +38,7 @@
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
           <td>{{ e.asignada_a || '-' }}</td>
           <td>{{ e.fecha_entrada | date:'dd/MM/yyyy' }}</td>
-          <td>{{ e.vida_util_meses ? e.vida_util_meses + ' m' : '-' }}</td>
+          <td>{{ textoVidaUtil(e.vida_util_meses) }}</td>
           <td>{{ e.procesador_nombre || '-' }}</td>
           <td>{{ e.memoria_ram || '-' }}</td>
           <td>{{ e.disco_duro || '-' }}</td>
