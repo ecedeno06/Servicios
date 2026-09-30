@@ -80,18 +80,16 @@ export class EquiposAsignadosComponent implements OnInit {
 
   // Buscador general: busca el texto en cualquier dato del registro (no
   // solo en las columnas visibles -- incluye numero de serie, puertos,
-  // precio, locacion/pais, observacion, etc.). Filtra la tabla al tipear
-  // (sin abrir nada todavia -- mover el foco a la fila en cada tecla le
-  // quitaba el foco al input y cortaba lo que el usuario estaba
-  // escribiendo). Abrir el primer resultado y darle foco a su fila queda
-  // para una accion explicita: Enter o el boton de la lupa.
+  // precio, locacion/pais, observacion, etc.). Solo se activa con el
+  // boton de la lupa (no al tipear ni con Enter): busquedaGeneralInput
+  // es lo que el usuario esta escribiendo, busquedaGeneral es lo
+  // efectivamente aplicado a la tabla -- separarlos evita que la tabla
+  // se refiltre (y le robe el foco al input) en cada tecla.
+  busquedaGeneralInput = signal('');
   busquedaGeneral = signal('');
 
-  onBusquedaGeneralChange(valor: string): void {
-    this.busquedaGeneral.set(valor);
-  }
-
   buscarYAbrirPrimero(): void {
+    this.busquedaGeneral.set(this.busquedaGeneralInput());
     const primero = this.equiposFiltrados()[0];
     if (!primero) return;
     if (this.seleccionado()?.id !== primero.id) {
@@ -332,6 +330,7 @@ export class EquiposAsignadosComponent implements OnInit {
   cargar(): void { this.srv.listar().subscribe((data) => this.equipos.set(data)); }
 
   limpiarFiltros(): void {
+    this.busquedaGeneralInput.set('');
     this.busquedaGeneral.set('');
     this.filtroCategoria.set('');
     this.filtroMarcaModelo.set('');
