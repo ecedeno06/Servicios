@@ -10,15 +10,21 @@
   @if (hayFiltros()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Limpiar filtros</button> }
 </div>
 
-<div class="table-wrap table-wrap-compact">
+<div class="table-wrap table-wrap-compact" (scroll)="cerrarMenuAccion()">
   <table class="data-table">
     <thead>
-      <tr><th>Categoria</th><th>Marca / Modelo</th><th>Estado</th><th>Asignado a</th><th>Entrada</th><th>Vida util</th><th>Acciones</th></tr>
+      <tr>
+        <th>Categoria</th><th>Marca / Modelo</th><th>Estado</th><th>Asignado a</th><th>Entrada</th><th>Vida util</th>
+        <th>CPU</th><th>Memoria RAM</th><th>Disco duro</th><th>Acciones</th>
+      </tr>
       <tr class="filter-row">
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)" /></th>
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)" /></th>
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" /></th>
         <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)" /></th>
+        <th></th>
+        <th></th>
+        <th></th>
         <th></th>
         <th></th>
         <th></th>
@@ -33,30 +39,47 @@
           <td>{{ e.asignada_a || '-' }}</td>
           <td>{{ e.fecha_entrada | date:'dd/MM/yyyy' }}</td>
           <td>{{ e.vida_util_meses ? e.vida_util_meses + ' m' : '-' }}</td>
+          <td>{{ e.procesador_nombre || '-' }}</td>
+          <td>{{ e.memoria_ram || '-' }}</td>
+          <td>{{ e.disco_duro || '-' }}</td>
           <td class="table-actions">
-            <button type="button" class="btn-icon" title="Pasar a Stock" aria-label="Pasar a Stock" (click)="$event.stopPropagation(); abrirAccion(e, 'stock')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-            </button>
-            <button type="button" class="btn-icon" title="Asignar / reasignar" aria-label="Asignar o reasignar" (click)="$event.stopPropagation(); abrirAccion(e, 'en_uso')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
-            </button>
-            <button type="button" class="btn-icon" title="Enviar a reparacion" aria-label="Enviar a reparacion" (click)="$event.stopPropagation(); abrirAccion(e, 'reparacion')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            </button>
-            <button type="button" class="btn-icon" title="Marcar como vendida" aria-label="Marcar como vendida" (click)="$event.stopPropagation(); abrirAccion(e, 'vendida')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </button>
-            <button type="button" class="btn-icon btn-icon-danger" title="Enviar a descarte" aria-label="Enviar a descarte" (click)="$event.stopPropagation(); abrirAccion(e, 'descarte')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            <button type="button" class="btn-icon" title="Acciones" aria-label="Acciones" (click)="toggleMenuAccion($event, e)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
             </button>
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="7"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
+        <tr><td colspan="10"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
       }
     </tbody>
   </table>
 </div>
+
+@if (menuAccionEquipo(); as me) {
+  <div class="dropdown-backdrop" (click)="cerrarMenuAccion()"></div>
+  <div class="dropdown-menu dropdown-menu-fixed" [style.top.px]="posMenuAccion()?.top" [style.left.px]="posMenuAccion()?.left">
+    <button type="button" class="dropdown-item dropdown-item-icon" (click)="abrirAccion(me, 'stock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <span>Pasar a stock</span>
+    </button>
+    <button type="button" class="dropdown-item dropdown-item-icon" (click)="abrirAccion(me, 'en_uso')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+      <span>Asignar / reasignar</span>
+    </button>
+    <button type="button" class="dropdown-item dropdown-item-icon" (click)="abrirAccion(me, 'reparacion')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span>Enviar a reparacion</span>
+    </button>
+    <button type="button" class="dropdown-item dropdown-item-icon" (click)="abrirAccion(me, 'vendida')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Marcar como vendida</span>
+    </button>
+    <button type="button" class="dropdown-item dropdown-item-icon dropdown-item-danger" (click)="abrirAccion(me, 'descarte')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <span>Enviar a descarte</span>
+    </button>
+  </div>
+}
 
 <div class="card mt-16">
   <h2>{{ seleccionado() ? 'Editar equipo' : 'Nuevo equipo' }}</h2>
@@ -187,15 +210,19 @@
             <div class="flex items-center gap-8" style="flex-wrap:wrap;">
               <span class="text-muted text-sm">{{ m.fecha_cambio | date:'dd/MM/yyyy HH:mm' }}</span>
               &middot;
-              @if (m.estado_anterior) {
+              @if (!m.estado_anterior) {
+                <span class="text-muted text-sm">Alta:</span>
+              } @else if (m.estado_anterior !== m.estado_nuevo) {
                 <span class="badge" [class]="claseEstado(m.estado_anterior)">{{ etiquetaEstado(m.estado_anterior) }}</span>
                 <span class="text-muted">&rarr;</span>
-              } @else {
-                <span class="text-muted text-sm">Alta:</span>
               }
               <span class="badge" [class]="claseEstado(m.estado_nuevo)">{{ etiquetaEstado(m.estado_nuevo) }}</span>
-              @if (m.asignada_a) {
+              @if (m.asignada_a && m.asignada_a_anterior && m.asignada_a !== m.asignada_a_anterior) {
+                <span class="text-muted text-sm">reasignado de {{ m.asignada_a_anterior }} a {{ m.asignada_a }}</span>
+              } @else if (m.asignada_a && m.asignada_a !== m.asignada_a_anterior) {
                 <span class="text-muted text-sm">asignado a {{ m.asignada_a }}</span>
+              } @else if (!m.asignada_a && m.asignada_a_anterior) {
+                <span class="text-muted text-sm">se quito la asignacion a {{ m.asignada_a_anterior }}</span>
               }
               <span class="text-muted text-sm">&middot; por {{ m.registrado_por_nombre }}</span>
             </div>

@@ -124,6 +124,7 @@ export interface MovimientoEquipo {
   equipo_asignado_id: string;
   estado_anterior: EstadoEquipo | null;
   estado_nuevo: EstadoEquipo;
+  asignada_a_anterior: string | null;
   asignada_a: string | null;
   observacion: string | null;
   registrado_por: string;

@@ -49,10 +49,10 @@ async function crear(req, res, next) {
       ]
     );
 
-    // Primer movimiento del historico: sin estado anterior.
+    // Primer movimiento del historico: sin estado ni asignacion anterior.
     await pool.query(
-      `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, registrado_por)
-       values ($1, null, $2, $3, $4)`,
+      `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, registrado_por)
+       values ($1, null, $2, null, $3, $4)`,
       [rows[0].id, estadoFinal, asignada_a || null, req.usuario.id]
     );
 
@@ -76,11 +76,13 @@ async function actualizar(req, res, next) {
     }
 
     const { rows: actual } = await pool.query(
-      'select estado from equipos_asignados where id = $1 and empresa_id = $2',
+      'select estado, asignada_a from equipos_asignados where id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]
     );
     if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
     const estadoAnterior = actual[0].estado;
+    const asignadaAnterior = actual[0].asignada_a;
+    const asignadaNueva = asignada_a || null;
 
     const { rows } = await pool.query(
       `update equipos_asignados set
@@ -102,19 +104,20 @@ async function actualizar(req, res, next) {
        where id = $16 and empresa_id = $17
        returning id`,
       [
-        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignada_a || null, observacion || null,
+        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
         req.usuario.id, req.params.id, req.empresaId,
       ]
     );
 
-    // Un movimiento nuevo en el historico solo si el estado realmente
-    // cambio (editar otros campos, como observacion, no genera uno).
-    if (estado !== estadoAnterior) {
+    // Un movimiento nuevo en el historico si el estado cambio o si se
+    // reasigno a otra persona (aunque el estado se mantenga igual) --
+    // editar otros campos, como observacion, no genera uno.
+    if (estado !== estadoAnterior || asignadaNueva !== asignadaAnterior) {
       await pool.query(
-        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, registrado_por)
-         values ($1, $2, $3, $4, $5)`,
-        [req.params.id, estadoAnterior, estado, asignada_a || null, req.usuario.id]
+        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, registrado_por)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [req.params.id, estadoAnterior, estado, asignadaAnterior, asignadaNueva, req.usuario.id]
       );
     }
 
@@ -152,11 +155,12 @@ async function cambiarEstado(req, res, next) {
     }
 
     const { rows: actual } = await pool.query(
-      'select estado from equipos_asignados where id = $1 and empresa_id = $2',
+      'select estado, asignada_a from equipos_asignados where id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]
     );
     if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
     const estadoAnterior = actual[0].estado;
+    const asignadaAnterior = actual[0].asignada_a;
 
     const asignadaFinal = estado === 'en_uso' ? asignada_a.trim() : null;
 
@@ -167,11 +171,13 @@ async function cambiarEstado(req, res, next) {
       [estado, asignadaFinal, req.usuario.id, req.params.id, req.empresaId]
     );
 
-    if (estado !== estadoAnterior) {
+    // Tambien registra el movimiento si solo cambio a quien esta asignado
+    // (reasignar de una persona a otra sin cambiar de "en_uso").
+    if (estado !== estadoAnterior || asignadaFinal !== asignadaAnterior) {
       await pool.query(
-        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a, observacion, registrado_por)
-         values ($1, $2, $3, $4, $5, $6)`,
-        [req.params.id, estadoAnterior, estado, asignadaFinal, observacion?.trim() || null, req.usuario.id]
+        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, observacion, registrado_por)
+         values ($1, $2, $3, $4, $5, $6, $7)`,
+        [req.params.id, estadoAnterior, estado, asignadaAnterior, asignadaFinal, observacion?.trim() || null, req.usuario.id]
       );
     }
 

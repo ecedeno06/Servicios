@@ -41,12 +41,34 @@ export class EquiposAsignadosComponent implements OnInit {
       this.etiquetaEstado(m.estado_nuevo).toLowerCase().includes(f) ||
       (m.estado_anterior && this.etiquetaEstado(m.estado_anterior).toLowerCase().includes(f)) ||
       (m.asignada_a ?? '').toLowerCase().includes(f) ||
+      (m.asignada_a_anterior ?? '').toLowerCase().includes(f) ||
       (m.observacion ?? '').toLowerCase().includes(f) ||
       m.registrado_por_nombre.toLowerCase().includes(f)
     );
   });
 
-  // Popup de cambio rapido de estado desde el boton-icono de una fila.
+  // Menu desplegable de acciones rapidas por fila (boton de elipsis). Se
+  // posiciona con "position: fixed" a partir del boton que lo abrio, para
+  // que no quede recortado por el scroll interno de la tabla compacta
+  // (table-wrap-compact tiene overflow-y: auto).
+  menuAccionEquipo = signal<EquipoAsignado | null>(null);
+  posMenuAccion = signal<{ top: number; left: number } | null>(null);
+
+  toggleMenuAccion(event: MouseEvent, e: EquipoAsignado): void {
+    event.stopPropagation();
+    if (this.menuAccionEquipo()?.id === e.id) { this.cerrarMenuAccion(); return; }
+    const boton = event.currentTarget as HTMLElement;
+    const rect = boton.getBoundingClientRect();
+    this.posMenuAccion.set({ top: rect.bottom + 6, left: Math.max(8, rect.right - 220) });
+    this.menuAccionEquipo.set(e);
+  }
+
+  cerrarMenuAccion(): void {
+    this.menuAccionEquipo.set(null);
+    this.posMenuAccion.set(null);
+  }
+
+  // Popup de cambio rapido de estado desde el menu de acciones de una fila.
   accionPendiente = signal<{ equipo: EquipoAsignado; estado: EstadoEquipo } | null>(null);
   guardandoAccion = signal(false);
   formMovimiento = this.fb.group({
@@ -253,6 +275,7 @@ export class EquiposAsignadosComponent implements OnInit {
 
   // ---------- Cambio rapido de estado (boton-icono por fila) ----------
   abrirAccion(e: EquipoAsignado, estado: EstadoEquipo): void {
+    this.cerrarMenuAccion();
     this.accionPendiente.set({ equipo: e, estado });
     // Si ya estaba asignado (ej. reasignar sin cambiar de "En uso" a otra
     // cosa), se precarga el nombre actual para editarlo en vez de partir
