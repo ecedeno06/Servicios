@@ -32,6 +32,7 @@ export class UsuariosComponent implements OnInit {
     rol: ['tecnico' as Rol],
     cliente_id: [''],
     activo: [true],
+    es_super_admin: [false],
   });
 
   constructor(
@@ -56,7 +57,8 @@ export class UsuariosComponent implements OnInit {
     this.editando.set(null);
     this.usuarioExistente.set(null);
     this.verPassword.set(false);
-    this.form.reset({ rol: 'tecnico', cliente_id: '', activo: true });
+    this.form.reset({ rol: 'tecnico', cliente_id: '', activo: true, es_super_admin: false });
+    this.form.get('es_super_admin')?.enable();
     // nombre/password no son obligatorios aqui: si el email ya existe en el
     // sistema (otra empresa), el backend solo lo asocia a esta empresa (como
     // tecnico por defecto; el rol se ajusta despues editando o desde Empresas).
@@ -70,6 +72,15 @@ export class UsuariosComponent implements OnInit {
     this.form.reset({ ...u, password: '', cliente_id: u.cliente_id ?? '' });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
+    // Un super-admin no puede quitarse el permiso a si mismo (el backend
+    // tambien lo bloquea) -- se deshabilita el FormControl, no solo el
+    // atributo HTML, porque la directiva de reactive forms pisaria un
+    // [attr.disabled] puesto directamente en el template.
+    if (u.id === this.auth.usuario()?.id) {
+      this.form.get('es_super_admin')?.disable();
+    } else {
+      this.form.get('es_super_admin')?.enable();
+    }
     this.panelAbierto.set(true);
   }
 

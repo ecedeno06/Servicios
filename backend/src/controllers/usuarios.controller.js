@@ -60,8 +60,12 @@ async function buscarPorEmail(req, res, next) {
 // propia empresa activa, sin importar lo que mande en el body.
 async function crear(req, res, next) {
   try {
-    const { nombre, email, password, rol, activo, empresa_id, cliente_id } = req.body;
+    const { nombre, email, password, rol, activo, empresa_id, cliente_id, es_super_admin } = req.body;
     if (!email) return res.status(400).json({ mensaje: 'email es requerido' });
+
+    // Igual que en actualizar(): solo un super-admin puede otorgar el
+    // permiso; de cualquier otro admin se ignora en silencio.
+    const esSuperAdminValor = (req.usuario.es_super_admin && es_super_admin !== undefined) ? !!es_super_admin : null;
 
     let empresaDestino = req.empresaId;
     if (req.usuario.es_super_admin && empresa_id) {
@@ -83,6 +87,9 @@ async function crear(req, res, next) {
 
     if (existente.rows[0]) {
       usuarioId = existente.rows[0].id;
+      if (esSuperAdminValor !== null) {
+        await pool.query('update usuarios set es_super_admin = $1 where id = $2', [esSuperAdminValor, usuarioId]);
+      }
     } else {
       if (!nombre || !password) {
         return res.status(400).json({ mensaje: 'nombre y password son requeridos para un usuario nuevo' });
@@ -96,9 +103,9 @@ async function crear(req, res, next) {
       // debe_cambiar_password: el admin conoce esta contrasena inicial, asi
       // que se fuerza a cambiarla en el primer login.
       const { rows } = await pool.query(
-        `insert into usuarios (nombre, email, password_hash, activo, debe_cambiar_password)
-         values ($1,$2,$3, coalesce($4, true), true) returning id`,
-        [nombre, email, password_hash, activo]
+        `insert into usuarios (nombre, email, password_hash, activo, debe_cambiar_password, es_super_admin)
+         values ($1,$2,$3, coalesce($4, true), true, coalesce($5, false)) returning id`,
+        [nombre, email, password_hash, activo, esSuperAdminValor]
       );
       usuarioId = rows[0].id;
     }
@@ -125,13 +132,22 @@ async function crear(req, res, next) {
 // rol toca la relacion con la empresa activa.
 async function actualizar(req, res, next) {
   try {
-    const { nombre, password, avatar, activo, rol, cliente_id } = req.body;
+    const { nombre, password, avatar, activo, rol, cliente_id, es_super_admin } = req.body;
 
     const pertenece = await pool.query(
       'select 1 from usuarios_empresas_rol where usuario_id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]
     );
     if (!pertenece.rows[0]) return res.status(404).json({ mensaje: 'Usuario no encontrado en esta empresa' });
+
+    // Solo un super-admin puede otorgar/quitar el permiso -- si lo manda
+    // cualquier otro admin (el checkbox ni siquiera se le muestra en el
+    // frontend) simplemente se ignora en vez de rechazar toda la edicion.
+    // Tampoco puede quitarse el permiso a si mismo (evita un auto-bloqueo).
+    if (req.usuario.es_super_admin && es_super_admin !== undefined && req.params.id === req.usuario.id && !es_super_admin) {
+      return res.status(400).json({ mensaje: 'No puedes quitarte tu propio permiso de super administrador' });
+    }
+    const esSuperAdminValor = (req.usuario.es_super_admin && es_super_admin !== undefined) ? !!es_super_admin : null;
 
     let password_hash = null;
     if (password) {
@@ -144,16 +160,17 @@ async function actualizar(req, res, next) {
     }
     // debe_cambiar_password se fuerza a true solo cuando el admin resetea
     // la contrasena aqui (la conoce); se queda como esta en cualquier otra
-    // edicion (nombre, avatar, activo, rol).
+    // edicion (nombre, avatar, activo, rol, es_super_admin).
     await pool.query(
       `update usuarios set
          nombre = coalesce($1, nombre),
          avatar = coalesce($2, avatar),
          activo = coalesce($3, activo),
          password_hash = coalesce($4, password_hash),
-         debe_cambiar_password = case when $4::text is not null then true else debe_cambiar_password end
+         debe_cambiar_password = case when $4::text is not null then true else debe_cambiar_password end,
+         es_super_admin = coalesce($6, es_super_admin)
        where id = $5`,
-      [nombre, avatar, activo, password_hash, req.params.id]
+      [nombre, avatar, activo, password_hash, req.params.id, esSuperAdminValor]
     );
 
     if (rol) {
