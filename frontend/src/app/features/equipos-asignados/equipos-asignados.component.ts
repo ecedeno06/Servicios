@@ -137,6 +137,8 @@ export class EquiposAsignadosComponent implements OnInit {
     numero_serie: [''],
     numero_puertos: [''],
     numero_puertos_hdmi: [''],
+    precio_usd: [''],
+    locacion_pais: [''],
   });
 
   // Senal propia (no el FormControl.value directo, que no es una senal y
@@ -246,6 +248,8 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_serie: e.numero_serie ?? '',
       numero_puertos: e.numero_puertos != null ? String(e.numero_puertos) : '',
       numero_puertos_hdmi: e.numero_puertos_hdmi != null ? String(e.numero_puertos_hdmi) : '',
+      precio_usd: e.precio_usd != null ? String(e.precio_usd) : '',
+      locacion_pais: e.locacion_pais ?? '',
     });
     this.cargarHistorial(e.id);
   }
@@ -262,6 +266,7 @@ export class EquiposAsignadosComponent implements OnInit {
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',
       procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
+      precio_usd: '', locacion_pais: '',
     });
   }
 
@@ -283,6 +288,8 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_serie: raw.numero_serie?.trim() || null,
       numero_puertos: raw.numero_puertos !== '' && raw.numero_puertos != null ? Number(raw.numero_puertos) : null,
       numero_puertos_hdmi: raw.numero_puertos_hdmi !== '' && raw.numero_puertos_hdmi != null ? Number(raw.numero_puertos_hdmi) : null,
+      precio_usd: raw.precio_usd !== '' && raw.precio_usd != null ? Number(raw.precio_usd) : null,
+      locacion_pais: raw.locacion_pais?.trim() || null,
     };
     const actual = this.seleccionado();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);

@@ -852,6 +852,8 @@ create table if not exists equipos_asignados (
     numero_serie          text,
     numero_puertos        integer check (numero_puertos is null or numero_puertos >= 0),
     numero_puertos_hdmi   integer check (numero_puertos_hdmi is null or numero_puertos_hdmi >= 0),
+    precio_usd            numeric(12,2) check (precio_usd is null or precio_usd >= 0),
+    locacion_pais         text,
     creado_por            uuid not null references usuarios(id),
     modificado_por        uuid references usuarios(id),
     created_at            timestamptz not null default now(),
