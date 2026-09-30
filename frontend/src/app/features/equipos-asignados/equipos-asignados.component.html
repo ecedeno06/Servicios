@@ -97,7 +97,7 @@
       @for (e of equiposFiltrados(); track e.id) {
         <tr class="row-clickable" [class.row-selected]="seleccionado()?.id === e.id" (click)="seleccionar(e)">
           <td>{{ e.categoria_nombre }}</td>
-          <td>{{ e.marca }} {{ e.modelo }}</td>
+          <td [title]="e.numero_serie ? 'N/S: ' + e.numero_serie : 'Sin numero de serie'">{{ e.marca }} {{ e.modelo }}</td>
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
           <td>{{ e.asignada_a || '-' }}</td>
           <!-- fecha_entrada es "date" (sin hora); forzar UTC evita que el
