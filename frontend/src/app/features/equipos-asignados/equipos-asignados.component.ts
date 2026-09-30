@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EquiposAsignadosService } from '../../core/services/equipos-asignados.service';
@@ -82,6 +82,34 @@ export class EquiposAsignadosComponent implements OnInit {
   // solo en las columnas visibles -- incluye numero de serie, puertos,
   // precio, locacion/pais, observacion, etc.).
   busquedaGeneral = signal('');
+  private debounceBusquedaGeneral?: ReturnType<typeof setTimeout>;
+
+  // Al escribir en el buscador general, ademas de filtrar la tabla se abre
+  // en el formulario el primer resultado encontrado y se le da foco/scroll
+  // a esa fila -- asi el usuario no tiene que hacer clic aparte. Con
+  // debounce para no recargar el historico (llamada al backend) en cada
+  // tecla mientras todavia esta escribiendo.
+  onBusquedaGeneralChange(valor: string): void {
+    this.busquedaGeneral.set(valor);
+    if (this.debounceBusquedaGeneral) clearTimeout(this.debounceBusquedaGeneral);
+    if (!valor.trim()) return;
+    this.debounceBusquedaGeneral = setTimeout(() => {
+      const primero = this.equiposFiltrados()[0];
+      if (!primero) return;
+      if (this.seleccionado()?.id !== primero.id) {
+        this.abrirParaEditar(primero);
+      }
+      this.enfocarFila(primero.id);
+    }, 300);
+  }
+
+  private enfocarFila(id: string): void {
+    setTimeout(() => {
+      const fila = this.elRef.nativeElement.querySelector<HTMLElement>(`tr[data-equipo-id="${id}"]`);
+      fila?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      fila?.focus();
+    });
+  }
 
   // Filtros por columna
   filtroCategoria = signal('');
@@ -269,7 +297,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private categoriasSrv: CategoriasService,
     private productosSrv: ProductosService,
     private procesadoresSrv: ProcesadoresService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private elRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
