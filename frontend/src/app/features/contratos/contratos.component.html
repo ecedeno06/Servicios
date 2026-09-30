@@ -35,8 +35,10 @@
         <tr>
           <td><a [routerLink]="['/contratos', c.id]" [title]="c.observaciones || 'Sin observaciones registradas.'">{{ c.numero_contrato }}</a></td>
           <td>{{ c.cliente_nombre }}</td>
-          <td>{{ c.fecha_inicio | date:'dd/MM/yyyy' }}</td>
-          <td>{{ c.fecha_fin ? (c.fecha_fin | date:'dd/MM/yyyy') : '-' }}</td>
+          <!-- fecha_inicio/fecha_fin son "date" (sin hora); forzar UTC evita
+               que el pipe las corra un dia hacia atras en timezones negativos. -->
+          <td>{{ c.fecha_inicio | date:'dd/MM/yyyy':'UTC' }}</td>
+          <td>{{ c.fecha_fin ? (c.fecha_fin | date:'dd/MM/yyyy':'UTC') : '-' }}</td>
           <td><span class="badge" [ngClass]="vigencia(c).clase">{{ vigencia(c).texto }}</span></td>
           <td class="table-actions">
             <a class="btn btn-outline btn-sm" [routerLink]="['/contratos', c.id]">Ver horas</a>

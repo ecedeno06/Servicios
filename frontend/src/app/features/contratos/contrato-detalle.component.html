@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1>Contrato {{ c.numero_contrato }}</h1>
-      <div class="desc">{{ c.cliente_nombre }} &middot; {{ c.fecha_inicio | date:'dd/MM/yyyy' }} - {{ c.fecha_fin ? (c.fecha_fin | date:'dd/MM/yyyy') : 'sin fecha de fin' }}</div>
+      <div class="desc">{{ c.cliente_nombre }} &middot; {{ c.fecha_inicio | date:'dd/MM/yyyy':'UTC' }} - {{ c.fecha_fin ? (c.fecha_fin | date:'dd/MM/yyyy':'UTC') : 'sin fecha de fin' }}</div>
     </div>
     <a routerLink="/contratos" class="btn btn-outline">&larr; Volver a contratos</a>
   </div>

@@ -52,7 +52,10 @@
       @for (r of registrosOrdenados(); track r.id) {
         <tr>
           <td>{{ numeroServicio(r) }}</td>
-          <td>{{ r.fecha | date:'dd/MM/yyyy' }}{{ r.created_at ? ' ' + (r.created_at | date:'HH:mm') : '' }}</td>
+          <!-- r.fecha es "date" (sin hora); forzar UTC evita que el pipe la
+               corra un dia hacia atras en timezones negativos. r.created_at
+               si es un timestamp real, se muestra en hora local sin tocar. -->
+          <td>{{ r.fecha | date:'dd/MM/yyyy':'UTC' }}{{ r.created_at ? ' ' + (r.created_at | date:'HH:mm') : '' }}</td>
           <td>{{ r.cliente_nombre }}</td>
           <td>{{ r.numero_contrato }}</td>
           <td>{{ r.tipo_servicio_nombre }}</td>

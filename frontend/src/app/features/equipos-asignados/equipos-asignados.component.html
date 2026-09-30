@@ -37,7 +37,9 @@
           <td>{{ e.marca }} {{ e.modelo }}</td>
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
           <td>{{ e.asignada_a || '-' }}</td>
-          <td>{{ e.fecha_entrada | date:'dd/MM/yyyy' }}</td>
+          <!-- fecha_entrada es "date" (sin hora); forzar UTC evita que el
+               pipe la corra un dia hacia atras en timezones negativos. -->
+          <td>{{ e.fecha_entrada | date:'dd/MM/yyyy':'UTC' }}</td>
           <td>{{ textoVidaUtil(e.vida_util_meses) }}</td>
           <td>{{ e.procesador_nombre || '-' }}</td>
           <td>{{ e.memoria_ram || '-' }}</td>
