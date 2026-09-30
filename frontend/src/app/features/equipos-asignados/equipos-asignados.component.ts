@@ -77,6 +77,11 @@ export class EquiposAsignadosComponent implements OnInit {
     observacion: [''],
   });
 
+  // Buscador general: busca el texto en cualquier dato del registro (no
+  // solo en las columnas visibles -- incluye numero de serie, puertos,
+  // precio, locacion/pais, observacion, etc.).
+  busquedaGeneral = signal('');
+
   // Filtros por columna
   filtroCategoria = signal('');
   filtroMarcaModelo = signal('');
@@ -89,11 +94,75 @@ export class EquiposAsignadosComponent implements OnInit {
   filtroDisco = signal('');
 
   hayFiltros = computed(() => !!(
+    this.busquedaGeneral() ||
     this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA() ||
     this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco()
   ));
 
+  private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
+    const campos: (string | number | null | undefined)[] = [
+      e.categoria_nombre, e.producto_nombre, e.marca, e.modelo,
+      this.etiquetaEstado(e.estado), e.asignada_a,
+      this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'),
+      this.textoVidaUtil(e), e.procesador_nombre, e.memoria_ram, e.disco_duro,
+      e.numero_serie, e.numero_puertos, e.numero_puertos_hdmi, e.precio_usd, e.locacion_pais,
+      e.observacion, e.creado_por_nombre, e.modificado_por_nombre,
+    ];
+    return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
+  }
+
+  // Valores unicos ya existentes en los datos, para poblar los <select>
+  // de filtro por columna (en vez de texto libre).
+  private valoresUnicos(valores: (string | null | undefined)[]): string[] {
+    const set = new Set(valores.filter((v): v is string => !!v));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  valoresCategoria = computed(() => this.valoresUnicos(this.equipos().map((e) => e.categoria_nombre)));
+  valoresMarcaModelo = computed(() => this.valoresUnicos(this.equipos().map((e) => `${e.marca} ${e.modelo}`)));
+  valoresEstado = computed(() => this.valoresUnicos(this.equipos().map((e) => this.etiquetaEstado(e.estado))));
+  valoresAsignadaA = computed(() => this.valoresUnicos(this.equipos().map((e) => e.asignada_a)));
+  valoresEntrada = computed(() => this.valoresUnicos(this.equipos().map((e) => this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'))));
+  valoresVidaUtil = computed(() => this.valoresUnicos(this.equipos().map((e) => this.textoVidaUtil(e))));
+  valoresCpu = computed(() => this.valoresUnicos(this.equipos().map((e) => e.procesador_nombre)));
+  valoresRam = computed(() => this.valoresUnicos(this.equipos().map((e) => e.memoria_ram)));
+  valoresDisco = computed(() => this.valoresUnicos(this.equipos().map((e) => e.disco_duro)));
+
+  // Orden por columna (click en el encabezado alterna asc/desc).
+  ordenColumna = signal<string | null>(null);
+  ordenDireccion = signal<'asc' | 'desc'>('asc');
+
+  ordenarPor(columna: string): void {
+    if (this.ordenColumna() === columna) {
+      this.ordenDireccion.set(this.ordenDireccion() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.ordenColumna.set(columna);
+      this.ordenDireccion.set('asc');
+    }
+  }
+
+  iconoOrden(columna: string): string {
+    if (this.ordenColumna() !== columna) return '';
+    return this.ordenDireccion() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrden(e: EquipoAsignado, columna: string): string | number {
+    switch (columna) {
+      case 'categoria': return e.categoria_nombre.toLowerCase();
+      case 'marcaModelo': return `${e.marca} ${e.modelo}`.toLowerCase();
+      case 'estado': return this.etiquetaEstado(e.estado).toLowerCase();
+      case 'asignadaA': return (e.asignada_a ?? '').toLowerCase();
+      case 'entrada': return e.fecha_entrada;
+      case 'vidaUtil': return this.mesesRestantesVidaUtil(e) ?? Number.NEGATIVE_INFINITY;
+      case 'cpu': return (e.procesador_nombre ?? '').toLowerCase();
+      case 'ram': return (e.memoria_ram ?? '').toLowerCase();
+      case 'disco': return (e.disco_duro ?? '').toLowerCase();
+      default: return '';
+    }
+  }
+
   equiposFiltrados = computed(() => {
+    const fGeneral = this.busquedaGeneral().trim().toLowerCase();
     const fCat = this.filtroCategoria().trim().toLowerCase();
     const fMarcaModelo = this.filtroMarcaModelo().trim().toLowerCase();
     const fEstado = this.filtroEstado().trim().toLowerCase();
@@ -103,17 +172,29 @@ export class EquiposAsignadosComponent implements OnInit {
     const fCpu = this.filtroCpu().trim().toLowerCase();
     const fRam = this.filtroRam().trim().toLowerCase();
     const fDisco = this.filtroDisco().trim().toLowerCase();
-    return this.equipos().filter((e) => {
+    const filtrados = this.equipos().filter((e) => {
+      if (fGeneral && !this.coincideBusquedaGeneral(e, fGeneral)) return false;
       if (fCat && !e.categoria_nombre.toLowerCase().includes(fCat)) return false;
       if (fMarcaModelo && !`${e.marca} ${e.modelo}`.toLowerCase().includes(fMarcaModelo)) return false;
       if (fEstado && !this.etiquetaEstado(e.estado).toLowerCase().includes(fEstado)) return false;
       if (fAsignada && !(e.asignada_a ?? '').toLowerCase().includes(fAsignada)) return false;
-      if (fEntrada && !(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy') ?? '').toLowerCase().includes(fEntrada)) return false;
+      if (fEntrada && !(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC') ?? '').toLowerCase().includes(fEntrada)) return false;
       if (fVidaUtil && !this.textoVidaUtil(e).toLowerCase().includes(fVidaUtil)) return false;
       if (fCpu && !(e.procesador_nombre ?? '-').toLowerCase().includes(fCpu)) return false;
       if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
       if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
       return true;
+    });
+
+    const columna = this.ordenColumna();
+    if (!columna) return filtrados;
+    const signo = this.ordenDireccion() === 'asc' ? 1 : -1;
+    return [...filtrados].sort((a, b) => {
+      const va = this.valorOrden(a, columna);
+      const vb = this.valorOrden(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
     });
   });
 
@@ -224,6 +305,7 @@ export class EquiposAsignadosComponent implements OnInit {
   cargar(): void { this.srv.listar().subscribe((data) => this.equipos.set(data)); }
 
   limpiarFiltros(): void {
+    this.busquedaGeneral.set('');
     this.filtroCategoria.set('');
     this.filtroMarcaModelo.set('');
     this.filtroEstado.set('');

@@ -28,3 +28,8 @@
    esta por cumplirse (2 meses o menos restantes). */
 .vida-util-vencida { color: var(--red-600); font-weight: 600; }
 .vida-util-por-vencer { color: var(--amber-500); font-weight: 600; }
+
+/* Encabezados de columna ordenables (click alterna asc/desc). */
+.th-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
