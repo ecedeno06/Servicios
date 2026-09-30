@@ -23,3 +23,8 @@
   border-bottom: none;
   padding-bottom: 0;
 }
+
+/* Columna "Vida util": resalta cuando se cumplio el tiempo estimado o
+   esta por cumplirse (2 meses o menos restantes). */
+.vida-util-vencida { color: var(--red-600); font-weight: 600; }
+.vida-util-por-vencer { color: var(--amber-500); font-weight: 600; }

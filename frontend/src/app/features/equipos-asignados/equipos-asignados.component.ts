@@ -109,7 +109,7 @@ export class EquiposAsignadosComponent implements OnInit {
       if (fEstado && !this.etiquetaEstado(e.estado).toLowerCase().includes(fEstado)) return false;
       if (fAsignada && !(e.asignada_a ?? '').toLowerCase().includes(fAsignada)) return false;
       if (fEntrada && !(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy') ?? '').toLowerCase().includes(fEntrada)) return false;
-      if (fVidaUtil && !this.textoVidaUtil(e.vida_util_meses).toLowerCase().includes(fVidaUtil)) return false;
+      if (fVidaUtil && !this.textoVidaUtil(e).toLowerCase().includes(fVidaUtil)) return false;
       if (fCpu && !(e.procesador_nombre ?? '-').toLowerCase().includes(fCpu)) return false;
       if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
       if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
@@ -117,8 +117,37 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   });
 
-  textoVidaUtil(meses: number | null): string {
-    return meses != null ? `${meses} m` : '-';
+  // Meses calendario desde fecha_entrada hasta hoy. fecha_entrada es un
+  // "date" puro (medianoche UTC); se leen sus componentes en UTC (no
+  // local) para no desfasarse un dia, igual que el fix de la columna
+  // "Entrada".
+  private mesesTranscurridos(fechaEntrada: string): number {
+    const inicio = new Date(fechaEntrada);
+    const hoy = new Date();
+    let meses = (hoy.getFullYear() - inicio.getUTCFullYear()) * 12 + (hoy.getMonth() - inicio.getUTCMonth());
+    if (hoy.getDate() < inicio.getUTCDate()) meses -= 1;
+    return Math.max(0, meses);
+  }
+
+  // Meses de vida util que quedan (puede dar negativo si ya se paso del
+  // estimado; textoVidaUtil() lo recorta a 0 para mostrar).
+  private mesesRestantesVidaUtil(e: EquipoAsignado): number | null {
+    if (e.vida_util_meses == null) return null;
+    return e.vida_util_meses - this.mesesTranscurridos(e.fecha_entrada);
+  }
+
+  textoVidaUtil(e: EquipoAsignado): string {
+    const restantes = this.mesesRestantesVidaUtil(e);
+    if (restantes == null) return '-';
+    return `${Math.max(0, restantes)} de ${e.vida_util_meses} m`;
+  }
+
+  claseVidaUtil(e: EquipoAsignado): string {
+    const restantes = this.mesesRestantesVidaUtil(e);
+    if (restantes == null) return '';
+    if (restantes <= 0) return 'vida-util-vencida';
+    if (restantes <= 2) return 'vida-util-por-vencer';
+    return '';
   }
 
   form = this.fb.group({
