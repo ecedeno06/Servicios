@@ -11,6 +11,7 @@ const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
   { valor: 'stock', etiqueta: 'Stock' },
   { valor: 'reparacion', etiqueta: 'Reparacion' },
+  { valor: 'dano', etiqueta: 'Danado' },
   { valor: 'descarte', etiqueta: 'Descarte' },
   { valor: 'vendida', etiqueta: 'Vendida' },
 ];
@@ -325,6 +326,7 @@ export class EquiposAsignadosComponent implements OnInit {
     switch (estado) {
       case 'en_uso': return 'badge-green';
       case 'reparacion': return 'badge-amber';
+      case 'dano': return 'badge-red';
       case 'descarte': return 'badge-red';
       default: return 'badge-slate'; // stock, vendida
     }

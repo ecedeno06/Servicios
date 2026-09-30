@@ -144,7 +144,7 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
-const ESTADOS_VALIDOS = ['en_uso', 'stock', 'reparacion', 'descarte', 'vendida'];
+const ESTADOS_VALIDOS = ['en_uso', 'stock', 'reparacion', 'dano', 'descarte', 'vendida'];
 
 // POST /api/equipos-asignados/:id/movimiento  { estado, asignada_a?, observacion? }
 // Cambio rapido de estado desde el boton-icono de la fila (sin pasar por

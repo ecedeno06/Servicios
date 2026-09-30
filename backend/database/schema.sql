@@ -842,7 +842,7 @@ create table if not exists equipos_asignados (
     modelo                text not null,
     fecha_entrada         date not null default current_date,
     vida_util_meses       integer check (vida_util_meses is null or vida_util_meses > 0),
-    estado                text not null default 'stock' check (estado in ('en_uso', 'stock', 'reparacion', 'descarte', 'vendida')),
+    estado                text not null default 'stock' check (estado in ('en_uso', 'stock', 'reparacion', 'dano', 'descarte', 'vendida')),
     asignada_a            text,
     observacion           text,
     -- Especificaciones tecnicas, todas opcionales.

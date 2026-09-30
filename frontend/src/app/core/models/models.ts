@@ -83,7 +83,7 @@ export interface Procesador {
   nombre: string;
 }
 
-export type EstadoEquipo = 'en_uso' | 'stock' | 'reparacion' | 'descarte' | 'vendida';
+export type EstadoEquipo = 'en_uso' | 'stock' | 'reparacion' | 'dano' | 'descarte' | 'vendida';
 
 // Tabla intermedia entre el catalogo global (categorias/productos) y una
 // empresa: cada unidad fisica de equipo que la empresa tiene.
