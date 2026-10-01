@@ -102,7 +102,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.menu.cargar();
+    // El menu/mapa de permisos ya quedo cargado por authGuard antes de que
+    // esta ruta (hija de layout) se activara -- ver su comentario.
     this.horasSrv.refrescarNoLeidos();
     // Sondeo simple -- este proyecto no tiene websockets/SSE.
     interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.horasSrv.refrescarNoLeidos());
