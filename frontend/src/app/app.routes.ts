@@ -1,8 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
-import { noClienteGuard } from './core/guards/no-cliente.guard';
-import { adminGuard } from './core/guards/admin.guard';
+import { permisoGuard } from './core/guards/permiso.guard';
 import { LayoutComponent } from './features/layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { RestablecerPasswordComponent } from './features/restablecer-password/restablecer-password.component';
@@ -19,6 +18,7 @@ import { PoliticaPasswordComponent } from './features/politica-password/politica
 import { AuditoriaSesionesComponent } from './features/auditoria-sesiones/auditoria-sesiones.component';
 import { EquiposComponent } from './features/equipos/equipos.component';
 import { EquiposAsignadosComponent } from './features/equipos-asignados/equipos-asignados.component';
+import { RolesPermisosComponent } from './features/roles-permisos/roles-permisos.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,19 +29,20 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', component: DashboardComponent },
-      { path: 'clientes', component: ClientesComponent, canActivate: [noClienteGuard] },
-      { path: 'tipos-servicio', component: TiposServicioComponent, canActivate: [noClienteGuard] },
-      { path: 'contratos', component: ContratosComponent, canActivate: [noClienteGuard] },
-      { path: 'contratos/:id', component: ContratoDetalleComponent, canActivate: [noClienteGuard] },
-      { path: 'horas', component: RegistroHorasComponent },
-      { path: 'reportes', component: ReporteHorasComponent, canActivate: [noClienteGuard] },
-      { path: 'usuarios', component: UsuariosComponent, canActivate: [noClienteGuard] },
-      { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [noClienteGuard] },
+      { path: 'dashboard', component: DashboardComponent, canActivate: [permisoGuard], data: { menu: 'dashboard' } },
+      { path: 'clientes', component: ClientesComponent, canActivate: [permisoGuard], data: { menu: 'clientes' } },
+      { path: 'tipos-servicio', component: TiposServicioComponent, canActivate: [permisoGuard], data: { menu: 'tipos_servicio' } },
+      { path: 'contratos', component: ContratosComponent, canActivate: [permisoGuard], data: { menu: 'contratos' } },
+      { path: 'contratos/:id', component: ContratoDetalleComponent, canActivate: [permisoGuard], data: { menu: 'contratos' } },
+      { path: 'horas', component: RegistroHorasComponent, canActivate: [permisoGuard], data: { menu: 'horas' } },
+      { path: 'reportes', component: ReporteHorasComponent, canActivate: [permisoGuard], data: { menu: 'reportes' } },
+      { path: 'usuarios', component: UsuariosComponent, canActivate: [permisoGuard], data: { menu: 'usuarios' } },
+      { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [permisoGuard], data: { menu: 'equipos_asignados' } },
+      { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [permisoGuard], data: { menu: 'auditoria_sesiones' } },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
-      { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [adminGuard] },
       { path: 'equipos', component: EquiposComponent, canActivate: [superAdminGuard] },
+      { path: 'roles-permisos', component: RolesPermisosComponent, canActivate: [superAdminGuard] },
     ],
   },
   { path: '**', redirectTo: '' },

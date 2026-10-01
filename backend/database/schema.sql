@@ -127,6 +127,31 @@ create index if not exists idx_sesiones_empresa on sesiones(empresa_id);
 create index if not exists idx_sesiones_token_activo on sesiones(token) where activo = true;
 
 -- ---------------------------------------------------------
+-- Tabla: roles -- catalogo dinamico de roles (ver migracion 024). Los 4
+-- roles originales son "de sistema": no se pueden borrar ni renombrar su
+-- codigo porque hay logica propia del codebase que depende literalmente
+-- de esos strings (scoping de datos del rol 'cliente', un super-admin
+-- que selecciona empresa recibe 'admin' para esa sesion, etc). Un
+-- super-admin puede crear roles adicionales desde la UI de
+-- administracion.
+-- ---------------------------------------------------------
+create table if not exists roles (
+    id          serial primary key,
+    codigo      text not null unique,
+    nombre      text not null,
+    es_sistema  boolean not null default false,
+    activo      boolean not null default true,
+    created_at  timestamptz not null default now()
+);
+
+insert into roles (codigo, nombre, es_sistema) values
+    ('admin', 'Administrador', true),
+    ('supervisor', 'Supervisor', true),
+    ('tecnico', 'Tecnico', true),
+    ('cliente', 'Cliente', true)
+on conflict (codigo) do nothing;
+
+-- ---------------------------------------------------------
 -- Tabla: usuarios_empresas_rol (relacion N:M usuario <-> empresa,
 -- el rol es un atributo de esta relacion, no del usuario)
 -- ---------------------------------------------------------
@@ -134,7 +159,11 @@ create table if not exists usuarios_empresas_rol (
     id              uuid primary key default gen_random_uuid(),
     usuario_id      uuid not null references usuarios(id) on delete cascade,
     empresa_id      uuid not null references empresas(id) on delete cascade,
-    rol             text not null check (rol in ('admin', 'supervisor', 'tecnico', 'cliente')) default 'tecnico',
+    -- "rol" sigue siendo texto libre (el codigo del rol), validado contra
+    -- la tabla roles en vez de un CHECK fijo -- permite roles nuevos sin
+    -- tocar el esquema, y nada del codigo que compara este valor contra
+    -- 'admin'/'cliente' etc. tiene que cambiar.
+    rol             text not null references roles(codigo) default 'tecnico',
     -- Solo aplica (y es obligatorio) cuando rol = 'cliente': a que cliente
     -- de la empresa representa este usuario. FK hacia clientes(id) se
     -- agrega mas abajo, una vez que esa tabla ya existe.
@@ -147,6 +176,91 @@ create table if not exists usuarios_empresas_rol (
     updated_at      timestamptz not null default now(),
     unique (usuario_id, empresa_id)
 );
+
+-- ---------------------------------------------------------
+-- Tablas: permisos / menus / rol_menu_permisos -- menu dinamico y matriz
+-- de permisos por rol (ver migracion 025). Las pantallas de
+-- configuracion cross-empresa (Empresas, Politica de password, Equipos
+-- catalogo) quedan fuera a proposito: siguen gateadas solo por
+-- usuarios.es_super_admin, no por esta matriz.
+-- ---------------------------------------------------------
+create table if not exists permisos (
+    id      serial primary key,
+    codigo  text not null unique,
+    nombre  text not null
+);
+
+insert into permisos (codigo, nombre) values
+    ('ver', 'Ver'),
+    ('crear', 'Crear'),
+    ('editar', 'Editar'),
+    ('eliminar', 'Eliminar')
+on conflict (codigo) do nothing;
+
+create table if not exists menus (
+    id          serial primary key,
+    codigo      text not null unique,
+    nombre      text not null,
+    ruta        text,
+    icono       text,
+    padre_id    integer references menus(id) on delete cascade,
+    orden       integer not null default 0,
+    activo      boolean not null default true
+);
+
+insert into menus (codigo, nombre, ruta, icono, orden) values
+    ('dashboard', 'Resumen', '/dashboard', 'dashboard', 10),
+    ('contratos', 'Contratos', '/contratos', 'contratos', 20),
+    ('horas', 'Registro de horas', '/horas', 'horas', 30),
+    ('reportes', 'Reportes', '/reportes', 'reportes', 40),
+    ('clientes', 'Clientes', '/clientes', 'clientes', 50),
+    ('tipos_servicio', 'Tipos de servicio', '/tipos-servicio', 'tipos_servicio', 60),
+    ('usuarios', 'Usuarios', '/usuarios', 'usuarios', 70),
+    ('equipos_asignados', 'Equipos asignados', '/equipos-asignados', 'equipos_asignados', 80),
+    ('auditoria_sesiones', 'Auditoria de sesiones', '/auditoria-sesiones', 'auditoria_sesiones', 90)
+on conflict (codigo) do nothing;
+
+create table if not exists rol_menu_permisos (
+    id          serial primary key,
+    rol_id      integer not null references roles(id) on delete cascade,
+    menu_id     integer not null references menus(id) on delete cascade,
+    permiso_id  integer not null references permisos(id) on delete cascade,
+    unique (rol_id, menu_id, permiso_id)
+);
+
+create index if not exists idx_rol_menu_permisos_rol on rol_menu_permisos(rol_id);
+
+-- Siembra inicial: reproduce el acceso que ya exigian requireRol/
+-- bloquearCliente/los guards de Angular/el sidebar antes de este cambio
+-- (ver migracion 026 para el detalle de por que cada fila esta asi).
+with datos (rol_codigo, menu_codigo, permiso_codigo) as (
+    values
+    ('admin', 'dashboard', 'ver'), ('supervisor', 'dashboard', 'ver'), ('tecnico', 'dashboard', 'ver'), ('cliente', 'dashboard', 'ver'),
+    ('admin', 'contratos', 'ver'), ('admin', 'contratos', 'crear'), ('admin', 'contratos', 'editar'), ('admin', 'contratos', 'eliminar'),
+    ('supervisor', 'contratos', 'ver'), ('supervisor', 'contratos', 'crear'), ('supervisor', 'contratos', 'editar'),
+    ('tecnico', 'contratos', 'ver'),
+    ('admin', 'horas', 'ver'), ('admin', 'horas', 'crear'), ('admin', 'horas', 'editar'), ('admin', 'horas', 'eliminar'),
+    ('supervisor', 'horas', 'ver'), ('supervisor', 'horas', 'crear'), ('supervisor', 'horas', 'editar'), ('supervisor', 'horas', 'eliminar'),
+    ('tecnico', 'horas', 'ver'), ('tecnico', 'horas', 'crear'),
+    ('cliente', 'horas', 'ver'),
+    ('admin', 'reportes', 'ver'), ('supervisor', 'reportes', 'ver'), ('tecnico', 'reportes', 'ver'),
+    ('admin', 'clientes', 'ver'), ('admin', 'clientes', 'crear'), ('admin', 'clientes', 'editar'), ('admin', 'clientes', 'eliminar'),
+    ('supervisor', 'clientes', 'ver'), ('supervisor', 'clientes', 'crear'), ('supervisor', 'clientes', 'editar'),
+    ('tecnico', 'clientes', 'ver'),
+    ('admin', 'tipos_servicio', 'ver'), ('admin', 'tipos_servicio', 'crear'), ('admin', 'tipos_servicio', 'editar'), ('admin', 'tipos_servicio', 'eliminar'),
+    ('supervisor', 'tipos_servicio', 'ver'), ('supervisor', 'tipos_servicio', 'crear'), ('supervisor', 'tipos_servicio', 'editar'),
+    ('tecnico', 'tipos_servicio', 'ver'),
+    ('admin', 'usuarios', 'ver'), ('admin', 'usuarios', 'crear'), ('admin', 'usuarios', 'editar'), ('admin', 'usuarios', 'eliminar'),
+    ('admin', 'equipos_asignados', 'ver'), ('admin', 'equipos_asignados', 'crear'), ('admin', 'equipos_asignados', 'editar'), ('admin', 'equipos_asignados', 'eliminar'),
+    ('admin', 'auditoria_sesiones', 'ver'), ('admin', 'auditoria_sesiones', 'editar')
+)
+insert into rol_menu_permisos (rol_id, menu_id, permiso_id)
+select r.id, m.id, p.id
+from datos d
+join roles r on r.codigo = d.rol_codigo
+join menus m on m.codigo = d.menu_codigo
+join permisos p on p.codigo = d.permiso_codigo
+on conflict (rol_id, menu_id, permiso_id) do nothing;
 
 -- ---------------------------------------------------------
 -- Tabla: clientes

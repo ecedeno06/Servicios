@@ -5,6 +5,7 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { ContratosService } from '../../core/services/contratos.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
 import { RegistroHora, Contrato, ConsumoHoras, Documento, Comentario } from '../../core/models/models';
 
@@ -128,7 +129,8 @@ export class RegistroHorasComponent implements OnInit {
     private contratosSrv: ContratosService,
     private route: ActivatedRoute,
     private pdfSrv: HojaServicioPdfService,
-    public auth: AuthService
+    public auth: AuthService,
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {

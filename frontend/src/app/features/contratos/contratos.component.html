@@ -3,7 +3,7 @@
     <h1>Contratos</h1>
     <div class="desc">Contratos firmados por cliente, con sus horas y estado</div>
   </div>
-  @if (auth.puedeEditar()) {
+  @if (menu.tienePermiso('contratos','editar')) {
     <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo contrato</button>
   }
 </div>
@@ -42,10 +42,10 @@
           <td><span class="badge" [ngClass]="vigencia(c).clase">{{ vigencia(c).texto }}</span></td>
           <td class="table-actions">
             <a class="btn btn-outline btn-sm" [routerLink]="['/contratos', c.id]">Ver horas</a>
-            @if (auth.puedeEditar()) {
+            @if (menu.tienePermiso('contratos','editar')) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
             }
-            @if (auth.puedeEliminar()) {
+            @if (menu.tienePermiso('contratos','eliminar')) {
               <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
             }
           </td>

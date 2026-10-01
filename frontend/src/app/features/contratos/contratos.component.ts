@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ContratosService } from '../../core/services/contratos.service';
 import { ClientesService } from '../../core/services/clientes.service';
-import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
 
 @Component({
@@ -104,7 +104,7 @@ export class ContratosComponent implements OnInit {
     private fb: FormBuilder,
     private srv: ContratosService,
     private clientesSrv: ClientesService,
-    public auth: AuthService
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {

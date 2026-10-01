@@ -2,8 +2,10 @@ import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { RegistroHorasService } from '../../core/services/registro-horas.service';
 import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
 import { ThemeService } from '../../core/services/theme.service';
@@ -64,6 +66,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     public auth: AuthService,
+    public menu: MenuService,
+    private sanitizer: DomSanitizer,
     private fb: FormBuilder,
     private horasSrv: RegistroHorasService,
     private politicaPasswordSrv: PoliticaPasswordService,
@@ -74,7 +78,31 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   get noLeidos() { return this.horasSrv.noLeidos; }
 
+  // El rol/empresa activa no cambia durante la sesion (un super-admin que
+  // quiere otra empresa vuelve a pasar por el selector de login), asi que
+  // basta con cargar el menu/permisos una vez al entrar al shell.
+  private readonly iconos: Record<string, string> = {
+    dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+    contratos: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/>',
+    horas: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+    reportes: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>',
+    clientes: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    tipos_servicio: '<path d="M20.59 13.41 13.41 20.59a2 2 0 0 1-2.82 0L2 12V2h10z"/><circle cx="7" cy="7" r="1.3" fill="currentColor" stroke="none"/>',
+    usuarios: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+    equipos_asignados: '<rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    auditoria_sesiones: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><circle cx="12" cy="11" r="2.5"/>',
+    empresas: '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/>',
+    politica_password: '<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    equipos: '<rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    roles_permisos: '<path d="M9 12l2 2 4-4"/><path d="M12 3a9 9 0 0 0-9 9v3a9 9 0 0 0 18 0v-3a9 9 0 0 0-9-9z"/>',
+  };
+
+  iconoSvg(codigo: string | null): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.iconos[codigo || ''] || '');
+  }
+
   ngOnInit(): void {
+    this.menu.cargar();
     this.horasSrv.refrescarNoLeidos();
     // Sondeo simple -- este proyecto no tiene websockets/SSE.
     interval(INTERVALO_NOTIFICACIONES_MS).subscribe(() => this.horasSrv.refrescarNoLeidos());

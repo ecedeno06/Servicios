@@ -3,7 +3,7 @@
     <h1>Tipos de servicio</h1>
     <div class="desc">Catalogo de servicios que se pueden asignar a un contrato</div>
   </div>
-  @if (auth.puedeEditar()) {
+  @if (menu.tienePermiso('tipos_servicio','editar')) {
     <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo tipo de servicio</button>
   }
 </div>
@@ -18,10 +18,10 @@
           <td>{{ t.descripcion || '-' }}</td>
           <td><span class="badge" [class.badge-green]="t.activo" [class.badge-slate]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span></td>
           <td class="table-actions">
-            @if (auth.puedeEditar()) {
+            @if (menu.tienePermiso('tipos_servicio','editar')) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(t)">Editar</button>
             }
-            @if (auth.puedeEliminar()) {
+            @if (menu.tienePermiso('tipos_servicio','eliminar')) {
               <button class="btn btn-danger btn-sm" (click)="eliminar(t)">Eliminar</button>
             }
           </td>

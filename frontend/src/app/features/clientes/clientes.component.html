@@ -3,7 +3,7 @@
     <h1>Clientes</h1>
     <div class="desc">Empresas o personas a quienes se les presta el servicio</div>
   </div>
-  @if (auth.puedeEditar()) {
+  @if (menu.tienePermiso('clientes','editar')) {
     <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo cliente</button>
   }
 </div>
@@ -39,10 +39,10 @@
           <td>{{ c.telefono || '-' }}</td>
           <td><span class="badge" [class.badge-green]="c.activo" [class.badge-slate]="!c.activo">{{ c.activo ? 'Activo' : 'Inactivo' }}</span></td>
           <td class="table-actions">
-            @if (auth.puedeEditar()) {
+            @if (menu.tienePermiso('clientes','editar')) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>
             }
-            @if (auth.puedeEliminar()) {
+            @if (menu.tienePermiso('clientes','eliminar')) {
               <button class="btn btn-danger btn-sm" (click)="eliminar(c)">Eliminar</button>
             }
           </td>

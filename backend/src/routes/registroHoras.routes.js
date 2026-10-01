@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/registroHoras.controller');
-const { requireAuth, requireEmpresa, requireRol, bloquearCliente } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
 
 router.use(requireAuth, requireEmpresa);
 
@@ -12,9 +12,11 @@ router.get('/consumo/:contratoId', ctrl.consumoPorContrato);
 router.get('/notificaciones', ctrl.listarNotificaciones);
 router.get('/notificaciones/no-leidos', ctrl.contarComentariosNoLeidos);
 router.get('/:id', ctrl.obtener);
-router.post('/', bloquearCliente, ctrl.crear); // un cliente no ejecuta trabajo, no registra horas
-router.put('/:id', requireRol('admin', 'supervisor'), ctrl.actualizar);
-router.delete('/:id', requireRol('admin', 'supervisor'), ctrl.eliminar);
+// un cliente no ejecuta trabajo, no registra horas -- a 'cliente' no se
+// le siembra permiso 'crear' aqui.
+router.post('/', requirePermiso('horas', 'crear'), ctrl.crear);
+router.put('/:id', requirePermiso('horas', 'editar'), ctrl.actualizar);
+router.delete('/:id', requirePermiso('horas', 'eliminar'), ctrl.eliminar);
 router.get('/:id/comentarios', ctrl.listarComentarios);
 router.post('/:id/comentarios', ctrl.agregarComentario); // cualquier rol autenticado puede comentar
 router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);

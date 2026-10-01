@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
-import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { TipoServicio } from '../../core/models/models';
 
 @Component({
@@ -23,7 +23,7 @@ export class TiposServicioComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: TiposServicioService, public auth: AuthService) {}
+  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.tipos.set(data)); }

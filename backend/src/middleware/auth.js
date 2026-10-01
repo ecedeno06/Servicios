@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
+const { tienePermiso } = require('../utils/permisos');
 
 // Rutas que siguen accesibles aunque el token traiga debe_cambiar_password
 // -- sin esto el usuario quedaria atrapado sin poder ni cambiar su propia
@@ -78,12 +79,19 @@ async function requireAuth(req, res, next) {
   }
 }
 
-function requireRol(...rolesPermitidos) {
-  return (req, res, next) => {
-    if (!req.usuario || !rolesPermitidos.includes(req.usuario.rol)) {
-      return res.status(403).json({ mensaje: 'No tienes permisos para esta accion' });
-    }
-    next();
+// Reemplaza a requireRol/bloquearCliente: en vez de comparar el codigo de
+// rol contra una lista fija por ruta, consulta la matriz dinamica
+// rol_menu_permisos (ver utils/permisos.js). Un super-admin siempre pasa,
+// igual que antes.
+function requirePermiso(menuCodigo, permisoCodigo) {
+  return async (req, res, next) => {
+    if (!req.usuario) return res.status(401).json({ mensaje: 'No autenticado' });
+    if (req.usuario.es_super_admin) return next();
+    try {
+      const tiene = await tienePermiso(req.usuario.rol, menuCodigo, permisoCodigo);
+      if (!tiene) return res.status(403).json({ mensaje: 'No tienes permisos para esta accion' });
+      next();
+    } catch (err) { next(err); }
   };
 }
 
@@ -107,14 +115,4 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-// Bloquea al rol 'cliente' de acciones que no le corresponden (crear
-// registros, ver el listado de contratos, etc.) sin tener que enumerar
-// el resto de roles en cada ruta.
-function bloquearCliente(req, res, next) {
-  if (req.usuario?.rol === 'cliente') {
-    return res.status(403).json({ mensaje: 'Tu usuario no tiene permisos para esta accion' });
-  }
-  next();
-}
-
-module.exports = { requireAuth, requireRol, requireEmpresa, requireSuperAdmin, bloquearCliente };
+module.exports = { requireAuth, requirePermiso, requireEmpresa, requireSuperAdmin };

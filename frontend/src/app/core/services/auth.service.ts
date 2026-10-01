@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Usuario, EmpresaSeleccionable } from '../models/models';
+import { MenuService } from './menu.service';
 
 interface LoginResponse {
   token: string;
@@ -37,7 +38,7 @@ export class AuthService {
   private _seleccionPendiente = signal<EmpresaSeleccionable[] | null>(null);
   seleccionPendiente = computed(() => this._seleccionPendiente());
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private menu: MenuService) {}
 
   login(email: string, password: string): Observable<LoginResponse | LoginRequiereSeleccion> {
     return this.http
@@ -87,16 +88,8 @@ export class AuthService {
     localStorage.removeItem('hs_session_start_time');
     this._usuario.set(null);
     this._seleccionPendiente.set(null);
+    this.menu.limpiar();
     this.router.navigate(['/login']);
-  }
-
-  puedeEditar(): boolean {
-    const rol = this.usuario()?.rol;
-    return rol === 'admin' || rol === 'supervisor';
-  }
-
-  puedeEliminar(): boolean {
-    return this.usuario()?.rol === 'admin';
   }
 
   actualizarAvatar(avatar: string | null): Observable<Usuario> {

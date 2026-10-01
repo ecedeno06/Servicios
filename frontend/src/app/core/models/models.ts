@@ -1,4 +1,42 @@
-export type Rol = 'admin' | 'supervisor' | 'tecnico' | 'cliente';
+// Los roles son dinamicos (un super-admin puede crear roles nuevos desde
+// Configuracion -> Roles y permisos) -- el codigo ya no es un enum fijo,
+// aunque 'admin'/'supervisor'/'tecnico'/'cliente' siguen siendo los 4
+// roles "de sistema" sembrados de entrada.
+export type Rol = string;
+
+export interface RolCatalogo {
+  id: number;
+  codigo: string;
+  nombre: string;
+  es_sistema: boolean;
+  activo: boolean;
+  created_at?: string;
+}
+
+export interface Permiso {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
+
+export interface MenuItem {
+  id: number | string;
+  codigo: string;
+  nombre: string;
+  ruta: string | null;
+  icono: string | null;
+  orden?: number;
+  activo?: boolean;
+  hijos: MenuItem[];
+}
+
+// { [menuCodigo]: ['ver','crear',...] }
+export type MapaPermisos = Record<string, string[]>;
+
+export interface ConcesionMatriz {
+  menu_id: number;
+  permiso_id: number;
+}
 
 export interface Usuario {
   id: string;

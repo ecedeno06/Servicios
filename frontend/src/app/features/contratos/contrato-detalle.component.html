@@ -15,7 +15,7 @@
   <div class="card mt-16">
     <div class="flex items-center gap-12" style="justify-content: space-between;">
       <h2 style="margin:0;">Horas establecidas por tipo de servicio</h2>
-      @if (auth.puedeEditar()) {
+      @if (menu.tienePermiso('contratos','editar')) {
         <button class="btn btn-accent btn-sm" (click)="panelAbierto.set(true)">+ Asignar servicio</button>
       }
     </div>
@@ -51,10 +51,10 @@
                 </div>
               </td>
               <td class="table-actions">
-                @if (auth.puedeEditar()) {
+                @if (menu.tienePermiso('contratos','editar')) {
                   <button class="btn btn-outline btn-sm" (click)="editarHoras(s)">Editar</button>
                 }
-                @if (auth.puedeEliminar()) {
+                @if (menu.tienePermiso('contratos','eliminar')) {
                   <button class="btn btn-danger btn-sm" (click)="eliminarServicio(s.contrato_servicio_id)">Quitar</button>
                 }
               </td>
@@ -70,7 +70,7 @@
   <div class="card mt-16">
     <div class="flex items-center gap-12" style="justify-content: space-between;">
       <h2 style="margin:0;">Documentos</h2>
-      @if (auth.puedeEditar()) {
+      @if (menu.tienePermiso('contratos','editar')) {
         <button class="btn btn-accent btn-sm" (click)="panelDocAbierto.set(true)">+ Agregar documento</button>
       }
     </div>
@@ -86,7 +86,7 @@
               <td>{{ d.nombre }}</td>
               <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
               <td class="table-actions">
-                @if (auth.puedeEditar()) {
+                @if (menu.tienePermiso('contratos','editar')) {
                   <button class="btn btn-danger btn-sm" (click)="quitarDocumento($index)">Quitar</button>
                 }
               </td>

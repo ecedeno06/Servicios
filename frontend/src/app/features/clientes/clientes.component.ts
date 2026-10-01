@@ -2,7 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClientesService } from '../../core/services/clientes.service';
-import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { Cliente } from '../../core/models/models';
 
 @Component({
@@ -95,7 +95,7 @@ export class ClientesComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: ClientesService, public auth: AuthService) {}
+  constructor(private fb: FormBuilder, private srv: ClientesService, public menu: MenuService) {}
 
   ngOnInit(): void { this.cargar(); }
 

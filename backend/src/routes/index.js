@@ -13,5 +13,10 @@ router.use('/categorias', require('./categorias.routes'));
 router.use('/productos', require('./productos.routes'));
 router.use('/procesadores', require('./procesadores.routes'));
 router.use('/equipos-asignados', require('./equiposAsignados.routes'));
+router.use('/roles', require('./roles.routes'));
+router.use('/menus', require('./menus.routes'));
+router.use('/permisos', require('./permisos.routes'));
+router.use('/rol-menu-permisos', require('./rolMenuPermisos.routes'));
+router.use('/', require('./navegacion.routes'));
 
 module.exports = router;

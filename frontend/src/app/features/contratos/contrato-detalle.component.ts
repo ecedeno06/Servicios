@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ContratosService } from '../../core/services/contratos.service';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
-import { AuthService } from '../../core/services/auth.service';
+import { MenuService } from '../../core/services/menu.service';
 import { Contacto, ConsumoHoras, Contrato, Documento, TipoServicio } from '../../core/models/models';
 
 @Component({
@@ -43,7 +43,7 @@ export class ContratoDetalleComponent implements OnInit {
     private route: ActivatedRoute,
     private srv: ContratosService,
     private tiposSrv: TiposServicioService,
-    public auth: AuthService
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {
