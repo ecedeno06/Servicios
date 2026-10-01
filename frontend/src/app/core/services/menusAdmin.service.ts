@@ -13,7 +13,10 @@ export class MenusAdminService {
   constructor(private http: HttpClient) {}
 
   listar(): Observable<MenuItem[]> { return this.http.get<MenuItem[]>(this.base); }
-  actualizar(id: number, data: { nombre?: string; icono?: string; orden?: number; activo?: boolean }): Observable<MenuItem> {
+  crear(data: { codigo: string; nombre: string; ruta?: string; icono?: string; padre_id?: number; orden?: number }): Observable<MenuItem> {
+    return this.http.post<MenuItem>(this.base, data);
+  }
+  actualizar(id: number, data: { nombre?: string; ruta?: string; icono?: string; padre_id?: number | null; orden?: number; activo?: boolean }): Observable<MenuItem> {
     return this.http.put<MenuItem>(`${this.base}/${id}`, data);
   }
 }

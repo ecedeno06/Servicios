@@ -27,9 +27,18 @@ export class RolesPermisosComponent implements OnInit {
   rolSeleccionado = signal<RolCatalogo | null>(null);
   formRol = this.fb.group({ codigo: ['', Validators.required], nombre: ['', Validators.required] });
 
-  // ---------- Menus (solo nombre/icono/orden/activo -- no crea pantallas) ----------
+  // ---------- Menus (ver nota de alcance mas abajo en guardarMenu/nuevoMenu) ----------
   menuSeleccionado = signal<MenuItem | null>(null);
-  formMenu = this.fb.group({ nombre: ['', Validators.required], icono: [''], orden: [0], activo: [true] });
+  creandoMenu = signal(false);
+  formMenu = this.fb.group({
+    codigo: ['', Validators.required],
+    nombre: ['', Validators.required],
+    ruta: [''],
+    icono: [''],
+    padre_id: [''],
+    orden: [0],
+    activo: [true],
+  });
 
   // ---------- Matriz ----------
   rolMatrizId = signal<number | null>(null);
@@ -91,19 +100,56 @@ export class RolesPermisosComponent implements OnInit {
   }
 
   // ---------- Menus: mantenimiento ----------
+  // "codigo" es lo que requirePermiso('<codigo>', ...) usa en el backend y
+  // los route guards en el frontend -- queda fijo tras crear el menu, igual
+  // que el codigo de un rol. "ruta" tiene que apuntar a un componente
+  // Angular que YA existe: crear/editar un menu aqui no crea una pantalla
+  // nueva, y si se crea un menu para una ruta que todavia no existe en el
+  // codigo, el link del sidebar no va a llevar a ningun lado. Ademas, para
+  // que el backend realmente exija el permiso (no solo que se vea u oculte
+  // el link), un desarrollador tiene que llamar a requirePermiso('<codigo>',
+  // accion) en el router correspondiente -- esta pantalla sola no alcanza
+  // para proteger una ruta nueva del lado del servidor.
   seleccionarMenu(m: MenuItem): void {
     const yaSeleccionado = this.menuSeleccionado()?.id === m.id;
-    if (yaSeleccionado) { this.menuSeleccionado.set(null); return; }
+    if (yaSeleccionado) { this.cancelarMenu(); return; }
+    this.creandoMenu.set(false);
     this.menuSeleccionado.set(m);
-    this.formMenu.reset({ nombre: m.nombre, icono: m.icono ?? '', orden: m.orden ?? 0, activo: m.activo ?? true });
+    this.formMenu.reset({
+      codigo: m.codigo, nombre: m.nombre, ruta: m.ruta ?? '', icono: m.icono ?? '',
+      padre_id: m.padre_id != null ? String(m.padre_id) : '', orden: m.orden ?? 0, activo: m.activo ?? true,
+    });
+    this.formMenu.get('codigo')?.disable();
+  }
+
+  nuevoMenu(): void {
+    this.menuSeleccionado.set(null);
+    this.creandoMenu.set(true);
+    this.formMenu.reset({ codigo: '', nombre: '', ruta: '', icono: '', padre_id: '', orden: 0, activo: true });
+    this.formMenu.get('codigo')?.enable();
+  }
+
+  cancelarMenu(): void {
+    this.menuSeleccionado.set(null);
+    this.creandoMenu.set(false);
   }
 
   guardarMenu(): void {
-    const actual = this.menuSeleccionado();
-    if (!actual || this.formMenu.invalid) return;
+    if (this.formMenu.invalid) return;
     const raw = this.formMenu.getRawValue();
-    this.menusSrv.actualizar(Number(actual.id), { nombre: raw.nombre!, icono: raw.icono || undefined, orden: Number(raw.orden), activo: !!raw.activo }).subscribe({
-      next: () => { this.menuSeleccionado.set(null); this.cargarMenus(); },
+    const actual = this.menuSeleccionado();
+    const padreId = raw.padre_id ? Number(raw.padre_id) : null;
+    const req = actual
+      ? this.menusSrv.actualizar(Number(actual.id), {
+          nombre: raw.nombre!, ruta: raw.ruta?.trim() || undefined, icono: raw.icono || undefined,
+          padre_id: padreId, orden: Number(raw.orden), activo: !!raw.activo,
+        })
+      : this.menusSrv.crear({
+          codigo: raw.codigo!, nombre: raw.nombre!, ruta: raw.ruta?.trim() || undefined, icono: raw.icono || undefined,
+          padre_id: padreId ?? undefined, orden: Number(raw.orden),
+        });
+    req.subscribe({
+      next: () => { this.cancelarMenu(); this.cargarMenus(); },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el menu'),
     });
   }

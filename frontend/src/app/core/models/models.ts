@@ -25,6 +25,7 @@ export interface MenuItem {
   nombre: string;
   ruta: string | null;
   icono: string | null;
+  padre_id?: number | null;
   orden?: number;
   activo?: boolean;
   hijos: MenuItem[];
