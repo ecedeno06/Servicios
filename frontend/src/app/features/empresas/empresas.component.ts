@@ -2,7 +2,8 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmpresasService, ClienteDeEmpresa } from '../../core/services/empresas.service';
-import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol } from '../../core/models/models';
+import { RolesService } from '../../core/services/roles.service';
+import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol, RolCatalogo } from '../../core/models/models';
 
 @Component({
   selector: 'app-empresas',
@@ -19,6 +20,8 @@ export class EmpresasComponent implements OnInit {
   usuariosGlobales = signal<UsuarioGlobal[]>([]);
   usuariosDeEmpresa = signal<UsuarioDeEmpresa[]>([]);
   clientesDeEmpresa = signal<ClienteDeEmpresa[]>([]);
+  roles = signal<RolCatalogo[]>([]);
+  rolesActivos = computed(() => this.roles().filter((r) => r.activo));
   usuarioParaAsociar = '';
   rolParaAsociar: Rol = 'tecnico';
   clienteParaAsociar = '';
@@ -39,11 +42,12 @@ export class EmpresasComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: EmpresasService) {}
+  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService) {}
 
   ngOnInit(): void {
     this.cargar();
     this.srv.usuariosGlobales().subscribe((data) => this.usuariosGlobales.set(data));
+    this.rolesSrv.listar().subscribe((data) => this.roles.set(data));
   }
 
   cargar(): void { this.srv.listar().subscribe((data) => this.empresas.set(data)); }

@@ -102,10 +102,7 @@
           <div class="form-group mt-16">
             <label>Rol</label>
             <select class="input" formControlName="rol">
-              <option value="tecnico">Tecnico</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="admin">Administrador</option>
-              <option value="cliente">Cliente</option>
+              @for (r of rolesActivos(); track r.id) { <option [value]="r.codigo">{{ r.nombre }}</option> }
             </select>
           </div>
           @if (form.get('rol')?.value === 'cliente') {

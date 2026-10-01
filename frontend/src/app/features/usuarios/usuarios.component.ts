@@ -1,11 +1,12 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UsuariosService } from '../../core/services/usuarios.service';
 import { ClientesService } from '../../core/services/clientes.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
-import { Usuario, Cliente, Rol, PoliticaPassword } from '../../core/models/models';
+import { RolesService } from '../../core/services/roles.service';
+import { Usuario, Cliente, Rol, PoliticaPassword, RolCatalogo } from '../../core/models/models';
 import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
 
 @Component({
@@ -18,6 +19,8 @@ import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
 export class UsuariosComponent implements OnInit {
   usuarios = signal<Usuario[]>([]);
   clientes = signal<Cliente[]>([]);
+  roles = signal<RolCatalogo[]>([]);
+  rolesActivos = computed(() => this.roles().filter((r) => r.activo));
   panelAbierto = signal(false);
   editando = signal<Usuario | null>(null);
   usuarioExistente = signal<{ nombre: string } | null>(null);
@@ -40,12 +43,14 @@ export class UsuariosComponent implements OnInit {
     private srv: UsuariosService,
     private clientesSrv: ClientesService,
     private politicaPasswordSrv: PoliticaPasswordService,
+    private rolesSrv: RolesService,
     public auth: AuthService
   ) {}
 
   ngOnInit(): void {
     this.cargar();
     this.clientesSrv.listar().subscribe((data) => this.clientes.set(data));
+    this.rolesSrv.listar().subscribe((data) => this.roles.set(data));
     this.politicaPasswordSrv.obtener().subscribe({
       next: (p) => this.politica.set(p),
       error: () => {},
