@@ -276,7 +276,7 @@
 @if (seleccionado()) {
   <div class="card mt-16">
     <div class="page-header">
-      <h2>Historico de movimientos</h2>
+      <h2>Historico de movimientos &middot; {{ idCorto(seleccionado()!.id) }}</h2>
       <input class="input" style="max-width:260px;" type="text" placeholder="Buscar en el historico..." [ngModel]="filtroHistorial()" (ngModelChange)="filtroHistorial.set($event)" />
     </div>
     @if (historial().length === 0) {

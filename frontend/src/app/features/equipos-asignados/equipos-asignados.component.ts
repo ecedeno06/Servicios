@@ -347,6 +347,10 @@ export class EquiposAsignadosComponent implements OnInit {
     return this.estados.find((e) => e.valor === estado)?.etiqueta ?? estado;
   }
 
+  idCorto(id: string): string {
+    return id.slice(0, 8).toUpperCase();
+  }
+
   claseEstado(estado: EstadoEquipo): string {
     switch (estado) {
       case 'en_uso': return 'badge-green';
