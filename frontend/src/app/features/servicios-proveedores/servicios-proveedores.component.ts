@@ -3,6 +3,7 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
+import { SectoresProveedoresService } from '../../core/services/sectores-proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
 import {
   ContactoProveedor,
@@ -11,18 +12,9 @@ import {
   FacturaServicioProveedor,
   FormaPagoFactura,
   Proveedor,
-  SectorProveedor,
+  SectorProveedorItem,
   ServicioProveedor
 } from '../../core/models/models';
-
-const SECTORES: { valor: SectorProveedor; etiqueta: string }[] = [
-  { valor: 'comunicaciones', etiqueta: 'Comunicaciones' },
-  { valor: 'energia', etiqueta: 'Energía' },
-  { valor: 'data', etiqueta: 'Data / Cloud' },
-  { valor: 'agua', etiqueta: 'Agua / Servicios Básicos' },
-  { valor: 'alquiler', etiqueta: 'Alquiler / Bienes Raíces' },
-  { valor: 'otro', etiqueta: 'Otro' },
-];
 
 const ESTADOS_SERVICIO: { valor: EstadoServicioProveedor; etiqueta: string }[] = [
   { valor: 'activo', etiqueta: 'Activo' },
@@ -52,17 +44,39 @@ const FORMAS_PAGO: { valor: FormaPagoFactura; etiqueta: string }[] = [
   styleUrl: './servicios-proveedores.component.css',
 })
 export class ServiciosProveedoresComponent implements OnInit {
-  pestanaActiva = signal<'servicios' | 'proveedores'>('servicios');
+  pestanaActiva = signal<'servicios' | 'proveedores' | 'sectores'>('servicios');
 
-  sectores = SECTORES;
   estadosServicio = ESTADOS_SERVICIO;
   estadosFactura = ESTADOS_FACTURA;
   formasPago = FORMAS_PAGO;
 
   // Listas de datos
+  sectores = signal<SectorProveedorItem[]>([]);
   proveedores = signal<Proveedor[]>([]);
   servicios = signal<ServicioProveedor[]>([]);
   cargando = signal(false);
+
+  // Filtros Sectores
+  filtroSecNombre = signal('');
+  filtroSecEstado = signal('');
+
+  hayFiltrosSec = computed(() => !!(this.filtroSecNombre() || this.filtroSecEstado()));
+
+  limpiarFiltrosSec(): void {
+    this.filtroSecNombre.set('');
+    this.filtroSecEstado.set('');
+  }
+
+  sectoresFiltrados = computed(() => {
+    const nom = this.filtroSecNombre().trim().toLowerCase();
+    const est = this.filtroSecEstado();
+
+    return this.sectores().filter((s) => {
+      if (nom && !s.nombre.toLowerCase().includes(nom) && !(s.descripcion || '').toLowerCase().includes(nom)) return false;
+      if (est && (s.activo ? 'activo' : 'inactivo') !== est) return false;
+      return true;
+    });
+  });
 
   // Filtros Proveedores
   filtroProvNombre = signal('');
@@ -92,7 +106,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     return this.proveedores().filter((p) => {
       if (nom && !p.nombre.toLowerCase().includes(nom)) return false;
-      if (sec && p.sector !== sec) return false;
+      if (sec && p.sector_id !== sec && p.sector !== sec) return false;
       if (con && !(p.contacto || '').toLowerCase().includes(con)) return false;
       if (em && !(p.correo || '').toLowerCase().includes(em)) return false;
       if (tel && !(p.telefono || '').toLowerCase().includes(tel)) return false;
@@ -129,7 +143,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.servicios().filter((s) => {
       if (nom && !s.servicio.toLowerCase().includes(nom)) return false;
       if (prov && !(s.proveedor_nombre || '').toLowerCase().includes(prov)) return false;
-      if (sec && s.proveedor_sector !== sec) return false;
+      if (sec && (s as any).proveedor_sector_id !== sec && s.proveedor_sector !== sec) return false;
       if (ctr && !(s.no_contrato || '').toLowerCase().includes(ctr)) return false;
       if (est && s.estado !== est) return false;
       return true;
@@ -154,6 +168,18 @@ export class ServiciosProveedoresComponent implements OnInit {
   kpiFacturasPendientes = signal(0);
 
   // -------------------------------------------------------------------
+  // PANEL SECTOR (Crear / Editar)
+  // -------------------------------------------------------------------
+  panelSectorAbierto = signal(false);
+  sectorEdicion = signal<SectorProveedorItem | null>(null);
+
+  sectorForm = this.fb.group({
+    nombre: ['', [Validators.required]],
+    descripcion: [''],
+    activo: [true],
+  });
+
+  // -------------------------------------------------------------------
   // PANEL PROVEEDOR (Crear / Editar)
   // -------------------------------------------------------------------
   panelProveedorAbierto = signal(false);
@@ -161,7 +187,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   proveedorForm = this.fb.group({
     nombre: ['', [Validators.required]],
-    sector: ['comunicaciones' as SectorProveedor, [Validators.required]],
+    sector_id: ['', [Validators.required]],
     descripcion: [''],
     contacto: [''],
     correo: ['', [Validators.email]],
@@ -208,6 +234,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
+    private sectoresSrv: SectoresProveedoresService,
     private proveedoresSrv: ProveedoresService,
     private serviciosSrv: ServiciosProveedoresService,
     public menu: MenuService
@@ -220,14 +247,20 @@ export class ServiciosProveedoresComponent implements OnInit {
   cargarDatos(): void {
     this.cargando.set(true);
 
-    this.proveedoresSrv.listar().subscribe({
-      next: (provs) => {
-        this.proveedores.set(provs);
-        this.serviciosSrv.listar().subscribe({
-          next: (servs) => {
-            this.servicios.set(servs);
-            this.calcularFacturasPendientesTotal();
-            this.cargando.set(false);
+    this.sectoresSrv.listar().subscribe({
+      next: (secs) => {
+        this.sectores.set(secs);
+        this.proveedoresSrv.listar().subscribe({
+          next: (provs) => {
+            this.proveedores.set(provs);
+            this.serviciosSrv.listar().subscribe({
+              next: (servs) => {
+                this.servicios.set(servs);
+                this.calcularFacturasPendientesTotal();
+                this.cargando.set(false);
+              },
+              error: () => this.cargando.set(false),
+            });
           },
           error: () => this.cargando.set(false),
         });
@@ -267,13 +300,75 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
+  // ACCIONES SECTORES
+  // -------------------------------------------------------------------
+  abrirNuevoSector(): void {
+    this.sectorEdicion.set(null);
+    this.sectorForm.reset({
+      nombre: '',
+      descripcion: '',
+      activo: true,
+    });
+    this.panelSectorAbierto.set(true);
+  }
+
+  abrirEditarSector(s: SectorProveedorItem): void {
+    this.sectorEdicion.set(s);
+    this.sectorForm.patchValue({
+      nombre: s.nombre,
+      descripcion: s.descripcion || '',
+      activo: s.activo,
+    });
+    this.panelSectorAbierto.set(true);
+  }
+
+  cerrarPanelSector(): void {
+    this.panelSectorAbierto.set(false);
+    this.sectorEdicion.set(null);
+  }
+
+  guardarSector(): void {
+    if (this.sectorForm.invalid) return;
+
+    const val = this.sectorForm.getRawValue() as any;
+    const edicion = this.sectorEdicion();
+
+    const req = edicion
+      ? this.sectoresSrv.actualizar(edicion.id, val)
+      : this.sectoresSrv.crear(val);
+
+    req.subscribe({
+      next: () => {
+        this.cerrarPanelSector();
+        this.cargarDatos();
+      },
+      error: (err) => alert(err.error?.mensaje || 'Error al guardar sector'),
+    });
+  }
+
+  eliminarSector(s: SectorProveedorItem): void {
+    if (s.proveedores_count && s.proveedores_count > 0) {
+      alert(`No se puede eliminar el sector "${s.nombre}" porque está asignado a ${s.proveedores_count} proveedor(es).`);
+      return;
+    }
+
+    if (!confirm(`¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`)) return;
+
+    this.sectoresSrv.eliminar(s.id).subscribe({
+      next: () => this.cargarDatos(),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar sector'),
+    });
+  }
+
+  // -------------------------------------------------------------------
   // ACCIONES PROVEEDORES
   // -------------------------------------------------------------------
   abrirNuevoProveedor(): void {
     this.proveedorEdicion.set(null);
+    const primerSectorId = this.sectores().length > 0 ? this.sectores()[0].id : '';
     this.proveedorForm.reset({
       nombre: '',
-      sector: 'comunicaciones',
+      sector_id: primerSectorId,
       descripcion: '',
       contacto: '',
       correo: '',
@@ -287,7 +382,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.proveedorEdicion.set(p);
     this.proveedorForm.patchValue({
       nombre: p.nombre,
-      sector: p.sector,
+      sector_id: p.sector_id || (this.sectores().find((sec) => sec.nombre === p.sector)?.id || ''),
       descripcion: p.descripcion || '',
       contacto: p.contacto || '',
       correo: p.correo || '',
@@ -521,8 +616,12 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // Helpers de Formato y Badges
-  etiquetaSector(s?: SectorProveedor): string {
-    return this.sectores.find((item) => item.valor === s)?.etiqueta || s || '';
+  obtenerNombreSector(secId?: string | null, secNombreLegacy?: string | null): string {
+    if (secId) {
+      const sec = this.sectores().find((item) => item.id === secId);
+      if (sec) return sec.nombre;
+    }
+    return secNombreLegacy || '-';
   }
 
   claseBadgeEstadoServicio(e: EstadoServicioProveedor): string {

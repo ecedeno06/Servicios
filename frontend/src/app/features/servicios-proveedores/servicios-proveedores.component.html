@@ -1,13 +1,16 @@
 <div class="page-header">
   <div>
     <h1>Servicios y Proveedores</h1>
-    <div class="desc">Gestión de proveedores, contratos de servicios por empresa y detalle de facturas</div>
+    <div class="desc">Gestión de proveedores, sectores corporativos, contratos de servicios y detalle de facturas</div>
   </div>
   @if (pestanaActiva() === 'servicios' && menu.tienePermiso('servicios_proveedores', 'editar')) {
     <button class="btn btn-accent" (click)="abrirNuevoServicio()">+ Nuevo servicio</button>
   }
   @if (pestanaActiva() === 'proveedores' && menu.tienePermiso('servicios_proveedores', 'editar')) {
     <button class="btn btn-accent" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
+  }
+  @if (pestanaActiva() === 'sectores' && menu.tienePermiso('servicios_proveedores', 'editar')) {
+    <button class="btn btn-accent" (click)="abrirNuevoSector()">+ Nuevo sector</button>
   }
 </div>
 
@@ -28,6 +31,14 @@
     (click)="pestanaActiva.set('proveedores')"
   >
     Catálogo de Proveedores ({{ proveedores().length }})
+  </button>
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'sectores'"
+    (click)="pestanaActiva.set('sectores')"
+  >
+    Sectores ({{ sectores().length }})
   </button>
 </div>
 
@@ -73,7 +84,7 @@
           <th>
             <select class="input" [ngModel]="filtroServSector()" (ngModelChange)="filtroServSector.set($event)">
               <option value="">Todos</option>
-              @for (sec of sectores; track sec.valor) { <option [value]="sec.valor">{{ sec.etiqueta }}</option> }
+              @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" /></th>
@@ -103,7 +114,8 @@
                 <a [href]="enlaceWhatsApp(s.proveedor_telefono)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
               }
             </td>
-            <td><span class="badge badge-slate">{{ etiquetaSector(s.proveedor_sector) }}</span></td>
+            <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
+
             <td><code>{{ s.no_contrato || '-' }}</code></td>
             <td>{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
@@ -157,7 +169,7 @@
           <th>
             <select class="input" [ngModel]="filtroProvSector()" (ngModelChange)="filtroProvSector.set($event)">
               <option value="">Todos</option>
-              @for (sec of sectores; track sec.valor) { <option [value]="sec.valor">{{ sec.etiqueta }}</option> }
+              @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvContacto()" (ngModelChange)="filtroProvContacto.set($event)" /></th>
@@ -180,7 +192,7 @@
                 <div style="font-size: 11px; color: var(--text-muted);">{{ p.descripcion }}</div>
               }
             </td>
-            <td><span class="badge badge-slate">{{ etiquetaSector(p.sector) }}</span></td>
+            <td><span class="badge badge-slate">{{ obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector) }}</span></td>
             <td>{{ p.contacto || '-' }}</td>
             <td>{{ p.correo || '-' }}</td>
             <td>
@@ -215,6 +227,107 @@
   </div>
 }
 
+<!-- PESTAÑA 3: CATÁLOGO DE SECTORES DE PROVEEDORES -->
+@if (pestanaActiva() === 'sectores') {
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre del Sector</th>
+          <th>Descripción</th>
+          <th class="th-narrow">Estado</th>
+          <th style="text-align: center;">Proveedores</th>
+          <th></th>
+        </tr>
+        <tr class="filter-row">
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroSecNombre()" (ngModelChange)="filtroSecNombre.set($event)" /></th>
+          <th></th>
+          <th>
+            <select class="input" [ngModel]="filtroSecEstado()" (ngModelChange)="filtroSecEstado.set($event)">
+              <option value="">Todos</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+          <th>
+            @if (hayFiltrosSec()) {
+              <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosSec()">Limpiar</button>
+            }
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sec of sectoresFiltrados(); track sec.id) {
+          <tr>
+            <td><strong>{{ sec.nombre }}</strong></td>
+            <td>{{ sec.descripcion || '-' }}</td>
+            <td>
+              <span class="badge" [class.badge-green]="sec.activo" [class.badge-slate]="!sec.activo">
+                {{ sec.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-slate">{{ sec.proveedores_count || 0 }}</span>
+            </td>
+            <td class="table-actions">
+              @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+                <button class="btn btn-outline btn-sm" (click)="abrirEditarSector(sec)">Editar</button>
+              }
+              @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                <button class="btn btn-danger btn-sm" (click)="eliminarSector(sec)">Eliminar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                {{ hayFiltrosSec() ? 'Ningún sector coincide con los filtros aplicados.' : 'No hay sectores registrados todavía.' }}
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- DRAWER: CREAR / EDITAR SECTOR -->
+@if (panelSectorAbierto()) {
+  <div class="overlay" (click)="cerrarPanelSector()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ sectorEdicion() ? 'Editar sector' : 'Nuevo sector' }}</h2>
+        <button type="button" class="close" (click)="cerrarPanelSector()">&times;</button>
+      </div>
+
+      <form [formGroup]="sectorForm" (ngSubmit)="guardarSector()">
+        <div class="form-group">
+          <label>Nombre del Sector *</label>
+          <input class="input" formControlName="nombre" placeholder="Ej. Comunicaciones, Energía, Inteligencia Artificial..." />
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Descripción</label>
+          <textarea class="input" rows="3" formControlName="descripcion" placeholder="Alcance o categoría del sector..."></textarea>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="flex items-center gap-8">
+            <input type="checkbox" formControlName="activo" /> Sector activo
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="sectorForm.invalid">Guardar</button>
+          <button type="button" class="btn btn-outline" (click)="cerrarPanelSector()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
 <!-- DRAWER: CREAR / EDITAR PROVEEDOR -->
 @if (panelProveedorAbierto()) {
   <div class="overlay" (click)="cerrarPanelProveedor()">
@@ -227,14 +340,15 @@
       <form [formGroup]="proveedorForm" (ngSubmit)="guardarProveedor()">
         <div class="form-group">
           <label>Nombre del Proveedor *</label>
-          <input class="input" formControlName="nombre" placeholder="Ej. Claro, Tigo, AWS, EPM..." />
+          <input class="input" formControlName="nombre" placeholder="Ej. Anthropic, Claro, AWS, EPM..." />
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
           <label>Sector *</label>
-          <select class="input" formControlName="sector">
-            @for (sec of sectores; track sec.valor) {
-              <option [value]="sec.valor">{{ sec.etiqueta }}</option>
+          <select class="input" formControlName="sector_id">
+            <option value="">-- Seleccionar Sector --</option>
+            @for (sec of sectores(); track sec.id) {
+              <option [value]="sec.id">{{ sec.nombre }}</option>
             }
           </select>
         </div>
@@ -289,7 +403,7 @@
           <select class="input" formControlName="proveedor_id">
             <option value="">-- Seleccionar Proveedor --</option>
             @for (p of proveedores(); track p.id) {
-              <option [value]="p.id">{{ p.nombre }} ({{ etiquetaSector(p.sector) }})</option>
+              <option [value]="p.id">{{ p.nombre }} ({{ obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector) }})</option>
             }
           </select>
         </div>

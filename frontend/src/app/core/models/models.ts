@@ -323,7 +323,22 @@ export interface RegistroHora {
   created_at?: string;
 }
 
-export type SectorProveedor = 'comunicaciones' | 'energia' | 'data' | 'agua' | 'alquiler' | 'otro';
+export type SectorProveedor = string;
+
+export interface SectorProveedorItem {
+  id: string;
+  empresa_id: string;
+  nombre: string;
+  descripcion?: string | null;
+  activo: boolean;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+  proveedores_count?: number;
+}
 
 export interface Proveedor {
   id: string;
@@ -334,7 +349,9 @@ export interface Proveedor {
   correo?: string | null;
   telefono?: string | null;
   acepta_whatsapp: boolean;
-  sector: SectorProveedor;
+  sector: string;
+  sector_id?: string | null;
+  sector_nombre?: string | null;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;
@@ -343,6 +360,7 @@ export interface Proveedor {
   updated_at: string;
   servicios_count?: number;
 }
+
 
 export interface ContactoProveedor {
   nombre: string;
@@ -359,7 +377,9 @@ export interface ServicioProveedor {
   proveedor_id: string;
   proveedor_nombre?: string;
   proveedor_sector?: SectorProveedor;
+  proveedor_sector_id?: string | null;
   proveedor_telefono?: string;
+
   proveedor_acepta_whatsapp?: boolean;
   servicio: string;
   costo_mensual: number;
