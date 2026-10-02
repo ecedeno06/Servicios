@@ -17,6 +17,9 @@ router.use('/roles', require('./roles.routes'));
 router.use('/menus', require('./menus.routes'));
 router.use('/permisos', require('./permisos.routes'));
 router.use('/rol-menu-permisos', require('./rolMenuPermisos.routes'));
+router.use('/proveedores', require('./proveedores.routes'));
+router.use('/servicios-proveedores', require('./serviciosProveedores.routes'));
 router.use('/', require('./navegacion.routes'));
+
 
 module.exports = router;

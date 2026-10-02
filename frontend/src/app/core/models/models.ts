@@ -322,3 +322,79 @@ export interface RegistroHora {
   comentarios_count?: number;
   created_at?: string;
 }
+
+export type SectorProveedor = 'comunicaciones' | 'energia' | 'data' | 'agua' | 'alquiler' | 'otro';
+
+export interface Proveedor {
+  id: string;
+  empresa_id: string;
+  nombre: string;
+  descripcion?: string | null;
+  contacto?: string | null;
+  correo?: string | null;
+  telefono?: string | null;
+  acepta_whatsapp: boolean;
+  sector: SectorProveedor;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+  servicios_count?: number;
+}
+
+export interface ContactoProveedor {
+  nombre: string;
+  telefono?: string;
+  email?: string;
+  cargo?: string;
+}
+
+export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado';
+
+export interface ServicioProveedor {
+  id: string;
+  empresa_id: string;
+  proveedor_id: string;
+  proveedor_nombre?: string;
+  proveedor_sector?: SectorProveedor;
+  proveedor_telefono?: string;
+  proveedor_acepta_whatsapp?: boolean;
+  servicio: string;
+  costo_mensual: number;
+  costo_anual: number;
+  fecha_inicio: string;
+  no_contrato?: string | null;
+  contactos: ContactoProveedor[];
+  estado: EstadoServicioProveedor;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+  facturas_count?: number;
+  monto_total_pagado?: number;
+  facturas?: FacturaServicioProveedor[];
+}
+
+export type EstadoFacturaServicio = 'pagada' | 'anulada' | 'pendiente';
+export type FormaPagoFactura = 'transferencia' | 'visa' | 'efectivo' | 'otro';
+
+export interface FacturaServicioProveedor {
+  id: string;
+  servicio_proveedor_id: string;
+  fecha_factura: string;
+  monto_factura: number;
+  estado: EstadoFacturaServicio;
+  forma_pago: FormaPagoFactura;
+  observaciones?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+

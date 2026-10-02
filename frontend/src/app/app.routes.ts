@@ -19,6 +19,7 @@ import { AuditoriaSesionesComponent } from './features/auditoria-sesiones/audito
 import { EquiposComponent } from './features/equipos/equipos.component';
 import { EquiposAsignadosComponent } from './features/equipos-asignados/equipos-asignados.component';
 import { RolesPermisosComponent } from './features/roles-permisos/roles-permisos.component';
+import { ServiciosProveedoresComponent } from './features/servicios-proveedores/servicios-proveedores.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'reportes', component: ReporteHorasComponent, canActivate: [permisoGuard], data: { menu: 'reportes' } },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [permisoGuard], data: { menu: 'usuarios' } },
       { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [permisoGuard], data: { menu: 'equipos_asignados' } },
+      { path: 'servicios-proveedores', component: ServiciosProveedoresComponent, canActivate: [permisoGuard], data: { menu: 'servicios_proveedores' } },
       { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [permisoGuard], data: { menu: 'auditoria_sesiones' } },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
@@ -45,5 +47,6 @@ export const routes: Routes = [
       { path: 'roles-permisos', component: RolesPermisosComponent, canActivate: [superAdminGuard] },
     ],
   },
+
   { path: '**', redirectTo: '' },
 ];
