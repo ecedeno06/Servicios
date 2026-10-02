@@ -37,8 +37,8 @@ const ESTADOS_FACTURA: { valor: EstadoFacturaServicio; etiqueta: string }[] = [
 ];
 
 const FORMAS_PAGO: { valor: FormaPagoFactura; etiqueta: string }[] = [
-  { valor: 'transferencia', etiqueta: 'Transferencia Bancaria' },
-  { valor: 'visa', etiqueta: 'Tarjeta Visa / Crédito' },
+  { valor: 'transferencia', etiqueta: 'Transferencia' },
+  { valor: 'visa', etiqueta: 'Tarjeta Visa' },
   { valor: 'efectivo', etiqueta: 'Efectivo' },
   { valor: 'otro', etiqueta: 'Otro' },
 ];
@@ -63,45 +63,76 @@ export class ServiciosProveedoresComponent implements OnInit {
   proveedores = signal<Proveedor[]>([]);
   servicios = signal<ServicioProveedor[]>([]);
   cargando = signal(false);
-  errorMsg = signal('');
 
   // Filtros Proveedores
-  filtroProveedor = signal('');
+  filtroProvNombre = signal('');
+  filtroProvSector = signal('');
+  filtroProvContacto = signal('');
+  filtroProvEmail = signal('');
+  filtroProvTelefono = signal('');
+
+  hayFiltrosProv = computed(() =>
+    !!(this.filtroProvNombre() || this.filtroProvSector() || this.filtroProvContacto() || this.filtroProvEmail() || this.filtroProvTelefono())
+  );
+
+  limpiarFiltrosProv(): void {
+    this.filtroProvNombre.set('');
+    this.filtroProvSector.set('');
+    this.filtroProvContacto.set('');
+    this.filtroProvEmail.set('');
+    this.filtroProvTelefono.set('');
+  }
 
   proveedoresFiltrados = computed(() => {
-    const q = this.filtroProveedor().trim().toLowerCase();
-    if (!q) return this.proveedores();
-    return this.proveedores().filter(
-      (p) =>
-        p.nombre.toLowerCase().includes(q) ||
-        (p.contacto && p.contacto.toLowerCase().includes(q)) ||
-        (p.correo && p.correo.toLowerCase().includes(q)) ||
-        (p.telefono && p.telefono.includes(q)) ||
-        p.sector.toLowerCase().includes(q)
-    );
+    const nom = this.filtroProvNombre().trim().toLowerCase();
+    const sec = this.filtroProvSector();
+    const con = this.filtroProvContacto().trim().toLowerCase();
+    const em = this.filtroProvEmail().trim().toLowerCase();
+    const tel = this.filtroProvTelefono().trim().toLowerCase();
+
+    return this.proveedores().filter((p) => {
+      if (nom && !p.nombre.toLowerCase().includes(nom)) return false;
+      if (sec && p.sector !== sec) return false;
+      if (con && !(p.contacto || '').toLowerCase().includes(con)) return false;
+      if (em && !(p.correo || '').toLowerCase().includes(em)) return false;
+      if (tel && !(p.telefono || '').toLowerCase().includes(tel)) return false;
+      return true;
+    });
   });
 
   // Filtros Servicios
-  filtroServicioBusqueda = signal('');
-  filtroServicioSector = signal('');
-  filtroServicioEstado = signal('');
+  filtroServNombre = signal('');
+  filtroServProveedor = signal('');
+  filtroServSector = signal('');
+  filtroServContrato = signal('');
+  filtroServEstado = signal('');
+
+  hayFiltrosServ = computed(() =>
+    !!(this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() || this.filtroServEstado())
+  );
+
+  limpiarFiltrosServ(): void {
+    this.filtroServNombre.set('');
+    this.filtroServProveedor.set('');
+    this.filtroServSector.set('');
+    this.filtroServContrato.set('');
+    this.filtroServEstado.set('');
+  }
 
   serviciosFiltrados = computed(() => {
-    const q = this.filtroServicioBusqueda().trim().toLowerCase();
-    const sector = this.filtroServicioSector();
-    const estado = this.filtroServicioEstado();
+    const nom = this.filtroServNombre().trim().toLowerCase();
+    const prov = this.filtroServProveedor().trim().toLowerCase();
+    const sec = this.filtroServSector();
+    const ctr = this.filtroServContrato().trim().toLowerCase();
+    const est = this.filtroServEstado();
 
     return this.servicios().filter((s) => {
-      const cumpleBusqueda =
-        !q ||
-        s.servicio.toLowerCase().includes(q) ||
-        (s.proveedor_nombre && s.proveedor_nombre.toLowerCase().includes(q)) ||
-        (s.no_contrato && s.no_contrato.toLowerCase().includes(q));
-
-      const cumpleSector = !sector || s.proveedor_sector === sector;
-      const cumpleEstado = !estado || s.estado === estado;
-
-      return cumpleBusqueda && cumpleSector && cumpleEstado;
+      if (nom && !s.servicio.toLowerCase().includes(nom)) return false;
+      if (prov && !(s.proveedor_nombre || '').toLowerCase().includes(prov)) return false;
+      if (sec && s.proveedor_sector !== sec) return false;
+      if (ctr && !(s.no_contrato || '').toLowerCase().includes(ctr)) return false;
+      if (est && s.estado !== est) return false;
+      return true;
     });
   });
 
@@ -123,11 +154,10 @@ export class ServiciosProveedoresComponent implements OnInit {
   kpiFacturasPendientes = signal(0);
 
   // -------------------------------------------------------------------
-  // MODAL PROVEEDOR (Crear / Editar)
+  // PANEL PROVEEDOR (Crear / Editar)
   // -------------------------------------------------------------------
-  modalProveedorAbierto = signal(false);
+  panelProveedorAbierto = signal(false);
   proveedorEdicion = signal<Proveedor | null>(null);
-  guardandoProveedor = signal(false);
 
   proveedorForm = this.fb.group({
     nombre: ['', [Validators.required]],
@@ -140,11 +170,10 @@ export class ServiciosProveedoresComponent implements OnInit {
   });
 
   // -------------------------------------------------------------------
-  // MODAL SERVICIO (Crear / Editar)
+  // PANEL SERVICIO (Crear / Editar)
   // -------------------------------------------------------------------
-  modalServicioAbierto = signal(false);
+  panelServicioAbierto = signal(false);
   servicioEdicion = signal<ServicioProveedor | null>(null);
-  guardandoServicio = signal(false);
 
   servicioForm = this.fb.group({
     proveedor_id: ['', [Validators.required]],
@@ -162,9 +191,9 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
-  // MODAL / DRAWER FACTURAS Y TRANSACCIONES
+  // PANEL FACTURAS Y TRANSACCIONES (DRAWER)
   // -------------------------------------------------------------------
-  modalFacturasAbierto = signal(false);
+  panelFacturasAbierto = signal(false);
   servicioSeleccionado = signal<ServicioProveedor | null>(null);
   facturas = signal<FacturaServicioProveedor[]>([]);
   cargandoFacturas = signal(false);
@@ -181,7 +210,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private fb: FormBuilder,
     private proveedoresSrv: ProveedoresService,
     private serviciosSrv: ServiciosProveedoresService,
-    public menuSrv: MenuService
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {
@@ -190,7 +219,6 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   cargarDatos(): void {
     this.cargando.set(true);
-    this.errorMsg.set('');
 
     this.proveedoresSrv.listar().subscribe({
       next: (provs) => {
@@ -201,116 +229,110 @@ export class ServiciosProveedoresComponent implements OnInit {
             this.calcularFacturasPendientesTotal();
             this.cargando.set(false);
           },
-          error: (err) => {
-            this.errorMsg.set(err.error?.mensaje || 'Error al cargar servicios');
-            this.cargando.set(false);
-          },
+          error: () => this.cargando.set(false),
         });
       },
-      error: (err) => {
-        this.errorMsg.set(err.error?.mensaje || 'Error al cargar proveedores');
-        this.cargando.set(false);
-      },
+      error: () => this.cargando.set(false),
     });
   }
 
   calcularFacturasPendientesTotal(): void {
     let pendientes = 0;
-    this.servicios().forEach((s) => {
+    const servs = this.servicios();
+    if (servs.length === 0) {
+      this.kpiFacturasPendientes.set(0);
+      return;
+    }
+
+    let procesados = 0;
+    servs.forEach((s) => {
       if (s.id) {
         this.serviciosSrv.listarFacturas(s.id).subscribe({
           next: (facts) => {
             pendientes += facts.filter((f) => f.estado === 'pendiente').length;
-            this.kpiFacturasPendientes.set(pendientes);
+            procesados++;
+            if (procesados === servs.length) {
+              this.kpiFacturasPendientes.set(pendientes);
+            }
           },
+          error: () => {
+            procesados++;
+            if (procesados === servs.length) {
+              this.kpiFacturasPendientes.set(pendientes);
+            }
+          }
         });
       }
     });
   }
 
   // -------------------------------------------------------------------
-  // CRUD PROVEEDORES
+  // ACCIONES PROVEEDORES
   // -------------------------------------------------------------------
-  abrirModalProveedor(p?: Proveedor): void {
-    this.proveedorEdicion.set(p || null);
-    if (p) {
-      this.proveedorForm.patchValue({
-        nombre: p.nombre,
-        sector: p.sector,
-        descripcion: p.descripcion || '',
-        contacto: p.contacto || '',
-        correo: p.correo || '',
-        telefono: p.telefono || '',
-        acepta_whatsapp: p.acepta_whatsapp,
-      });
-    } else {
-      this.proveedorForm.reset({
-        nombre: '',
-        sector: 'comunicaciones',
-        descripcion: '',
-        contacto: '',
-        correo: '',
-        telefono: '',
-        acepta_whatsapp: false,
-      });
-    }
-    this.modalProveedorAbierto.set(true);
+  abrirNuevoProveedor(): void {
+    this.proveedorEdicion.set(null);
+    this.proveedorForm.reset({
+      nombre: '',
+      sector: 'comunicaciones',
+      descripcion: '',
+      contacto: '',
+      correo: '',
+      telefono: '',
+      acepta_whatsapp: false,
+    });
+    this.panelProveedorAbierto.set(true);
   }
 
-  cerrarModalProveedor(): void {
-    this.modalProveedorAbierto.set(false);
+  abrirEditarProveedor(p: Proveedor): void {
+    this.proveedorEdicion.set(p);
+    this.proveedorForm.patchValue({
+      nombre: p.nombre,
+      sector: p.sector,
+      descripcion: p.descripcion || '',
+      contacto: p.contacto || '',
+      correo: p.correo || '',
+      telefono: p.telefono || '',
+      acepta_whatsapp: p.acepta_whatsapp,
+    });
+    this.panelProveedorAbierto.set(true);
+  }
+
+  cerrarPanelProveedor(): void {
+    this.panelProveedorAbierto.set(false);
     this.proveedorEdicion.set(null);
   }
 
   guardarProveedor(): void {
-    if (this.proveedorForm.invalid) {
-      this.proveedorForm.markAllAsTouched();
-      return;
-    }
+    if (this.proveedorForm.invalid) return;
 
-    this.guardandoProveedor.set(true);
     const val = this.proveedorForm.getRawValue() as any;
     const edicion = this.proveedorEdicion();
 
-    if (edicion) {
-      this.proveedoresSrv.actualizar(edicion.id, val).subscribe({
-        next: () => {
-          this.guardandoProveedor.set(false);
-          this.cerrarModalProveedor();
-          this.cargarDatos();
-        },
-        error: (err) => {
-          alert(err.error?.mensaje || 'Error al actualizar proveedor');
-          this.guardandoProveedor.set(false);
-        },
-      });
-    } else {
-      this.proveedoresSrv.crear(val).subscribe({
-        next: () => {
-          this.guardandoProveedor.set(false);
-          this.cerrarModalProveedor();
-          this.cargarDatos();
-        },
-        error: (err) => {
-          alert(err.error?.mensaje || 'Error al crear proveedor');
-          this.guardandoProveedor.set(false);
-        },
-      });
-    }
+    const req = edicion
+      ? this.proveedoresSrv.actualizar(edicion.id, val)
+      : this.proveedoresSrv.crear(val);
+
+    req.subscribe({
+      next: () => {
+        this.cerrarPanelProveedor();
+        this.cargarDatos();
+      },
+      error: (err) => alert(err.error?.mensaje || 'Error al guardar proveedor'),
+    });
   }
 
   eliminarProveedor(p: Proveedor): void {
     if (p.servicios_count && p.servicios_count > 0) {
-      alert(`No se puede eliminar el proveedor ${p.nombre} porque tiene ${p.servicios_count} servicio(s) asociado(s).`);
+      alert(`No se puede eliminar el proveedor "${p.nombre}" porque tiene ${p.servicios_count} servicio(s) asociado(s).`);
       return;
     }
 
-    if (confirm(`¿Estás seguro de eliminar el proveedor "${p.nombre}"?`)) {
-      this.proveedoresSrv.eliminar(p.id).subscribe({
-        next: () => this.cargarDatos(),
-        error: (err) => alert(err.error?.mensaje || 'Error al eliminar proveedor'),
-      });
-    }
+    if (!confirm(`¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+
+    this.proveedoresSrv.eliminar(p.id).subscribe({
+      next: () => this.cargarDatos(),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar proveedor'),
+    });
   }
 
   enlaceWhatsApp(telefono?: string | null): string {
@@ -320,42 +342,46 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
-  // CRUD SERVICIOS
+  // ACCIONES SERVICIOS
   // -------------------------------------------------------------------
-  abrirModalServicio(s?: ServicioProveedor): void {
-    this.servicioEdicion.set(s || null);
+  abrirNuevoServicio(): void {
+    this.servicioEdicion.set(null);
     this.contactosArray.clear();
-
-    if (s) {
-      this.servicioForm.patchValue({
-        proveedor_id: s.proveedor_id,
-        servicio: s.servicio,
-        costo_mensual: s.costo_mensual,
-        costo_anual: s.costo_anual,
-        fecha_inicio: s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : new Date().toISOString().substring(0, 10),
-        no_contrato: s.no_contrato || '',
-        estado: s.estado,
-      });
-
-      if (Array.isArray(s.contactos)) {
-        s.contactos.forEach((c) => this.agregarContacto(c));
-      }
-    } else {
-      this.servicioForm.reset({
-        proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
-        servicio: '',
-        costo_mensual: 0,
-        costo_anual: 0,
-        fecha_inicio: new Date().toISOString().substring(0, 10),
-        no_contrato: '',
-        estado: 'activo',
-      });
-    }
-    this.modalServicioAbierto.set(true);
+    this.servicioForm.reset({
+      proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
+      servicio: '',
+      costo_mensual: 0,
+      costo_anual: 0,
+      fecha_inicio: new Date().toISOString().substring(0, 10),
+      no_contrato: '',
+      estado: 'activo',
+    });
+    this.panelServicioAbierto.set(true);
   }
 
-  cerrarModalServicio(): void {
-    this.modalServicioAbierto.set(false);
+  abrirEditarServicio(s: ServicioProveedor): void {
+    this.servicioEdicion.set(s);
+    this.contactosArray.clear();
+
+    this.servicioForm.patchValue({
+      proveedor_id: s.proveedor_id,
+      servicio: s.servicio,
+      costo_mensual: s.costo_mensual,
+      costo_anual: s.costo_anual,
+      fecha_inicio: s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      no_contrato: s.no_contrato || '',
+      estado: s.estado,
+    });
+
+    if (Array.isArray(s.contactos)) {
+      s.contactos.forEach((c) => this.agregarContacto(c));
+    }
+
+    this.panelServicioAbierto.set(true);
+  }
+
+  cerrarPanelServicio(): void {
+    this.panelServicioAbierto.set(false);
     this.servicioEdicion.set(null);
   }
 
@@ -382,57 +408,39 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   guardarServicio(): void {
-    if (this.servicioForm.invalid) {
-      this.servicioForm.markAllAsTouched();
-      return;
-    }
+    if (this.servicioForm.invalid) return;
 
-    this.guardandoServicio.set(true);
     const val = this.servicioForm.getRawValue() as any;
     const edicion = this.servicioEdicion();
 
-    if (edicion) {
-      this.serviciosSrv.actualizar(edicion.id, val).subscribe({
-        next: () => {
-          this.guardandoServicio.set(false);
-          this.cerrarModalServicio();
-          this.cargarDatos();
-        },
-        error: (err) => {
-          alert(err.error?.mensaje || 'Error al actualizar servicio');
-          this.guardandoServicio.set(false);
-        },
-      });
-    } else {
-      this.serviciosSrv.crear(val).subscribe({
-        next: () => {
-          this.guardandoServicio.set(false);
-          this.cerrarModalServicio();
-          this.cargarDatos();
-        },
-        error: (err) => {
-          alert(err.error?.mensaje || 'Error al crear servicio');
-          this.guardandoServicio.set(false);
-        },
-      });
-    }
+    const req = edicion
+      ? this.serviciosSrv.actualizar(edicion.id, val)
+      : this.serviciosSrv.crear(val);
+
+    req.subscribe({
+      next: () => {
+        this.cerrarPanelServicio();
+        this.cargarDatos();
+      },
+      error: (err) => alert(err.error?.mensaje || 'Error al guardar servicio'),
+    });
   }
 
   eliminarServicio(s: ServicioProveedor): void {
-    if (confirm(`¿Estás seguro de eliminar el servicio "${s.servicio}"?`)) {
-      this.serviciosSrv.eliminar(s.id).subscribe({
-        next: () => this.cargarDatos(),
-        error: (err) => alert(err.error?.mensaje || 'Error al eliminar servicio'),
-      });
-    }
+    if (!confirm(`¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`)) return;
+
+    this.serviciosSrv.eliminar(s.id).subscribe({
+      next: () => this.cargarDatos(),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar servicio'),
+    });
   }
 
   // -------------------------------------------------------------------
-  // DETALLE DE FACTURAS / TRANSACCIONES
+  // FACTURAS / DRAWER
   // -------------------------------------------------------------------
-  abrirModalFacturas(s: ServicioProveedor): void {
+  abrirFacturas(s: ServicioProveedor): void {
     this.servicioSeleccionado.set(s);
-    this.modalFacturasAbierto.set(true);
+    this.panelFacturasAbierto.set(true);
     this.facturaForm.reset({
       fecha_factura: new Date().toISOString().substring(0, 10),
       monto_factura: 0,
@@ -443,8 +451,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.cargarFacturas(s.id);
   }
 
-  cerrarModalFacturas(): void {
-    this.modalFacturasAbierto.set(false);
+  cerrarPanelFacturas(): void {
+    this.panelFacturasAbierto.set(false);
     this.servicioSeleccionado.set(null);
     this.facturas.set([]);
   }
@@ -456,18 +464,12 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.facturas.set(facts);
         this.cargandoFacturas.set(false);
       },
-      error: (err) => {
-        alert(err.error?.mensaje || 'Error al cargar facturas');
-        this.cargandoFacturas.set(false);
-      },
+      error: () => this.cargandoFacturas.set(false),
     });
   }
 
   guardarFactura(): void {
-    if (this.facturaForm.invalid) {
-      this.facturaForm.markAllAsTouched();
-      return;
-    }
+    if (this.facturaForm.invalid) return;
 
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
@@ -499,7 +501,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.cargarFacturas(servicio.id);
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al actualizar estado de la factura'),
+      error: (err) => alert(err.error?.mensaje || 'Error al actualizar estado de factura'),
     });
   }
 
@@ -507,48 +509,37 @@ export class ServiciosProveedoresComponent implements OnInit {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
 
-    if (confirm('¿Deseas eliminar esta factura?')) {
-      this.serviciosSrv.eliminarFactura(servicio.id, f.id).subscribe({
-        next: () => {
-          this.cargarFacturas(servicio.id);
-          this.cargarDatos();
-        },
-        error: (err) => alert(err.error?.mensaje || 'Error al eliminar factura'),
-      });
-    }
+    if (!confirm('¿Eliminar esta factura del registro?')) return;
+
+    this.serviciosSrv.eliminarFactura(servicio.id, f.id).subscribe({
+      next: () => {
+        this.cargarFacturas(servicio.id);
+        this.cargarDatos();
+      },
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar factura'),
+    });
   }
 
-  // Helpers
+  // Helpers de Formato y Badges
   etiquetaSector(s?: SectorProveedor): string {
     return this.sectores.find((item) => item.valor === s)?.etiqueta || s || '';
   }
 
-  claseBadgeSector(s?: SectorProveedor): string {
-    switch (s) {
-      case 'comunicaciones': return 'badge-blue';
-      case 'energia': return 'badge-amber';
-      case 'data': return 'badge-purple';
-      case 'agua': return 'badge-cyan';
-      case 'alquiler': return 'badge-emerald';
-      default: return 'badge-gray';
-    }
-  }
-
   claseBadgeEstadoServicio(e: EstadoServicioProveedor): string {
     switch (e) {
-      case 'activo': return 'badge-emerald';
+      case 'activo': return 'badge-green';
       case 'en pausa': return 'badge-amber';
-      case 'cancelado': return 'badge-rose';
-      default: return 'badge-gray';
+      case 'cancelado': return 'badge-red';
+      default: return 'badge-slate';
     }
   }
 
   claseBadgeEstadoFactura(e: EstadoFacturaServicio): string {
     switch (e) {
-      case 'pagada': return 'badge-emerald';
+      case 'pagada': return 'badge-green';
       case 'pendiente': return 'badge-amber';
-      case 'anulada': return 'badge-rose';
-      default: return 'badge-gray';
+      case 'anulada': return 'badge-red';
+      default: return 'badge-slate';
     }
   }
 }

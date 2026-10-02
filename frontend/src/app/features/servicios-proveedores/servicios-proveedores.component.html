@@ -1,760 +1,480 @@
-<div class="p-4 sm:p-6 space-y-6">
-  <!-- Cabecera -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V9a2 2 0 012-2h2a2 2 0 012 2v12"/>
-        </svg>
-        Servicios y Proveedores
-      </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-        Administración de proveedores, contratos de servicios por empresa y registro de facturas.
-      </p>
+<div class="page-header">
+  <div>
+    <h1>Servicios y Proveedores</h1>
+    <div class="desc">Gestión de proveedores, contratos de servicios por empresa y detalle de facturas</div>
+  </div>
+  @if (pestanaActiva() === 'servicios' && menu.tienePermiso('servicios_proveedores', 'editar')) {
+    <button class="btn btn-accent" (click)="abrirNuevoServicio()">+ Nuevo servicio</button>
+  }
+  @if (pestanaActiva() === 'proveedores' && menu.tienePermiso('servicios_proveedores', 'editar')) {
+    <button class="btn btn-accent" (click)="abrirNuevoProveedor()">+ Nuevo proveedor</button>
+  }
+</div>
+
+<!-- Tabs de Navegación -->
+<div class="tabs">
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'servicios'"
+    (click)="pestanaActiva.set('servicios')"
+  >
+    Servicios Contratados ({{ servicios().length }})
+  </button>
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'proveedores'"
+    (click)="pestanaActiva.set('proveedores')"
+  >
+    Catálogo de Proveedores ({{ proveedores().length }})
+  </button>
+</div>
+
+<!-- PESTAÑA 1: SERVICIOS CONTRATADOS -->
+@if (pestanaActiva() === 'servicios') {
+  <!-- Tarjetas KPI -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Servicios Activos</div>
+      <div class="value">{{ kpiTotalServicios() }}</div>
     </div>
-
-    <!-- Acciones principales -->
-    <div class="flex items-center gap-2">
-      @if (pestanaActiva() === 'servicios' && menuSrv.tienePermiso('servicios_proveedores', 'crear')) {
-        <button
-          (click)="abrirModalServicio()"
-          class="btn-primary flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nuevo Servicio
-        </button>
-      }
-
-      @if (pestanaActiva() === 'proveedores' && menuSrv.tienePermiso('servicios_proveedores', 'crear')) {
-        <button
-          (click)="abrirModalProveedor()"
-          class="btn-primary flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nuevo Proveedor
-        </button>
-      }
+    <div class="stat-card">
+      <div class="label">Costo Mensual Estimado</div>
+      <div class="value">{{ kpiCostoMensualTotal() | currency:'USD':'symbol':'1.2-2' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Costo Anual Estimado</div>
+      <div class="value">{{ kpiCostoAnualTotal() | currency:'USD':'symbol':'1.2-2' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Facturas Pendientes</div>
+      <div class="value">{{ kpiFacturasPendientes() }}</div>
     </div>
   </div>
 
-  <!-- Pestañas de Navegación -->
-  <div class="border-b border-gray-200 dark:border-gray-700">
-    <nav class="-mb-px flex space-x-8">
-      <button
-        (click)="pestanaActiva.set('servicios')"
-        [class]="pestanaActiva() === 'servicios'
-          ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 border-b-2 font-semibold'
-          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-        class="py-3 px-1 text-sm flex items-center gap-2 transition"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-        Servicios Contratados ({{ servicios().length }})
-      </button>
-
-      <button
-        (click)="pestanaActiva.set('proveedores')"
-        [class]="pestanaActiva() === 'proveedores'
-          ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 border-b-2 font-semibold'
-          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium'"
-        class="py-3 px-1 text-sm flex items-center gap-2 transition"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20H2v-2a3 3 0 015.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        Catálogo de Proveedores ({{ proveedores().length }})
-      </button>
-    </nav>
-  </div>
-
-  <!-- Contenido Pestaña 1: SERVICIOS CONTRATADOS -->
-  @if (pestanaActiva() === 'servicios') {
-    <!-- Tarjetas de Métricas KPI -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Servicios Activos</div>
-        <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ kpiTotalServicios() }}</div>
-        <div class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">En operación regular</div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Costo Mensual Estimado</div>
-        <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-          {{ kpiCostoMensualTotal() | currency:'USD':'symbol':'1.2-2' }}
-        </div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total por mes</div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Costo Anual Estimado</div>
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-          {{ kpiCostoAnualTotal() | currency:'USD':'symbol':'1.2-2' }}
-        </div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Proyección anual</div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Facturas Pendientes</div>
-        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ kpiFacturasPendientes() }}</div>
-        <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">Requieren atención de pago</div>
-      </div>
-    </div>
-
-    <!-- Filtros de Búsqueda de Servicios -->
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-3">
-      <div class="flex-1 relative">
-        <input
-          type="text"
-          [ngModel]="filtroServicioBusqueda()"
-          (ngModelChange)="filtroServicioBusqueda.set($event)"
-          placeholder="Buscar por servicio, proveedor o contrato..."
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-        />
-        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-      </div>
-
-      <select
-        [ngModel]="filtroServicioSector()"
-        (ngModelChange)="filtroServicioSector.set($event)"
-        class="py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="">Todos los sectores</option>
-        @for (sec of sectores; track sec.valor) {
-          <option [value]="sec.valor">{{ sec.etiqueta }}</option>
-        }
-      </select>
-
-      <select
-        [ngModel]="filtroServicioEstado()"
-        (ngModelChange)="filtroServicioEstado.set($event)"
-        class="py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="">Todos los estados</option>
-        @for (est of estadosServicio; track est.valor) {
-          <option [value]="est.valor">{{ est.etiqueta }}</option>
-        }
-      </select>
-    </div>
-
-    <!-- Tabla de Servicios -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-          <thead class="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <tr>
-              <th class="py-3 px-4">Proveedor / Servicio</th>
-              <th class="py-3 px-4">Sector</th>
-              <th class="py-3 px-4">No. Contrato</th>
-              <th class="py-3 px-4 text-right">Costo Mensual</th>
-              <th class="py-3 px-4 text-right">Costo Anual</th>
-              <th class="py-3 px-4">Estado</th>
-              <th class="py-3 px-4 text-center">Facturas</th>
-              <th class="py-3 px-4 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-            @for (item of serviciosFiltrados(); track item.id) {
-              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
-                <td class="py-3 px-4">
-                  <div class="font-semibold text-gray-900 dark:text-white">{{ item.servicio }}</div>
-                  <div class="text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                    <span>{{ item.proveedor_nombre }}</span>
-                    @if (item.proveedor_acepta_whatsapp && item.proveedor_telefono) {
-                      <a
-                        [href]="enlaceWhatsApp(item.proveedor_telefono)"
-                        target="_blank"
-                        title="Chat en WhatsApp"
-                        class="text-emerald-500 hover:text-emerald-600"
-                      >
-                        <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.758.459 3.474 1.33 4.986L2 22l5.233-1.37a9.981 9.981 0 004.779 1.218h.004c5.505 0 9.988-4.478 9.989-9.984 0-2.669-1.038-5.176-2.925-7.062A9.925 9.925 0 0012.012 2z"/>
-                        </svg>
-                      </a>
-                    }
-                  </div>
-                </td>
-                <td class="py-3 px-4">
-                  <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + claseBadgeSector(item.proveedor_sector)">
-                    {{ etiquetaSector(item.proveedor_sector) }}
-                  </span>
-                </td>
-                <td class="py-3 px-4 font-mono text-xs">{{ item.no_contrato || '-' }}</td>
-                <td class="py-3 px-4 text-right font-medium text-gray-900 dark:text-white">
-                  {{ item.costo_mensual | currency:'USD':'symbol':'1.2-2' }}
-                </td>
-                <td class="py-3 px-4 text-right font-medium text-gray-900 dark:text-white">
-                  {{ item.costo_anual | currency:'USD':'symbol':'1.2-2' }}
-                </td>
-                <td class="py-3 px-4">
-                  <span [class]="'px-2 py-1 rounded-full text-xs font-medium capitalize ' + claseBadgeEstadoServicio(item.estado)">
-                    {{ item.estado }}
-                  </span>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <button
-                    (click)="abrirModalFacturas(item)"
-                    class="px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg transition"
-                  >
-                    Facturas ({{ item.facturas_count || 0 }})
-                  </button>
-                </td>
-                <td class="py-3 px-4 text-right space-x-2">
-                  @if (menuSrv.tienePermiso('servicios_proveedores', 'editar')) {
-                    <button
-                      (click)="abrirModalServicio(item)"
-                      class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-medium text-xs"
-                    >
-                      Editar
-                    </button>
-                  }
-                  @if (menuSrv.tienePermiso('servicios_proveedores', 'eliminar')) {
-                    <button
-                      (click)="eliminarServicio(item)"
-                      class="text-rose-600 hover:text-rose-800 dark:text-rose-400 font-medium text-xs"
-                    >
-                      Eliminar
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" class="text-center py-8 text-gray-400">
-                  No se encontraron servicios registrados.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  }
-
-  <!-- Contenido Pestaña 2: CATÁLOGO DE PROVEEDORES -->
-  @if (pestanaActiva() === 'proveedores') {
-    <!-- Filtro de Búsqueda Proveedores -->
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-      <div class="relative max-w-md">
-        <input
-          type="text"
-          [ngModel]="filtroProveedor()"
-          (ngModelChange)="filtroProveedor.set($event)"
-          placeholder="Buscar por nombre, contacto, sector, correo..."
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-        />
-        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-      </div>
-    </div>
-
-    <!-- Tabla de Proveedores -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-          <thead class="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            <tr>
-              <th class="py-3 px-4">Proveedor</th>
-              <th class="py-3 px-4">Sector</th>
-              <th class="py-3 px-4">Contacto Principal</th>
-              <th class="py-3 px-4">Correo</th>
-              <th class="py-3 px-4">Teléfono</th>
-              <th class="py-3 px-4 text-center">Servicios</th>
-              <th class="py-3 px-4 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-            @for (p of proveedoresFiltrados(); track p.id) {
-              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
-                <td class="py-3 px-4">
-                  <div class="font-semibold text-gray-900 dark:text-white">{{ p.nombre }}</div>
-                  @if (p.descripcion) {
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ p.descripcion }}</div>
-                  }
-                </td>
-                <td class="py-3 px-4">
-                  <span [class]="'px-2 py-1 rounded-full text-xs font-medium ' + claseBadgeSector(p.sector)">
-                    {{ etiquetaSector(p.sector) }}
-                  </span>
-                </td>
-                <td class="py-3 px-4">{{ p.contacto || '-' }}</td>
-                <td class="py-3 px-4">{{ p.correo || '-' }}</td>
-                <td class="py-3 px-4">
-                  <div class="flex items-center gap-1.5">
-                    <span>{{ p.telefono || '-' }}</span>
-                    @if (p.acepta_whatsapp && p.telefono) {
-                      <a
-                        [href]="enlaceWhatsApp(p.telefono)"
-                        target="_blank"
-                        title="Enviar WhatsApp"
-                        class="text-emerald-500 hover:text-emerald-600"
-                      >
-                        <svg class="w-5 h-5 inline" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.758.459 3.474 1.33 4.986L2 22l5.233-1.37a9.981 9.981 0 004.779 1.218h.004c5.505 0 9.988-4.478 9.989-9.984 0-2.669-1.038-5.176-2.925-7.062A9.925 9.925 0 0012.012 2z"/>
-                        </svg>
-                      </a>
-                    }
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-center">
-                  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    {{ p.servicios_count || 0 }}
-                  </span>
-                </td>
-                <td class="py-3 px-4 text-right space-x-2">
-                  @if (menuSrv.tienePermiso('servicios_proveedores', 'editar')) {
-                    <button
-                      (click)="abrirModalProveedor(p)"
-                      class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-medium text-xs"
-                    >
-                      Editar
-                    </button>
-                  }
-                  @if (menuSrv.tienePermiso('servicios_proveedores', 'eliminar')) {
-                    <button
-                      (click)="eliminarProveedor(p)"
-                      class="text-rose-600 hover:text-rose-800 dark:text-rose-400 font-medium text-xs"
-                    >
-                      Eliminar
-                    </button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="7" class="text-center py-8 text-gray-400">
-                  No se encontraron proveedores registrados.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  }
-
-  <!-- MODAL: CREAR / EDITAR PROVEEDOR -->
-  @if (modalProveedorAbierto()) {
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ proveedorEdicion() ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
-        </h3>
-
-        <form [formGroup]="proveedorForm" (ngSubmit)="guardarProveedor()" class="space-y-4">
-          <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Proveedor *</label>
-            <input
-              type="text"
-              formControlName="nombre"
-              placeholder="Ej. Claro, Tigo, AWS, EPM..."
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Sector *</label>
-            <select
-              formControlName="sector"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-            >
-              @for (sec of sectores; track sec.valor) {
-                <option [value]="sec.valor">{{ sec.etiqueta }}</option>
-              }
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Servicio</th>
+          <th>Proveedor</th>
+          <th>Sector</th>
+          <th>No. Contrato</th>
+          <th>Costo Mensual</th>
+          <th>Costo Anual</th>
+          <th class="th-narrow">Estado</th>
+          <th style="text-align: center;">Facturas</th>
+          <th></th>
+        </tr>
+        <tr class="filter-row">
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServNombre()" (ngModelChange)="filtroServNombre.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServProveedor()" (ngModelChange)="filtroServProveedor.set($event)" /></th>
+          <th>
+            <select class="input" [ngModel]="filtroServSector()" (ngModelChange)="filtroServSector.set($event)">
+              <option value="">Todos</option>
+              @for (sec of sectores; track sec.valor) { <option [value]="sec.valor">{{ sec.etiqueta }}</option> }
             </select>
-          </div>
+          </th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" /></th>
+          <th></th>
+          <th></th>
+          <th>
+            <select class="input" [ngModel]="filtroServEstado()" (ngModelChange)="filtroServEstado.set($event)">
+              <option value="">Todos</option>
+              @for (est of estadosServicio; track est.valor) { <option [value]="est.valor">{{ est.etiqueta }}</option> }
+            </select>
+          </th>
+          <th></th>
+          <th>
+            @if (hayFiltrosServ()) {
+              <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosServ()">Limpiar</button>
+            }
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of serviciosFiltrados(); track s.id) {
+          <tr>
+            <td><strong>{{ s.servicio }}</strong></td>
+            <td>
+              <span>{{ s.proveedor_nombre }}</span>
+              @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
+                <a [href]="enlaceWhatsApp(s.proveedor_telefono)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+              }
+            </td>
+            <td><span class="badge badge-slate">{{ etiquetaSector(s.proveedor_sector) }}</span></td>
+            <td><code>{{ s.no_contrato || '-' }}</code></td>
+            <td>{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>
+              <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
+            </td>
+            <td style="text-align: center;">
+              <button class="btn btn-outline btn-sm" (click)="abrirFacturas(s)">
+                Facturas ({{ s.facturas_count || 0 }})
+              </button>
+            </td>
+            <td class="table-actions">
+              @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+                <button class="btn btn-outline btn-sm" (click)="abrirEditarServicio(s)">Editar</button>
+              }
+              @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                <button class="btn btn-danger btn-sm" (click)="eliminarServicio(s)">Eliminar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Contacto Principal</label>
-              <input
-                type="text"
-                formControlName="contacto"
-                placeholder="Nombre del ejecutivo"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label>
-              <input
-                type="email"
-                formControlName="correo"
-                placeholder="ejemplo@proveedor.com"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
+<!-- PESTAÑA 2: CATÁLOGO DE PROVEEDORES -->
+@if (pestanaActiva() === 'proveedores') {
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Sector</th>
+          <th>Contacto Principal</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th style="text-align: center;">Servicios</th>
+          <th></th>
+        </tr>
+        <tr class="filter-row">
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvNombre()" (ngModelChange)="filtroProvNombre.set($event)" /></th>
+          <th>
+            <select class="input" [ngModel]="filtroProvSector()" (ngModelChange)="filtroProvSector.set($event)">
+              <option value="">Todos</option>
+              @for (sec of sectores; track sec.valor) { <option [value]="sec.valor">{{ sec.etiqueta }}</option> }
+            </select>
+          </th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvContacto()" (ngModelChange)="filtroProvContacto.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvEmail()" (ngModelChange)="filtroProvEmail.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvTelefono()" (ngModelChange)="filtroProvTelefono.set($event)" /></th>
+          <th></th>
+          <th>
+            @if (hayFiltrosProv()) {
+              <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosProv()">Limpiar</button>
+            }
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of proveedoresFiltrados(); track p.id) {
+          <tr>
+            <td>
+              <strong>{{ p.nombre }}</strong>
+              @if (p.descripcion) {
+                <div style="font-size: 11px; color: var(--text-muted);">{{ p.descripcion }}</div>
+              }
+            </td>
+            <td><span class="badge badge-slate">{{ etiquetaSector(p.sector) }}</span></td>
+            <td>{{ p.contacto || '-' }}</td>
+            <td>{{ p.correo || '-' }}</td>
+            <td>
+              <span>{{ p.telefono || '-' }}</span>
+              @if (p.acepta_whatsapp && p.telefono) {
+                <a [href]="enlaceWhatsApp(p.telefono)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+              }
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-slate">{{ p.servicios_count || 0 }}</span>
+            </td>
+            <td class="table-actions">
+              @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+                <button class="btn btn-outline btn-sm" (click)="abrirEditarProveedor(p)">Editar</button>
+              }
+              @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(p)">Eliminar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                {{ hayFiltrosProv() ? 'Ningún proveedor coincide con los filtros aplicados.' : 'No hay proveedores registrados todavía.' }}
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-              <input
-                type="text"
-                formControlName="telefono"
-                placeholder="+57 300 000 0000"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div class="pt-4">
-              <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  formControlName="acepta_whatsapp"
-                  class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                />
-                <span>Acepta WhatsApp</span>
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción / Observaciones</label>
-            <textarea
-              formControlName="descripcion"
-              rows="2"
-              placeholder="Detalles sobre acuerdos corporativos, cuentas clave..."
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-            ></textarea>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              (click)="cerrarModalProveedor()"
-              class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              [disabled]="guardandoProveedor()"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition disabled:opacity-50"
-            >
-              {{ guardandoProveedor() ? 'Guardando...' : 'Guardar Proveedor' }}
-            </button>
-          </div>
-        </form>
+<!-- DRAWER: CREAR / EDITAR PROVEEDOR -->
+@if (panelProveedorAbierto()) {
+  <div class="overlay" (click)="cerrarPanelProveedor()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ proveedorEdicion() ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
+        <button type="button" class="close" (click)="cerrarPanelProveedor()">&times;</button>
       </div>
+
+      <form [formGroup]="proveedorForm" (ngSubmit)="guardarProveedor()">
+        <div class="form-group">
+          <label>Nombre del Proveedor *</label>
+          <input class="input" formControlName="nombre" placeholder="Ej. Claro, Tigo, AWS, EPM..." />
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Sector *</label>
+          <select class="input" formControlName="sector">
+            @for (sec of sectores; track sec.valor) {
+              <option [value]="sec.valor">{{ sec.etiqueta }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Contacto Principal</label>
+          <input class="input" formControlName="contacto" placeholder="Ej. Juan Pérez" />
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Correo Electrónico</label>
+          <input class="input" type="email" formControlName="correo" placeholder="contacto@proveedor.com" />
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Teléfono</label>
+          <input class="input" formControlName="telefono" placeholder="+57 300 000 0000" />
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label class="flex items-center gap-8">
+            <input type="checkbox" formControlName="acepta_whatsapp" /> Acepta WhatsApp
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Descripción / Observaciones</label>
+          <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalles de contacto corporativo..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="proveedorForm.invalid">Guardar</button>
+          <button type="button" class="btn btn-outline" (click)="cerrarPanelProveedor()">Cancelar</button>
+        </div>
+      </form>
     </div>
-  }
+  </div>
+}
 
-  <!-- MODAL: CREAR / EDITAR SERVICIO -->
-  @if (modalServicioAbierto()) {
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-          {{ servicioEdicion() ? 'Editar Servicio' : 'Nuevo Servicio' }}
-        </h3>
+<!-- DRAWER: CREAR / EDITAR SERVICIO -->
+@if (panelServicioAbierto()) {
+  <div class="overlay" (click)="cerrarPanelServicio()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ servicioEdicion() ? 'Editar servicio' : 'Nuevo servicio' }}</h2>
+        <button type="button" class="close" (click)="cerrarPanelServicio()">&times;</button>
+      </div>
 
-        <form [formGroup]="servicioForm" (ngSubmit)="guardarServicio()" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Proveedor *</label>
-              <select
-                formControlName="proveedor_id"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">-- Seleccionar Proveedor --</option>
-                @for (p of proveedores(); track p.id) {
-                  <option [value]="p.id">{{ p.nombre }} ({{ etiquetaSector(p.sector) }})</option>
-                }
-              </select>
+      <form [formGroup]="servicioForm" (ngSubmit)="guardarServicio()">
+        <div class="form-group">
+          <label>Proveedor *</label>
+          <select class="input" formControlName="proveedor_id">
+            <option value="">-- Seleccionar Proveedor --</option>
+            @for (p of proveedores(); track p.id) {
+              <option [value]="p.id">{{ p.nombre }} ({{ etiquetaSector(p.sector) }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Nombre del Servicio *</label>
+          <input class="input" formControlName="servicio" placeholder="Ej. Internet 500Mbps, Servidor Cloud..." />
+        </div>
+
+        <div class="form-grid" style="margin-top: 14px;">
+          <div class="form-group">
+            <label>Costo Mensual (USD) *</label>
+            <input class="input" type="number" step="0.01" formControlName="costo_mensual" (input)="calcularCostoAnualDesdeMensual()" />
+          </div>
+          <div class="form-group">
+            <label>Costo Anual (USD) *</label>
+            <input class="input" type="number" step="0.01" formControlName="costo_anual" />
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 14px;">
+          <div class="form-group">
+            <label>Fecha de Inicio *</label>
+            <input class="input" type="date" formControlName="fecha_inicio" />
+          </div>
+          <div class="form-group">
+            <label>No. Contrato / Referencia</label>
+            <input class="input" formControlName="no_contrato" placeholder="Ej. CTR-2026-99" />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Estado *</label>
+          <select class="input" formControlName="estado">
+            @for (est of estadosServicio; track est.valor) {
+              <option [value]="est.valor">{{ est.etiqueta }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Contactos JSON Dinámicos -->
+        <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 13px;">Contactos Específicos del Servicio</label>
+            <button type="button" class="btn btn-outline btn-sm" (click)="agregarContacto()">+ Contacto</button>
+          </div>
+
+          <div formArrayName="contactos">
+            @for (cGroup of contactosArray.controls; track $index) {
+              <div [formGroupName]="$index" class="card" style="margin-bottom: 10px; padding: 12px; position: relative;">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Nombre</label>
+                    <input class="input" formControlName="nombre" placeholder="Nombre" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Teléfono</label>
+                    <input class="input" formControlName="telefono" placeholder="Teléfono" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Email</label>
+                    <input class="input" type="email" formControlName="email" placeholder="Email" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Cargo</label>
+                    <input class="input" formControlName="cargo" placeholder="Cargo" />
+                  </div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" style="margin-top: 8px;" (click)="eliminarContacto($index)">Eliminar contacto</button>
+              </div>
+            } @empty {
+              <div class="desc" style="font-style: italic;">No se han agregado contactos adicionales.</div>
+            }
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="servicioForm.invalid">Guardar</button>
+          <button type="button" class="btn btn-outline" (click)="cerrarPanelServicio()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- DRAWER: FACTURAS Y TRANSACCIONES -->
+@if (panelFacturasAbierto()) {
+  <div class="overlay" (click)="cerrarPanelFacturas()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <h2>Facturas y Transacciones</h2>
+          <div class="desc">{{ servicioSeleccionado()?.servicio }} - {{ servicioSeleccionado()?.proveedor_nombre }}</div>
+        </div>
+        <button type="button" class="close" (click)="cerrarPanelFacturas()">&times;</button>
+      </div>
+
+      <!-- Formulario para Registrar Nueva Factura -->
+      @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+        <form [formGroup]="facturaForm" (ngSubmit)="guardarFactura()" class="card" style="margin-bottom: 20px;">
+          <h3>Registrar Nueva Factura</h3>
+
+          <div class="form-grid" style="margin-top: 10px;">
+            <div class="form-group">
+              <label>Fecha Factura</label>
+              <input class="input" type="date" formControlName="fecha_factura" />
             </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Servicio *</label>
-              <input
-                type="text"
-                formControlName="servicio"
-                placeholder="Ej. Internet 500Mbps, Servidor AWS..."
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
+            <div class="form-group">
+              <label>Monto (USD)</label>
+              <input class="input" type="number" step="0.01" formControlName="monto_factura" />
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Costo Mensual (USD) *</label>
-              <input
-                type="number"
-                step="0.01"
-                formControlName="costo_mensual"
-                (input)="calcularCostoAnualDesdeMensual()"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Costo Anual (USD) *</label>
-              <input
-                type="number"
-                step="0.01"
-                formControlName="costo_anual"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Estado *</label>
-              <select
-                formControlName="estado"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              >
-                @for (est of estadosServicio; track est.valor) {
+          <div class="form-grid" style="margin-top: 10px;">
+            <div class="form-group">
+              <label>Estado Pago</label>
+              <select class="input" formControlName="estado">
+                @for (est of estadosFactura; track est.valor) {
                   <option [value]="est.valor">{{ est.etiqueta }}</option>
                 }
               </select>
             </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Inicio *</label>
-              <input
-                type="date"
-                formControlName="fecha_inicio"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">No. Contrato / Referencia</label>
-              <input
-                type="text"
-                formControlName="no_contrato"
-                placeholder="Ej. CTR-2026-99"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
-              />
+            <div class="form-group">
+              <label>Forma de Pago</label>
+              <select class="input" formControlName="forma_pago">
+                @for (fp of formasPago; track fp.valor) {
+                  <option [value]="fp.valor">{{ fp.etiqueta }}</option>
+                }
+              </select>
             </div>
           </div>
 
-          <!-- Contactos JSON Dinámicos -->
-          <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Contactos del Servicio</span>
-              <button
-                type="button"
-                (click)="agregarContacto()"
-                class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                + Agregar Contacto
-              </button>
-            </div>
-
-            <div formArrayName="contactos" class="space-y-2">
-              @for (cGroup of contactosArray.controls; track $index) {
-                <div [formGroupName]="$index" class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                  <input
-                    type="text"
-                    formControlName="nombre"
-                    placeholder="Nombre"
-                    class="flex-1 px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  />
-                  <input
-                    type="text"
-                    formControlName="telefono"
-                    placeholder="Teléfono"
-                    class="w-full sm:w-28 px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  />
-                  <input
-                    type="email"
-                    formControlName="email"
-                    placeholder="Email"
-                    class="w-full sm:w-36 px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  />
-                  <input
-                    type="text"
-                    formControlName="cargo"
-                    placeholder="Cargo"
-                    class="w-full sm:w-28 px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  />
-                  <button
-                    type="button"
-                    (click)="eliminarContacto($index)"
-                    class="text-rose-600 hover:text-rose-800 p-1"
-                    title="Quitar contacto"
-                  >
-                    &times;
-                  </button>
-                </div>
-              } @empty {
-                <p class="text-xs text-gray-400 italic">No hay contactos adicionales definidos.</p>
-              }
-            </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label>Observaciones / No. comprobante</label>
+            <input class="input" formControlName="observaciones" placeholder="Referencia de transferencia..." />
           </div>
 
-          <div class="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              (click)="cerrarModalServicio()"
-              class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              [disabled]="guardandoServicio()"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition disabled:opacity-50"
-            >
-              {{ guardandoServicio() ? 'Guardando...' : 'Guardar Servicio' }}
-            </button>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-accent btn-sm" [disabled]="facturaForm.invalid">+ Agregar Factura</button>
           </div>
         </form>
-      </div>
-    </div>
-  }
+      }
 
-  <!-- MODAL / DRAWER: FACTURAS Y TRANSACCIONES -->
-  @if (modalFacturasAbierto()) {
-    <div class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-end">
-      <div class="bg-white dark:bg-gray-800 h-full max-w-xl w-full p-6 space-y-4 overflow-y-auto shadow-2xl">
-        <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
-          <div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Facturas y Transacciones</h3>
-            <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
-              {{ servicioSeleccionado()?.servicio }} - {{ servicioSeleccionado()?.proveedor_nombre }}
-            </p>
-          </div>
-          <button
-            (click)="cerrarModalFacturas()"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold"
-          >
-            &times;
-          </button>
-        </div>
+      <!-- Historial de Facturas -->
+      <div>
+        <h3>Historial de Transacciones</h3>
 
-        <!-- Formulario para Registrar Nueva Factura -->
-        @if (menuSrv.tienePermiso('servicios_proveedores', 'crear')) {
-          <form [formGroup]="facturaForm" (ngSubmit)="guardarFactura()" class="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-xl space-y-3">
-            <div class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Registrar Nueva Factura</div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Fecha Factura</label>
-                <input
-                  type="date"
-                  formControlName="fecha_factura"
-                  class="w-full px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Monto (USD)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  formControlName="monto_factura"
-                  class="w-full px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Estado Pago</label>
-                <select
-                  formControlName="estado"
-                  class="w-full px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                >
-                  @for (est of estadosFactura; track est.valor) {
-                    <option [value]="est.valor">{{ est.etiqueta }}</option>
-                  }
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Forma de Pago</label>
-                <select
-                  formControlName="forma_pago"
-                  class="w-full px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                >
-                  @for (fp of formasPago; track fp.valor) {
-                    <option [value]="fp.valor">{{ fp.etiqueta }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <input
-                type="text"
-                formControlName="observaciones"
-                placeholder="Observaciones / No. comprobante..."
-                class="w-full px-2.5 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-
-            <button
-              type="submit"
-              class="w-full py-2 px-4 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"
-            >
-              + Agregar Factura
-            </button>
-          </form>
-        }
-
-        <!-- Historial de Facturas -->
-        <div class="space-y-2">
-          <div class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">Historial de Transacciones</div>
-
-          @if (cargandoFacturas()) {
-            <p class="text-xs text-gray-400">Cargando facturas...</p>
-          } @else {
-            <div class="space-y-2">
-              @for (f of facturas(); track f.id) {
-                <div class="p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-between text-xs">
-                  <div>
-                    <div class="font-bold text-gray-900 dark:text-white">
-                      {{ f.monto_factura | currency:'USD':'symbol':'1.2-2' }}
-                    </div>
-                    <div class="text-gray-500 dark:text-gray-400">
-                      Fecha: {{ f.fecha_factura | date:'mediumDate' }} | {{ f.forma_pago }}
-                    </div>
-                    @if (f.observaciones) {
-                      <div class="text-gray-400 italic mt-0.5">{{ f.observaciones }}</div>
-                    }
+        @if (cargandoFacturas()) {
+          <div class="desc" style="padding: 16px 0;">Cargando facturas...</div>
+        } @else {
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+            @for (f of facturas(); track f.id) {
+              <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px;">
+                <div>
+                  <div style="font-size: 15px; font-weight: 700; color: var(--text-heading);">
+                    {{ f.monto_factura | currency:'USD':'symbol':'1.2-2' }}
                   </div>
-
-                  <div class="flex items-center gap-2">
-                    <span [class]="'px-2 py-0.5 rounded-full font-medium capitalize ' + claseBadgeEstadoFactura(f.estado)">
-                      {{ f.estado }}
-                    </span>
-
-                    @if (f.estado === 'pendiente') {
-                      <button
-                        (click)="cambiarEstadoFactura(f, 'pagada')"
-                        class="text-emerald-600 hover:underline font-semibold"
-                        title="Marcar como pagada"
-                      >
-                        Pagar
-                      </button>
-                    }
-
-                    @if (menuSrv.tienePermiso('servicios_proveedores', 'eliminar')) {
-                      <button
-                        (click)="eliminarFactura(f)"
-                        class="text-rose-600 hover:text-rose-800"
-                        title="Eliminar factura"
-                      >
-                        &times;
-                      </button>
-                    }
+                  <div class="desc" style="margin-top: 2px;">
+                    Fecha: {{ f.fecha_factura | date:'mediumDate' }} | {{ f.forma_pago }}
                   </div>
+                  @if (f.observaciones) {
+                    <div class="desc" style="font-style: italic; margin-top: 2px;">{{ f.observaciones }}</div>
+                  }
                 </div>
-              } @empty {
-                <p class="text-xs text-gray-400 py-4 text-center">No hay facturas registradas para este servicio.</p>
-              }
-            </div>
-          }
-        </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge" [class]="claseBadgeEstadoFactura(f.estado)">{{ f.estado }}</span>
+
+                  @if (f.estado === 'pendiente') {
+                    <button type="button" class="btn btn-outline btn-sm" (click)="cambiarEstadoFactura(f, 'pagada')">
+                      Marcar Pagada
+                    </button>
+                  }
+
+                  @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                    <button type="button" class="btn btn-danger btn-sm" (click)="eliminarFactura(f)">&times;</button>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">No hay facturas registradas para este servicio.</div>
+            }
+          </div>
+        }
       </div>
     </div>
-  }
-</div>
+  </div>
+}
