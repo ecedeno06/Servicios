@@ -1,1 +1,20 @@
 /* Estilos específicos del componente (la mayoría se heredan del styles.css global) */
+
+/* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
+   demasiado espacio vacio en pantallas anchas -- se angosta solo aqui
+   (encapsulado al componente, no afecta el Dashboard que comparte la
+   misma clase global). */
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* La "pastilla" de Total Pagado reemplaza el .value en negro plano de
+   las demas tarjetas -- mismo tamaño de fuente que el resto para que no
+   desentone, pero con el fondo/color de exito de .badge-green. */
+.stat-pill {
+  display: inline-flex;
+  margin-top: 4px;
+  font-size: 20px;
+  font-family: var(--font-display);
+  padding: 4px 12px;
+}

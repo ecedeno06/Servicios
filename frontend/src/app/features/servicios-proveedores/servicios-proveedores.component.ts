@@ -265,6 +265,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.servicios().reduce((acc, s) => acc + (s.facturas_pendientes_count || 0), 0)
   );
 
+  // Suma de todo lo ya pagado (no filtra por estado, igual que facturas
+  // pendientes: un servicio pausado/cancelado igual conserva su historial
+  // de pagos).
+  kpiTotalPagado = computed(() =>
+    this.servicios().reduce((acc, s) => acc + (Number(s.monto_total_pagado) || 0), 0)
+  );
+
   // Click en la tarjeta "Facturas Pendientes": filtra la tabla a solo los
   // servicios que tienen al menos una factura pendiente.
   filtroSoloPendientes = signal(false);
