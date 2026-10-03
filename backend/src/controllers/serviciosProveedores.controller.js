@@ -52,7 +52,7 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -66,15 +66,16 @@ async function crear(req, res, next) {
 
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
     const estadoFinal = estado || 'activo';
-    // es_indefinido=true manda sobre cualquier fecha_fin que llegue: un
-    // contrato indefinido no tiene fecha de vencimiento.
+    // es_indefinido=true manda sobre cualquier fecha_fin/aviso que llegue:
+    // un contrato indefinido no tiene fecha de vencimiento ni aviso previo.
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
     const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
+    const diasAvisoFinal = indefinidoFinal ? null : (dias_aviso_vencimiento ?? null);
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10::jsonb, $11, $12)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13)
        returning id`,
       [
         req.empresaId,
@@ -85,6 +86,7 @@ async function crear(req, res, next) {
         fecha_inicio || null,
         fechaFinFinal,
         indefinidoFinal,
+        diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
         estadoFinal,
@@ -99,7 +101,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -113,6 +115,7 @@ async function actualizar(req, res, next) {
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
     const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
+    const diasAvisoFinal = indefinidoFinal ? null : (dias_aviso_vencimiento ?? null);
 
     await pool.query(
       `update servicios_proveedores set
@@ -123,11 +126,12 @@ async function actualizar(req, res, next) {
          fecha_inicio = coalesce($5, fecha_inicio),
          fecha_fin = $6,
          es_indefinido = $7,
-         no_contrato = $8,
-         contactos = $9::jsonb,
-         estado = $10,
-         modificado_por = $11
-       where id = $12 and empresa_id = $13`,
+         dias_aviso_vencimiento = $8,
+         no_contrato = $9,
+         contactos = $10::jsonb,
+         estado = $11,
+         modificado_por = $12
+       where id = $13 and empresa_id = $14`,
       [
         proveedor_id,
         servicio.trim(),
@@ -136,6 +140,7 @@ async function actualizar(req, res, next) {
         fecha_inicio || null,
         fechaFinFinal,
         indefinidoFinal,
+        diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
         estado || 'activo',

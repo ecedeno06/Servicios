@@ -92,6 +92,7 @@
           <th>Sector</th>
           <th>No. Contrato</th>
           <th>Fecha Fin</th>
+          <th>Aviso Previo</th>
           <th>Costo Mensual</th>
           <th>Costo Anual</th>
           <th>Pagado</th>
@@ -110,6 +111,7 @@
           </th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" /></th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" /></th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" /></th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" /></th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServPagado()" (ngModelChange)="filtroServPagado.set($event)" /></th>
@@ -143,6 +145,7 @@
                 {{ textoFechaFin(s) }}
               }
             </td>
+            <td>{{ textoAvisoVencimiento(s) }}</td>
             <td>{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
@@ -170,7 +173,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="11">
+            <td colspan="12">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
@@ -478,8 +481,10 @@
             <label>Fecha de Fin</label>
             <input class="input" type="date" formControlName="fecha_fin" />
           </div>
-
- 
+          <div class="form-group">
+            <label>Aviso previo (dias)</label>
+            <input class="input" type="number" min="0" step="1" formControlName="dias_aviso_vencimiento" placeholder="Ej. 30" />
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 14px;">

@@ -387,6 +387,7 @@ export interface ServicioProveedor {
   fecha_inicio: string;
   fecha_fin?: string | null;
   es_indefinido: boolean;
+  dias_aviso_vencimiento?: number | null;
   no_contrato?: string | null;
   contactos: ContactoProveedor[];
   estado: EstadoServicioProveedor;

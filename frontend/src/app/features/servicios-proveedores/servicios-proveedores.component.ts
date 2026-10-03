@@ -132,10 +132,18 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.datePipe.transform(s.fecha_fin, 'dd/MM/yyyy', 'UTC') || '-';
   }
 
+  // No aplica a servicios indefinidos (no tienen fecha de vencimiento de
+  // la cual avisar).
+  textoAvisoVencimiento(s: ServicioProveedor): string {
+    if (s.es_indefinido || !s.dias_aviso_vencimiento) return '-';
+    return `${s.dias_aviso_vencimiento} dias`;
+  }
+
   private coincideBusquedaGeneralServicio(s: ServicioProveedor, texto: string): boolean {
     const campos: (string | number | null | undefined)[] = [
       s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
-      s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s), s.estado, s.facturas_count,
+      s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s),
+      this.textoAvisoVencimiento(s), s.estado, s.facturas_count,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -149,6 +157,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServCostoAnual = signal('');
   filtroServPagado = signal('');
   filtroServFechaFin = signal('');
+  filtroServAviso = signal('');
   filtroServEstado = signal('');
   filtroServFacturas = signal('');
 
@@ -156,7 +165,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.busquedaGeneralServ() ||
     this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
     this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
-    this.filtroServEstado() || this.filtroServFacturas()
+    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas()
   ));
 
   limpiarFiltrosServ(): void {
@@ -170,6 +179,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServCostoAnual.set('');
     this.filtroServPagado.set('');
     this.filtroServFechaFin.set('');
+    this.filtroServAviso.set('');
     this.filtroServEstado.set('');
     this.filtroServFacturas.set('');
   }
@@ -184,6 +194,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const costoA = this.filtroServCostoAnual().trim().toLowerCase();
     const pagado = this.filtroServPagado().trim().toLowerCase();
     const fechaFin = this.filtroServFechaFin().trim().toLowerCase();
+    const aviso = this.filtroServAviso().trim().toLowerCase();
     const est = this.filtroServEstado();
     const fact = this.filtroServFacturas().trim().toLowerCase();
 
@@ -197,6 +208,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (costoA && !String(s.costo_anual ?? '').toLowerCase().includes(costoA)) return false;
       if (pagado && !String(s.monto_total_pagado ?? 0).toLowerCase().includes(pagado)) return false;
       if (fechaFin && !this.textoFechaFin(s).toLowerCase().includes(fechaFin)) return false;
+      if (aviso && !this.textoAvisoVencimiento(s).toLowerCase().includes(aviso)) return false;
       if (est && s.estado !== est) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
       return true;
@@ -262,22 +274,28 @@ export class ServiciosProveedoresComponent implements OnInit {
     fecha_inicio: [new Date().toISOString().substring(0, 10), [Validators.required]],
     fecha_fin: [{ value: null as string | null, disabled: true }],
     es_indefinido: [true],
+    dias_aviso_vencimiento: [{ value: null as number | null, disabled: true }],
     no_contrato: [''],
     estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
     contactos: this.fb.array([]),
   });
 
-  // "Indefinido" deshabilita y limpia fecha_fin -- un contrato indefinido
-  // no tiene fecha de vencimiento. getRawValue() en guardarServicio()
-  // igual incluye el valor (null) de un control deshabilitado.
+  // "Indefinido" deshabilita y limpia fecha_fin y dias_aviso_vencimiento --
+  // un contrato indefinido no tiene fecha de vencimiento ni aviso previo.
+  // getRawValue() en guardarServicio() igual incluye el valor (null) de un
+  // control deshabilitado.
   onToggleIndefinido(): void {
     const indefinido = !!this.servicioForm.get('es_indefinido')?.value;
     const fechaFinCtrl = this.servicioForm.get('fecha_fin');
+    const diasAvisoCtrl = this.servicioForm.get('dias_aviso_vencimiento');
     if (indefinido) {
       fechaFinCtrl?.reset(null);
       fechaFinCtrl?.disable();
+      diasAvisoCtrl?.reset(null);
+      diasAvisoCtrl?.disable();
     } else {
       fechaFinCtrl?.enable();
+      diasAvisoCtrl?.enable();
     }
   }
 
@@ -520,6 +538,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       fecha_inicio: new Date().toISOString().substring(0, 10),
       fecha_fin: null,
       es_indefinido: true,
+      dias_aviso_vencimiento: null,
       no_contrato: '',
       estado: 'activo',
     });
@@ -539,6 +558,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       fecha_inicio: s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : new Date().toISOString().substring(0, 10),
       fecha_fin: s.fecha_fin ? s.fecha_fin.substring(0, 10) : null,
       es_indefinido: s.es_indefinido ?? true,
+      dias_aviso_vencimiento: s.dias_aviso_vencimiento ?? null,
       no_contrato: s.no_contrato || '',
       estado: s.estado,
     });
