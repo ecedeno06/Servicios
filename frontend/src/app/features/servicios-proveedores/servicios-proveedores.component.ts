@@ -132,11 +132,40 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.datePipe.transform(s.fecha_fin, 'dd/MM/yyyy', 'UTC') || '-';
   }
 
-  // No aplica a servicios indefinidos (no tienen fecha de vencimiento de
-  // la cual avisar).
+  // Dias de hoy a fecha_fin (negativo si ya vencio). No aplica a
+  // servicios indefinidos. Compara fechas puras en UTC (sin hora) para
+  // no desfasarse un dia en timezones negativos.
+  private diasRestantes(s: ServicioProveedor): number | null {
+    if (s.es_indefinido || !s.fecha_fin) return null;
+    const fin = new Date(s.fecha_fin);
+    const finUTC = Date.UTC(fin.getUTCFullYear(), fin.getUTCMonth(), fin.getUTCDate());
+    const hoy = new Date();
+    const hoyUTC = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    return Math.round((finUTC - hoyUTC) / 86400000);
+  }
+
+  // Columna "Aviso Previo": muestra cuanto falta para vencer (no el
+  // umbral configurado en dias_aviso_vencimiento -- ese solo decide
+  // cuando se activa la alerta, ver debeAvisarVencimiento/claseBadgeAviso).
   textoAvisoVencimiento(s: ServicioProveedor): string {
-    if (s.es_indefinido || !s.dias_aviso_vencimiento) return '-';
-    return `${s.dias_aviso_vencimiento} dias`;
+    const dias = this.diasRestantes(s);
+    if (dias == null) return '-';
+    if (dias < 0) return `Vencido hace ${Math.abs(dias)} dia(s)`;
+    if (dias === 0) return 'Vence hoy';
+    return `${dias} dia(s)`;
+  }
+
+  // La alerta (badge amber/rojo) solo aparece si hay un umbral configurado
+  // y ya estamos dentro de esa ventana (o ya vencio).
+  debeAvisarVencimiento(s: ServicioProveedor): boolean {
+    if (s.dias_aviso_vencimiento == null) return false;
+    const dias = this.diasRestantes(s);
+    return dias != null && dias <= s.dias_aviso_vencimiento;
+  }
+
+  claseBadgeAviso(s: ServicioProveedor): string {
+    const dias = this.diasRestantes(s);
+    return dias != null && dias < 0 ? 'badge-red' : 'badge-amber';
   }
 
   private coincideBusquedaGeneralServicio(s: ServicioProveedor, texto: string): boolean {
