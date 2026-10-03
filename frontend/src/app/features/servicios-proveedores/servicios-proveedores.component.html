@@ -147,7 +147,7 @@
       <tbody>
         @for (s of serviciosFiltrados(); track s.id) {
           <tr>
-            <td><strong>{{ s.servicio }}</strong></td>
+            <td [title]="tooltipContactos(s)"><strong>{{ s.servicio }}</strong></td>
             <td>
               <span>{{ s.proveedor_nombre }}</span>
               @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
@@ -184,6 +184,16 @@
               </button>
             </td>
             <td class="table-actions">
+              @if (tieneContactoEmail(s)) {
+                <a class="btn-icon" [href]="enlaceEmailServicio(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                </a>
+              }
+              @if (tieneContactoTelefono(s)) {
+                <a class="btn-icon" [href]="enlaceWhatsAppServicio(s)" target="_blank" title="Enviar WhatsApp a un contacto del servicio" aria-label="Enviar WhatsApp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
+                </a>
+              }
               @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
                 <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirEditarServicio(s)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>

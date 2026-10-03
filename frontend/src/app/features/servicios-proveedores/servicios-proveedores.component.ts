@@ -545,6 +545,56 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
+  // CONTACTOS DEL SERVICIO: tooltip al pasar el mouse + acciones rapidas
+  // de correo/WhatsApp hacia esos contactos (no el telefono del
+  // proveedor -- este es el listado de contactos propios del servicio).
+  // -------------------------------------------------------------------
+  tooltipContactos(s: ServicioProveedor): string {
+    const contactos = s.contactos || [];
+    if (!contactos.length) return 'Sin contactos registrados para este servicio';
+    return contactos
+      .map((c) => {
+        const partes = [c.nombre || '(sin nombre)'];
+        if (c.cargo) partes.push(c.cargo);
+        if (c.telefono) partes.push(`Tel: ${c.telefono}`);
+        if (c.email) partes.push(`Correo: ${c.email}`);
+        return partes.join(' • ');
+      })
+      .join('\n');
+  }
+
+  private contactosConEmail(s: ServicioProveedor): ContactoProveedor[] {
+    return (s.contactos || []).filter((c) => !!c.email);
+  }
+
+  private contactosConTelefono(s: ServicioProveedor): ContactoProveedor[] {
+    return (s.contactos || []).filter((c) => !!c.telefono);
+  }
+
+  tieneContactoEmail(s: ServicioProveedor): boolean {
+    return this.contactosConEmail(s).length > 0;
+  }
+
+  tieneContactoTelefono(s: ServicioProveedor): boolean {
+    return this.contactosConTelefono(s).length > 0;
+  }
+
+  // mailto solo admite abrir el cliente de correo local -- se mandan
+  // todos los correos de contacto como destinatarios, no solo el primero.
+  enlaceEmailServicio(s: ServicioProveedor): string {
+    const correos = this.contactosConEmail(s).map((c) => c.email);
+    if (!correos.length) return '#';
+    return `mailto:${correos.join(',')}?subject=${encodeURIComponent(s.servicio)}`;
+  }
+
+  // wa.me solo admite un numero por enlace -- se usa el primer contacto
+  // que tenga telefono registrado.
+  enlaceWhatsAppServicio(s: ServicioProveedor): string {
+    const contacto = this.contactosConTelefono(s)[0];
+    return this.enlaceWhatsApp(contacto?.telefono);
+  }
+
+  // -------------------------------------------------------------------
   // ACCIONES SERVICIOS
   // -------------------------------------------------------------------
   abrirNuevoServicio(): void {
