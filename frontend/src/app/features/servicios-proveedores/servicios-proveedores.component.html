@@ -58,7 +58,7 @@
       <div class="label">Costo Anual Estimado</div>
       <div class="value">{{ kpiCostoAnualTotal() | currency:'USD':'symbol':'1.2-2' }}</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card row-clickable" role="button" tabindex="0" title="Ver servicios con facturas pendientes" (click)="verSoloPendientes()" (keydown.enter)="verSoloPendientes()">
       <div class="label">Facturas Pendientes</div>
       <div class="value">{{ kpiFacturasPendientes() }}</div>
     </div>

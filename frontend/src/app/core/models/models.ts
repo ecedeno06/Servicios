@@ -398,6 +398,7 @@ export interface ServicioProveedor {
   created_at: string;
   updated_at: string;
   facturas_count?: number;
+  facturas_pendientes_count?: number;
   monto_total_pagado?: number;
   facturas?: FacturaServicioProveedor[];
 }

@@ -194,7 +194,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.busquedaGeneralServ() ||
     this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
     this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
-    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas()
+    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas() || this.filtroSoloPendientes()
   ));
 
   limpiarFiltrosServ(): void {
@@ -211,6 +211,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServAviso.set('');
     this.filtroServEstado.set('');
     this.filtroServFacturas.set('');
+    this.filtroSoloPendientes.set(false);
   }
 
   serviciosFiltrados = computed(() => {
@@ -240,6 +241,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (aviso && !this.textoAvisoVencimiento(s).toLowerCase().includes(aviso)) return false;
       if (est && s.estado !== est) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
+      if (this.filtroSoloPendientes() && !(s.facturas_pendientes_count && s.facturas_pendientes_count > 0)) return false;
       return true;
     });
   });
@@ -259,7 +261,17 @@ export class ServiciosProveedoresComponent implements OnInit {
       .reduce((acc, s) => acc + (Number(s.costo_anual) || 0), 0)
   );
 
-  kpiFacturasPendientes = signal(0);
+  kpiFacturasPendientes = computed(() =>
+    this.servicios().reduce((acc, s) => acc + (s.facturas_pendientes_count || 0), 0)
+  );
+
+  // Click en la tarjeta "Facturas Pendientes": filtra la tabla a solo los
+  // servicios que tienen al menos una factura pendiente.
+  filtroSoloPendientes = signal(false);
+
+  verSoloPendientes(): void {
+    this.filtroSoloPendientes.set(true);
+  }
 
   // -------------------------------------------------------------------
   // PANEL SECTOR (Crear / Editar)
@@ -373,7 +385,6 @@ export class ServiciosProveedoresComponent implements OnInit {
             this.serviciosSrv.listar().subscribe({
               next: (servs) => {
                 this.servicios.set(servs);
-                this.calcularFacturasPendientesTotal();
                 this.cargando.set(false);
               },
               error: () => this.cargando.set(false),
@@ -383,36 +394,6 @@ export class ServiciosProveedoresComponent implements OnInit {
         });
       },
       error: () => this.cargando.set(false),
-    });
-  }
-
-  calcularFacturasPendientesTotal(): void {
-    let pendientes = 0;
-    const servs = this.servicios();
-    if (servs.length === 0) {
-      this.kpiFacturasPendientes.set(0);
-      return;
-    }
-
-    let procesados = 0;
-    servs.forEach((s) => {
-      if (s.id) {
-        this.serviciosSrv.listarFacturas(s.id).subscribe({
-          next: (facts) => {
-            pendientes += facts.filter((f) => f.estado === 'pendiente').length;
-            procesados++;
-            if (procesados === servs.length) {
-              this.kpiFacturasPendientes.set(pendientes);
-            }
-          },
-          error: () => {
-            procesados++;
-            if (procesados === servs.length) {
-              this.kpiFacturasPendientes.set(pendientes);
-            }
-          }
-        });
-      }
     });
   }
 

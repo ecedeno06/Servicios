@@ -11,6 +11,7 @@ const SELECT_BASE = `
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre,
     (select count(*)::int from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id) as facturas_count,
+    (select count(*)::int from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pendiente') as facturas_pendientes_count,
     (select coalesce(sum(f.monto_factura), 0)::numeric from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada') as monto_total_pagado
   from servicios_proveedores sp
   join proveedores p on p.id = sp.proveedor_id
