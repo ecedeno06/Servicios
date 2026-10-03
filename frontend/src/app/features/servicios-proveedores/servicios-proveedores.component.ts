@@ -19,6 +19,8 @@ import {
 const ESTADOS_SERVICIO: { valor: EstadoServicioProveedor; etiqueta: string }[] = [
   { valor: 'activo', etiqueta: 'Activo' },
   { valor: 'en pausa', etiqueta: 'En Pausa' },
+  { valor: 'vencido', etiqueta: 'Vencido' },
+  { valor: 'inactivo', etiqueta: 'Inactivo' },
   { valor: 'cancelado', etiqueta: 'Cancelado' },
 ];
 
@@ -830,7 +832,9 @@ export class ServiciosProveedoresComponent implements OnInit {
     switch (e) {
       case 'activo': return 'badge-green';
       case 'en pausa': return 'badge-amber';
+      case 'vencido': return 'badge-red';
       case 'cancelado': return 'badge-red';
+      case 'inactivo': return 'badge-slate';
       default: return 'badge-slate';
     }
   }

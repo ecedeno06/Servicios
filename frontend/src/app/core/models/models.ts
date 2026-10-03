@@ -371,7 +371,7 @@ export interface ContactoProveedor {
   cargo?: string;
 }
 
-export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado';
+export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado' | 'vencido' | 'inactivo';
 
 export interface ServicioProveedor {
   id: string;
