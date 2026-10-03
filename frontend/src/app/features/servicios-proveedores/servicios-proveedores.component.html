@@ -106,10 +106,16 @@
               @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
+          <!-- Columna "No. Contrato" oculta hasta nueva orden (pedido
+               explicito) -- el filtro (filtroServContrato) sigue activo
+               para la busqueda general, solo se quito de la tabla. Para
+               restaurarla, descomentar este th y el td de abajo y subir
+               colspan="11" de vuelta a 12.
           <th>
             <span class="th-label">No. Contrato</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" />
           </th>
+          -->
           <th>
             <span class="th-label">Fecha Fin</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" />
@@ -156,7 +162,9 @@
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
 
+            <!-- Columna "No. Contrato" oculta hasta nueva orden, ver thead.
             <td><code>{{ s.no_contrato || '-' }}</code></td>
+            -->
             <td>
               @if (s.es_indefinido) {
                 <span class="badge badge-slate">Indefinido</span>
@@ -208,7 +216,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="12">
+            <td colspan="11">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
