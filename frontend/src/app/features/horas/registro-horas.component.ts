@@ -36,12 +36,33 @@ export class RegistroHorasComponent implements OnInit {
   filtroHoras = signal('');
   filtroUsuario = signal('');
 
+  // Buscador general: igual que en Equipos asignados -- solo se activa
+  // con el boton de la lupa (no en cada tecla), busca en cualquier dato
+  // del registro (incluida la descripcion, que no tiene columna propia).
+  busquedaGeneralInput = signal('');
+  busquedaGeneral = signal('');
+
+  buscarGeneral(): void {
+    this.busquedaGeneral.set(this.busquedaGeneralInput());
+  }
+
+  private coincideBusquedaGeneral(r: RegistroHora, texto: string): boolean {
+    const campos: (string | number | null | undefined)[] = [
+      this.numeroServicio(r), fechaConHora(r), r.cliente_nombre, r.numero_contrato,
+      r.tipo_servicio_nombre, r.horas, r.usuario_nombre, r.descripcion,
+    ];
+    return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
+  }
+
   hayFiltros = computed(() =>
-    !!(this.filtroNumero() || this.filtroFecha() || this.filtroCliente() || this.filtroContrato() ||
+    !!(this.busquedaGeneral() ||
+      this.filtroNumero() || this.filtroFecha() || this.filtroCliente() || this.filtroContrato() ||
       this.filtroServicio() || this.filtroHoras() || this.filtroUsuario())
   );
 
   limpiarFiltros(): void {
+    this.busquedaGeneralInput.set('');
+    this.busquedaGeneral.set('');
     this.filtroNumero.set('');
     this.filtroFecha.set('');
     this.filtroCliente.set('');
@@ -54,6 +75,7 @@ export class RegistroHorasComponent implements OnInit {
   registrosFiltrados = computed(() => {
     const contratoId = this.filtroContratoId();
     const tipoServicioId = this.filtroTipoServicioId();
+    const fGeneral = this.busquedaGeneral().trim().toLowerCase();
     const numero = this.filtroNumero().trim().toLowerCase();
     const fecha = this.filtroFecha().trim().toLowerCase();
     const cliente = this.filtroCliente().trim().toLowerCase();
@@ -65,6 +87,7 @@ export class RegistroHorasComponent implements OnInit {
     return this.registros().filter((r) => {
       if (contratoId && r.contrato_id !== contratoId) return false;
       if (tipoServicioId && r.tipo_servicio_id !== tipoServicioId) return false;
+      if (fGeneral && !this.coincideBusquedaGeneral(r, fGeneral)) return false;
       if (numero && !this.numeroServicio(r).toLowerCase().includes(numero)) return false;
       if (fecha && !fechaConHora(r).toLowerCase().includes(fecha)) return false;
       if (cliente && !(r.cliente_nombre ?? '').toLowerCase().includes(cliente)) return false;
