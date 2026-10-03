@@ -41,3 +41,13 @@
 }
 
 .data-table thead th select.input-th-filtro { cursor: pointer; }
+
+/* Columnas Aviso Previo / Costo Mensual / Costo Anual en Servicios
+   Contratados: 10px mas angostas que el resto (5px menos de padding
+   horizontal a cada lado), pedido explicito para que la tabla respire
+   menos en esas 3. */
+.data-table th.col-compact,
+.data-table td.col-compact {
+  padding-left: 9px;
+  padding-right: 9px;
+}

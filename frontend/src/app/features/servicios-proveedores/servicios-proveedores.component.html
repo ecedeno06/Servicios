@@ -120,15 +120,15 @@
             <span class="th-sortable" (click)="ordenarPorServ('fechaFin')">Fecha Fin <span class="orden-icono">{{ iconoOrdenServ('fechaFin') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" />
           </th>
-          <th>
+          <th class="col-compact">
             <span class="th-sortable" (click)="ordenarPorServ('aviso')">Aviso Previo <span class="orden-icono">{{ iconoOrdenServ('aviso') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" />
           </th>
-          <th>
+          <th class="col-compact">
             <span class="th-sortable" (click)="ordenarPorServ('costoMensual')">Costo Mensual <span class="orden-icono">{{ iconoOrdenServ('costoMensual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" />
           </th>
-          <th>
+          <th class="col-compact">
             <span class="th-sortable" (click)="ordenarPorServ('costoAnual')">Costo Anual <span class="orden-icono">{{ iconoOrdenServ('costoAnual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" />
           </th>
@@ -172,15 +172,15 @@
                 {{ textoFechaFin(s) }}
               }
             </td>
-            <td>
+            <td class="col-compact">
               @if (debeAvisarVencimiento(s)) {
                 <span class="badge" [class]="claseBadgeAviso(s)">{{ textoAvisoVencimiento(s) }}</span>
               } @else {
                 {{ textoAvisoVencimiento(s) }}
               }
             </td>
-            <td>{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td>{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="col-compact">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="col-compact">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
