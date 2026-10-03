@@ -64,6 +64,25 @@
     </div>
   </div>
 
+  <div class="page-header">
+    <div class="desc">{{ serviciosFiltrados().length }} de {{ servicios().length }} servicio(s).</div>
+    <div class="flex items-center gap-8">
+      <input
+        class="input"
+        style="max-width:280px;"
+        type="text"
+        placeholder="Buscar en todo el registro..."
+        [ngModel]="busquedaGeneralServInput()"
+        (ngModelChange)="busquedaGeneralServInput.set($event)"
+        (keyup.enter)="buscarGeneralServicios()"
+      />
+      <button type="button" class="btn-icon" title="Buscar" aria-label="Buscar" (click)="buscarGeneralServicios()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      @if (hayFiltrosServ()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosServ()">Limpiar filtros</button> }
+    </div>
+  </div>
+
   <div class="table-wrap">
     <table class="data-table">
       <thead>
@@ -74,6 +93,7 @@
           <th>No. Contrato</th>
           <th>Costo Mensual</th>
           <th>Costo Anual</th>
+          <th>Pagado</th>
           <th class="th-narrow">Estado</th>
           <th style="text-align: center;">Facturas</th>
           <th></th>
@@ -88,20 +108,17 @@
             </select>
           </th>
           <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" /></th>
-          <th></th>
-          <th></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" /></th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServPagado()" (ngModelChange)="filtroServPagado.set($event)" /></th>
           <th>
             <select class="input" [ngModel]="filtroServEstado()" (ngModelChange)="filtroServEstado.set($event)">
               <option value="">Todos</option>
               @for (est of estadosServicio; track est.valor) { <option [value]="est.valor">{{ est.etiqueta }}</option> }
             </select>
           </th>
+          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" /></th>
           <th></th>
-          <th>
-            @if (hayFiltrosServ()) {
-              <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosServ()">Limpiar</button>
-            }
-          </th>
         </tr>
       </thead>
       <tbody>
@@ -119,6 +136,7 @@
             <td><code>{{ s.no_contrato || '-' }}</code></td>
             <td>{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
             </td>
@@ -129,16 +147,20 @@
             </td>
             <td class="table-actions">
               @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
-                <button class="btn btn-outline btn-sm" (click)="abrirEditarServicio(s)">Editar</button>
+                <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirEditarServicio(s)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
               }
               @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
-                <button class="btn btn-danger btn-sm" (click)="eliminarServicio(s)">Eliminar</button>
+                <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarServicio(s)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               }
             </td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="9">
+            <td colspan="10">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
@@ -206,10 +228,14 @@
             </td>
             <td class="table-actions">
               @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
-                <button class="btn btn-outline btn-sm" (click)="abrirEditarProveedor(p)">Editar</button>
+                <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirEditarProveedor(p)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
               }
               @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
-                <button class="btn btn-danger btn-sm" (click)="eliminarProveedor(p)">Eliminar</button>
+                <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarProveedor(p)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               }
             </td>
           </tr>
@@ -272,10 +298,14 @@
             </td>
             <td class="table-actions">
               @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
-                <button class="btn btn-outline btn-sm" (click)="abrirEditarSector(sec)">Editar</button>
+                <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirEditarSector(sec)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
               }
               @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
-                <button class="btn btn-danger btn-sm" (click)="eliminarSector(sec)">Eliminar</button>
+                <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarSector(sec)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
               }
             </td>
           </tr>

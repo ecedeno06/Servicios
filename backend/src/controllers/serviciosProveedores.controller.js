@@ -5,6 +5,7 @@ const SELECT_BASE = `
     sp.*,
     p.nombre as proveedor_nombre,
     p.sector as proveedor_sector,
+    p.sector_id as proveedor_sector_id,
     p.telefono as proveedor_telefono,
     p.acepta_whatsapp as proveedor_acepta_whatsapp,
     uc.nombre as creado_por_nombre,

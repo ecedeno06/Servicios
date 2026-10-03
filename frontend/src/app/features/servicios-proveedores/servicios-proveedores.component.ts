@@ -114,38 +114,79 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   });
 
+  // Buscador general: igual que en Equipos asignados -- solo se activa
+  // con el boton de la lupa (no en cada tecla), busca en cualquier campo
+  // visible de la fila (no solo en las columnas con filtro propio).
+  busquedaGeneralServInput = signal('');
+  busquedaGeneralServ = signal('');
+
+  buscarGeneralServicios(): void {
+    this.busquedaGeneralServ.set(this.busquedaGeneralServInput());
+  }
+
+  private coincideBusquedaGeneralServicio(s: ServicioProveedor, texto: string): boolean {
+    const campos: (string | number | null | undefined)[] = [
+      s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
+      s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, s.estado, s.facturas_count,
+    ];
+    return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
+  }
+
   // Filtros Servicios
   filtroServNombre = signal('');
   filtroServProveedor = signal('');
   filtroServSector = signal('');
   filtroServContrato = signal('');
+  filtroServCostoMensual = signal('');
+  filtroServCostoAnual = signal('');
+  filtroServPagado = signal('');
   filtroServEstado = signal('');
+  filtroServFacturas = signal('');
 
-  hayFiltrosServ = computed(() =>
-    !!(this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() || this.filtroServEstado())
-  );
+  hayFiltrosServ = computed(() => !!(
+    this.busquedaGeneralServ() ||
+    this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
+    this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() ||
+    this.filtroServEstado() || this.filtroServFacturas()
+  ));
 
   limpiarFiltrosServ(): void {
+    this.busquedaGeneralServInput.set('');
+    this.busquedaGeneralServ.set('');
     this.filtroServNombre.set('');
     this.filtroServProveedor.set('');
     this.filtroServSector.set('');
     this.filtroServContrato.set('');
+    this.filtroServCostoMensual.set('');
+    this.filtroServCostoAnual.set('');
+    this.filtroServPagado.set('');
     this.filtroServEstado.set('');
+    this.filtroServFacturas.set('');
   }
 
   serviciosFiltrados = computed(() => {
+    const fGeneral = this.busquedaGeneralServ().trim().toLowerCase();
     const nom = this.filtroServNombre().trim().toLowerCase();
     const prov = this.filtroServProveedor().trim().toLowerCase();
     const sec = this.filtroServSector();
     const ctr = this.filtroServContrato().trim().toLowerCase();
+    const costoM = this.filtroServCostoMensual().trim().toLowerCase();
+    const costoA = this.filtroServCostoAnual().trim().toLowerCase();
+    const pagado = this.filtroServPagado().trim().toLowerCase();
     const est = this.filtroServEstado();
+    const fact = this.filtroServFacturas().trim().toLowerCase();
 
     return this.servicios().filter((s) => {
+      if (fGeneral && !this.coincideBusquedaGeneralServicio(s, fGeneral)) return false;
       if (nom && !s.servicio.toLowerCase().includes(nom)) return false;
       if (prov && !(s.proveedor_nombre || '').toLowerCase().includes(prov)) return false;
-      if (sec && (s as any).proveedor_sector_id !== sec && s.proveedor_sector !== sec) return false;
+      if (sec && s.proveedor_sector_id !== sec && s.proveedor_sector !== sec) return false;
       if (ctr && !(s.no_contrato || '').toLowerCase().includes(ctr)) return false;
+      if (costoM && !String(s.costo_mensual ?? '').toLowerCase().includes(costoM)) return false;
+      if (costoA && !String(s.costo_anual ?? '').toLowerCase().includes(costoA)) return false;
+      if (pagado && !String(s.monto_total_pagado ?? 0).toLowerCase().includes(pagado)) return false;
       if (est && s.estado !== est) return false;
+      if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
       return true;
     });
   });
