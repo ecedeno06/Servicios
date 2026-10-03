@@ -124,10 +124,18 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.busquedaGeneralServ.set(this.busquedaGeneralServInput());
   }
 
+  // "Indefinido" si es_indefinido, la fecha formateada si no, '-' si no
+  // hay ninguna de las dos (dato viejo de antes de la migracion 029).
+  textoFechaFin(s: ServicioProveedor): string {
+    if (s.es_indefinido) return 'Indefinido';
+    if (!s.fecha_fin) return '-';
+    return this.datePipe.transform(s.fecha_fin, 'dd/MM/yyyy', 'UTC') || '-';
+  }
+
   private coincideBusquedaGeneralServicio(s: ServicioProveedor, texto: string): boolean {
     const campos: (string | number | null | undefined)[] = [
       s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
-      s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, s.estado, s.facturas_count,
+      s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s), s.estado, s.facturas_count,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -140,13 +148,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServCostoMensual = signal('');
   filtroServCostoAnual = signal('');
   filtroServPagado = signal('');
+  filtroServFechaFin = signal('');
   filtroServEstado = signal('');
   filtroServFacturas = signal('');
 
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
     this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
-    this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() ||
+    this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
     this.filtroServEstado() || this.filtroServFacturas()
   ));
 
@@ -160,6 +169,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServCostoMensual.set('');
     this.filtroServCostoAnual.set('');
     this.filtroServPagado.set('');
+    this.filtroServFechaFin.set('');
     this.filtroServEstado.set('');
     this.filtroServFacturas.set('');
   }
@@ -173,6 +183,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const costoM = this.filtroServCostoMensual().trim().toLowerCase();
     const costoA = this.filtroServCostoAnual().trim().toLowerCase();
     const pagado = this.filtroServPagado().trim().toLowerCase();
+    const fechaFin = this.filtroServFechaFin().trim().toLowerCase();
     const est = this.filtroServEstado();
     const fact = this.filtroServFacturas().trim().toLowerCase();
 
@@ -185,6 +196,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (costoM && !String(s.costo_mensual ?? '').toLowerCase().includes(costoM)) return false;
       if (costoA && !String(s.costo_anual ?? '').toLowerCase().includes(costoA)) return false;
       if (pagado && !String(s.monto_total_pagado ?? 0).toLowerCase().includes(pagado)) return false;
+      if (fechaFin && !this.textoFechaFin(s).toLowerCase().includes(fechaFin)) return false;
       if (est && s.estado !== est) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
       return true;
@@ -294,6 +306,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private sectoresSrv: SectoresProveedoresService,
     private proveedoresSrv: ProveedoresService,
     private serviciosSrv: ServiciosProveedoresService,
+    private datePipe: DatePipe,
     public menu: MenuService
   ) {}
 
