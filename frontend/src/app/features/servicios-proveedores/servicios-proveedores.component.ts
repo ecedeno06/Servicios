@@ -35,6 +35,33 @@ const FORMAS_PAGO: { valor: FormaPagoFactura; etiqueta: string }[] = [
   { valor: 'otro', etiqueta: 'Otro' },
 ];
 
+// Codigo de pais del telefono, separado del numero -- sin esto, el
+// enlace de WhatsApp (wa.me) sale incompleto si el usuario olvida
+// escribirlo a mano dentro del campo de telefono.
+const CODIGOS_PAIS: { codigo: string; nombre: string }[] = [
+  { codigo: '+54', nombre: 'Argentina (+54)' },
+  { codigo: '+591', nombre: 'Bolivia (+591)' },
+  { codigo: '+55', nombre: 'Brasil (+55)' },
+  { codigo: '+56', nombre: 'Chile (+56)' },
+  { codigo: '+57', nombre: 'Colombia (+57)' },
+  { codigo: '+506', nombre: 'Costa Rica (+506)' },
+  { codigo: '+53', nombre: 'Cuba (+53)' },
+  { codigo: '+593', nombre: 'Ecuador (+593)' },
+  { codigo: '+503', nombre: 'El Salvador (+503)' },
+  { codigo: '+34', nombre: 'España (+34)' },
+  { codigo: '+1', nombre: 'Estados Unidos / Canada (+1)' },
+  { codigo: '+502', nombre: 'Guatemala (+502)' },
+  { codigo: '+504', nombre: 'Honduras (+504)' },
+  { codigo: '+52', nombre: 'Mexico (+52)' },
+  { codigo: '+505', nombre: 'Nicaragua (+505)' },
+  { codigo: '+507', nombre: 'Panama (+507)' },
+  { codigo: '+595', nombre: 'Paraguay (+595)' },
+  { codigo: '+51', nombre: 'Peru (+51)' },
+  { codigo: '+1', nombre: 'Republica Dominicana (+1)' },
+  { codigo: '+598', nombre: 'Uruguay (+598)' },
+  { codigo: '+58', nombre: 'Venezuela (+58)' },
+];
+
 @Component({
   selector: 'app-servicios-proveedores',
   standalone: true,
@@ -49,6 +76,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   estadosServicio = ESTADOS_SERVICIO;
   estadosFactura = ESTADOS_FACTURA;
   formasPago = FORMAS_PAGO;
+  codigosPais = CODIGOS_PAIS;
 
   // Listas de datos
   sectores = signal<SectorProveedorItem[]>([]);
@@ -308,6 +336,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     contacto: [''],
     correo: ['', [Validators.email]],
     telefono: [''],
+    telefono_codigo_pais: ['+507'],
     acepta_whatsapp: [false],
   });
 
@@ -481,6 +510,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       contacto: '',
       correo: '',
       telefono: '',
+      telefono_codigo_pais: '+507',
       acepta_whatsapp: false,
     });
     this.panelProveedorAbierto.set(true);
@@ -495,6 +525,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       contacto: p.contacto || '',
       correo: p.correo || '',
       telefono: p.telefono || '',
+      telefono_codigo_pais: p.telefono_codigo_pais || '+507',
       acepta_whatsapp: p.acepta_whatsapp,
     });
     this.panelProveedorAbierto.set(true);
@@ -538,10 +569,14 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  enlaceWhatsApp(telefono?: string | null): string {
+  // codigoPais (ej. "+507") se antepone al numero local -- sin esto el
+  // enlace de WhatsApp sale incompleto si el telefono no trae el codigo
+  // de pais ya incluido.
+  enlaceWhatsApp(telefono?: string | null, codigoPais?: string | null): string {
     if (!telefono) return '#';
     const num = telefono.replace(/\D/g, '');
-    return `https://wa.me/${num}`;
+    const cod = (codigoPais || '').replace(/\D/g, '');
+    return `https://wa.me/${cod}${num}`;
   }
 
   // -------------------------------------------------------------------
@@ -556,7 +591,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       .map((c) => {
         const partes = [c.nombre || '(sin nombre)'];
         if (c.cargo) partes.push(c.cargo);
-        if (c.telefono) partes.push(`Tel: ${c.telefono}`);
+        if (c.telefono) partes.push(`Tel: ${c.telefono_codigo_pais || ''} ${c.telefono}`.trim());
         if (c.email) partes.push(`Correo: ${c.email}`);
         return partes.join(' • ');
       })
@@ -591,7 +626,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // que tenga telefono registrado.
   enlaceWhatsAppServicio(s: ServicioProveedor): string {
     const contacto = this.contactosConTelefono(s)[0];
-    return this.enlaceWhatsApp(contacto?.telefono);
+    return this.enlaceWhatsApp(contacto?.telefono, contacto?.telefono_codigo_pais);
   }
 
   // -------------------------------------------------------------------
@@ -650,6 +685,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.fb.group({
       nombre: [c?.nombre || '', [Validators.required]],
       telefono: [c?.telefono || ''],
+      telefono_codigo_pais: [c?.telefono_codigo_pais || '+507'],
       email: [c?.email || ''],
       cargo: [c?.cargo || ''],
     });

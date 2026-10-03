@@ -157,7 +157,7 @@
             <td>
               <span>{{ s.proveedor_nombre }}</span>
               @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
-                <a [href]="enlaceWhatsApp(s.proveedor_telefono)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+                <a [href]="enlaceWhatsApp(s.proveedor_telefono, s.proveedor_telefono_codigo_pais)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
               }
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
@@ -278,9 +278,9 @@
             <td>{{ p.contacto || '-' }}</td>
             <td>{{ p.correo || '-' }}</td>
             <td>
-              <span>{{ p.telefono || '-' }}</span>
+              <span>{{ p.telefono ? (p.telefono_codigo_pais || '') + ' ' + p.telefono : '-' }}</span>
               @if (p.acepta_whatsapp && p.telefono) {
-                <a [href]="enlaceWhatsApp(p.telefono)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+                <a [href]="enlaceWhatsApp(p.telefono, p.telefono_codigo_pais)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
               }
             </td>
             <td style="text-align: center;">
@@ -450,9 +450,17 @@
           <input class="input" type="email" formControlName="correo" placeholder="contacto@proveedor.com" />
         </div>
 
-        <div class="form-group" style="margin-top: 14px;">
-          <label>Teléfono</label>
-          <input class="input" formControlName="telefono" placeholder="+57 300 000 0000" />
+        <div class="flex gap-12" style="margin-top: 14px; align-items: flex-end;">
+          <div class="form-group" style="flex: 0 0 auto; min-width: 160px;">
+            <label>Código de país</label>
+            <select class="input" formControlName="telefono_codigo_pais">
+              @for (cp of codigosPais; track cp.codigo + cp.nombre) { <option [value]="cp.codigo">{{ cp.nombre }}</option> }
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 0;">
+            <label>Teléfono</label>
+            <input class="input" formControlName="telefono" placeholder="300 000 0000" />
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
@@ -559,6 +567,12 @@
                   <div class="form-group">
                     <label style="font-size: 11px;">Nombre</label>
                     <input class="input" formControlName="nombre" placeholder="Nombre" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Código de país</label>
+                    <select class="input" formControlName="telefono_codigo_pais">
+                      @for (cp of codigosPais; track cp.codigo + cp.nombre) { <option [value]="cp.codigo">{{ cp.nombre }}</option> }
+                    </select>
                   </div>
                   <div class="form-group">
                     <label style="font-size: 11px;">Teléfono</label>

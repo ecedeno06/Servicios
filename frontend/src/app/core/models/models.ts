@@ -348,6 +348,7 @@ export interface Proveedor {
   contacto?: string | null;
   correo?: string | null;
   telefono?: string | null;
+  telefono_codigo_pais?: string | null;
   acepta_whatsapp: boolean;
   sector: string;
   sector_id?: string | null;
@@ -365,6 +366,7 @@ export interface Proveedor {
 export interface ContactoProveedor {
   nombre: string;
   telefono?: string;
+  telefono_codigo_pais?: string;
   email?: string;
   cargo?: string;
 }
@@ -379,6 +381,7 @@ export interface ServicioProveedor {
   proveedor_sector?: SectorProveedor;
   proveedor_sector_id?: string | null;
   proveedor_telefono?: string;
+  proveedor_telefono_codigo_pais?: string | null;
 
   proveedor_acepta_whatsapp?: boolean;
   servicio: string;
