@@ -469,15 +469,17 @@
             <label>Fecha de Inicio *</label>
             <input class="input" type="date" formControlName="fecha_inicio" />
           </div>
-          <div class="form-group">
-            <label>Fecha de Fin</label>
-            <input class="input" type="date" formControlName="fecha_fin" />
-          </div>
           <div class="form-group" style="justify-content: flex-end;">
             <label class="flex items-center gap-8">
               <input type="checkbox" formControlName="es_indefinido" (change)="onToggleIndefinido()" /> Indefinido
             </label>
           </div>
+          <div class="form-group">
+            <label>Fecha de Fin</label>
+            <input class="input" type="date" formControlName="fecha_fin" />
+          </div>
+
+ 
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
