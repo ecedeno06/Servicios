@@ -385,6 +385,8 @@ export interface ServicioProveedor {
   costo_mensual: number;
   costo_anual: number;
   fecha_inicio: string;
+  fecha_fin?: string | null;
+  es_indefinido: boolean;
   no_contrato?: string | null;
   contactos: ContactoProveedor[];
   estado: EstadoServicioProveedor;

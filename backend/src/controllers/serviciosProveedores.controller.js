@@ -51,7 +51,7 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, no_contrato, contactos, estado } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -65,11 +65,15 @@ async function crear(req, res, next) {
 
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
     const estadoFinal = estado || 'activo';
+    // es_indefinido=true manda sobre cualquier fecha_fin que llegue: un
+    // contrato indefinido no tiene fecha de vencimiento.
+    const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
+    const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, no_contrato, contactos, estado, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8::jsonb, $9, $10)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10::jsonb, $11, $12)
        returning id`,
       [
         req.empresaId,
@@ -78,6 +82,8 @@ async function crear(req, res, next) {
         costo_mensual ?? 0.00,
         costo_anual ?? 0.00,
         fecha_inicio || null,
+        fechaFinFinal,
+        indefinidoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
         estadoFinal,
@@ -92,7 +98,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, no_contrato, contactos, estado } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, no_contrato, contactos, estado } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -104,6 +110,8 @@ async function actualizar(req, res, next) {
     if (!actual[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
 
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
+    const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
+    const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
 
     await pool.query(
       `update servicios_proveedores set
@@ -112,17 +120,21 @@ async function actualizar(req, res, next) {
          costo_mensual = $3,
          costo_anual = $4,
          fecha_inicio = coalesce($5, fecha_inicio),
-         no_contrato = $6,
-         contactos = $7::jsonb,
-         estado = $8,
-         modificado_por = $9
-       where id = $10 and empresa_id = $11`,
+         fecha_fin = $6,
+         es_indefinido = $7,
+         no_contrato = $8,
+         contactos = $9::jsonb,
+         estado = $10,
+         modificado_por = $11
+       where id = $12 and empresa_id = $13`,
       [
         proveedor_id,
         servicio.trim(),
         costo_mensual ?? 0.00,
         costo_anual ?? 0.00,
         fecha_inicio || null,
+        fechaFinFinal,
+        indefinidoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
         estado || 'activo',

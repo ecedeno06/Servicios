@@ -207,10 +207,26 @@ export class ServiciosProveedoresComponent implements OnInit {
     costo_mensual: [0, [Validators.required, Validators.min(0)]],
     costo_anual: [0, [Validators.required, Validators.min(0)]],
     fecha_inicio: [new Date().toISOString().substring(0, 10), [Validators.required]],
+    fecha_fin: [{ value: null as string | null, disabled: true }],
+    es_indefinido: [true],
     no_contrato: [''],
     estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
     contactos: this.fb.array([]),
   });
+
+  // "Indefinido" deshabilita y limpia fecha_fin -- un contrato indefinido
+  // no tiene fecha de vencimiento. getRawValue() en guardarServicio()
+  // igual incluye el valor (null) de un control deshabilitado.
+  onToggleIndefinido(): void {
+    const indefinido = !!this.servicioForm.get('es_indefinido')?.value;
+    const fechaFinCtrl = this.servicioForm.get('fecha_fin');
+    if (indefinido) {
+      fechaFinCtrl?.reset(null);
+      fechaFinCtrl?.disable();
+    } else {
+      fechaFinCtrl?.enable();
+    }
+  }
 
   get contactosArray(): FormArray {
     return this.servicioForm.get('contactos') as FormArray;
@@ -448,9 +464,12 @@ export class ServiciosProveedoresComponent implements OnInit {
       costo_mensual: 0,
       costo_anual: 0,
       fecha_inicio: new Date().toISOString().substring(0, 10),
+      fecha_fin: null,
+      es_indefinido: true,
       no_contrato: '',
       estado: 'activo',
     });
+    this.onToggleIndefinido();
     this.panelServicioAbierto.set(true);
   }
 
@@ -464,9 +483,12 @@ export class ServiciosProveedoresComponent implements OnInit {
       costo_mensual: s.costo_mensual,
       costo_anual: s.costo_anual,
       fecha_inicio: s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      fecha_fin: s.fecha_fin ? s.fecha_fin.substring(0, 10) : null,
+      es_indefinido: s.es_indefinido ?? true,
       no_contrato: s.no_contrato || '',
       estado: s.estado,
     });
+    this.onToggleIndefinido();
 
     if (Array.isArray(s.contactos)) {
       s.contactos.forEach((c) => this.agregarContacto(c));
