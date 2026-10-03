@@ -5,6 +5,7 @@ import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
 import { SectoresProveedoresService } from '../../core/services/sectores-proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   ContactoProveedor,
   EstadoFacturaServicio,
@@ -538,6 +539,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private proveedoresSrv: ProveedoresService,
     private serviciosSrv: ServiciosProveedoresService,
     private datePipe: DatePipe,
+    private auth: AuthService,
     public menu: MenuService
   ) {}
 
@@ -749,10 +751,15 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   // mailto solo admite abrir el cliente de correo local -- se mandan
   // todos los correos de contacto como destinatarios, no solo el primero.
+  // El asunto lleva el nombre de la empresa activa (ej. "BLUECORE - ...")
+  // para que el contacto del proveedor identifique de inmediato de que
+  // empresa viene el correo.
   enlaceEmailServicio(s: ServicioProveedor): string {
     const correos = this.contactosConEmail(s).map((c) => c.email);
     if (!correos.length) return '#';
-    return `mailto:${correos.join(',')}?subject=${encodeURIComponent(s.servicio)}`;
+    const empresa = this.auth.empresaActiva()?.empresa_nombre;
+    const asunto = empresa ? `${empresa.toUpperCase()} - ${s.servicio}` : s.servicio;
+    return `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
   }
 
   // wa.me solo admite un numero por enlace -- se usa el primer contacto
