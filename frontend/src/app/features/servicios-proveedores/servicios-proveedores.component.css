@@ -24,6 +24,12 @@
    por separado (mismo patron que Equipos asignados). */
 .th-label { display: block; white-space: nowrap; margin-bottom: 6px; }
 
+/* Nombre de columna ordenable (click alterna asc/desc), igual que
+   .th-label pero clickeable -- mismo patron que Equipos asignados. */
+.th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
 .data-table thead th input.input-th-filtro,
 .data-table thead th select.input-th-filtro {
   text-transform: none;

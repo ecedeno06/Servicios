@@ -92,15 +92,15 @@
       <thead>
         <tr>
           <th>
-            <span class="th-label">Servicio</span>
+            <span class="th-sortable" (click)="ordenarPorServ('servicio')">Servicio <span class="orden-icono">{{ iconoOrdenServ('servicio') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServNombre()" (ngModelChange)="filtroServNombre.set($event)" />
           </th>
           <th>
-            <span class="th-label">Proveedor</span>
+            <span class="th-sortable" (click)="ordenarPorServ('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrdenServ('proveedor') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServProveedor()" (ngModelChange)="filtroServProveedor.set($event)" />
           </th>
           <th>
-            <span class="th-label">Sector</span>
+            <span class="th-sortable" (click)="ordenarPorServ('sector')">Sector <span class="orden-icono">{{ iconoOrdenServ('sector') }}</span></span>
             <select class="input input-th-filtro" [ngModel]="filtroServSector()" (ngModelChange)="filtroServSector.set($event)">
               <option value="">Todos</option>
               @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
@@ -117,41 +117,41 @@
           </th>
           -->
           <th>
-            <span class="th-label">Fecha Fin</span>
+            <span class="th-sortable" (click)="ordenarPorServ('fechaFin')">Fecha Fin <span class="orden-icono">{{ iconoOrdenServ('fechaFin') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" />
           </th>
           <th>
-            <span class="th-label">Aviso Previo</span>
+            <span class="th-sortable" (click)="ordenarPorServ('aviso')">Aviso Previo <span class="orden-icono">{{ iconoOrdenServ('aviso') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" />
           </th>
           <th>
-            <span class="th-label">Costo Mensual</span>
+            <span class="th-sortable" (click)="ordenarPorServ('costoMensual')">Costo Mensual <span class="orden-icono">{{ iconoOrdenServ('costoMensual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" />
           </th>
           <th>
-            <span class="th-label">Costo Anual</span>
+            <span class="th-sortable" (click)="ordenarPorServ('costoAnual')">Costo Anual <span class="orden-icono">{{ iconoOrdenServ('costoAnual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" />
           </th>
           <th>
-            <span class="th-label">Pagado</span>
+            <span class="th-sortable" (click)="ordenarPorServ('pagado')">Pagado <span class="orden-icono">{{ iconoOrdenServ('pagado') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServPagado()" (ngModelChange)="filtroServPagado.set($event)" />
           </th>
           <th class="th-narrow">
-            <span class="th-label">Estado</span>
+            <span class="th-sortable" (click)="ordenarPorServ('estado')">Estado <span class="orden-icono">{{ iconoOrdenServ('estado') }}</span></span>
             <select class="input input-th-filtro" [ngModel]="filtroServEstado()" (ngModelChange)="filtroServEstado.set($event)">
               <option value="">Todos</option>
               @for (est of estadosServicio; track est.valor) { <option [value]="est.valor">{{ est.etiqueta }}</option> }
             </select>
           </th>
           <th style="text-align: center;">
-            <span class="th-label">Facturas</span>
+            <span class="th-sortable" (click)="ordenarPorServ('facturas')">Facturas <span class="orden-icono">{{ iconoOrdenServ('facturas') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" />
           </th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        @for (s of serviciosFiltrados(); track s.id) {
+        @for (s of serviciosOrdenados(); track s.id) {
           <tr>
             <td [title]="tooltipContactos(s)"><strong>{{ s.servicio }}</strong></td>
             <td>
@@ -235,29 +235,31 @@
       <thead>
         <tr>
           <th>
-            <span class="th-label">Proveedor</span>
+            <span class="th-sortable" (click)="ordenarPorProv('nombre')">Proveedor <span class="orden-icono">{{ iconoOrdenProv('nombre') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvNombre()" (ngModelChange)="filtroProvNombre.set($event)" />
           </th>
           <th>
-            <span class="th-label">Sector</span>
+            <span class="th-sortable" (click)="ordenarPorProv('sector')">Sector <span class="orden-icono">{{ iconoOrdenProv('sector') }}</span></span>
             <select class="input input-th-filtro" [ngModel]="filtroProvSector()" (ngModelChange)="filtroProvSector.set($event)">
               <option value="">Todos</option>
               @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
           <th>
-            <span class="th-label">Contacto Principal</span>
+            <span class="th-sortable" (click)="ordenarPorProv('contacto')">Contacto Principal <span class="orden-icono">{{ iconoOrdenProv('contacto') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvContacto()" (ngModelChange)="filtroProvContacto.set($event)" />
           </th>
           <th>
-            <span class="th-label">Correo</span>
+            <span class="th-sortable" (click)="ordenarPorProv('correo')">Correo <span class="orden-icono">{{ iconoOrdenProv('correo') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvEmail()" (ngModelChange)="filtroProvEmail.set($event)" />
           </th>
           <th>
-            <span class="th-label">Teléfono</span>
+            <span class="th-sortable" (click)="ordenarPorProv('telefono')">Teléfono <span class="orden-icono">{{ iconoOrdenProv('telefono') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvTelefono()" (ngModelChange)="filtroProvTelefono.set($event)" />
           </th>
-          <th style="text-align: center;">Servicios</th>
+          <th style="text-align: center;">
+            <span class="th-sortable" (click)="ordenarPorProv('servicios')">Servicios <span class="orden-icono">{{ iconoOrdenProv('servicios') }}</span></span>
+          </th>
           <th>
             @if (hayFiltrosProv()) {
               <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosProv()">Limpiar</button>
@@ -266,7 +268,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (p of proveedoresFiltrados(); track p.id) {
+        @for (p of proveedoresOrdenados(); track p.id) {
           <tr>
             <td>
               <strong>{{ p.nombre }}</strong>
@@ -320,19 +322,21 @@
       <thead>
         <tr>
           <th>
-            <span class="th-label">Nombre del Sector</span>
+            <span class="th-sortable" (click)="ordenarPorSec('nombre')">Nombre del Sector <span class="orden-icono">{{ iconoOrdenSec('nombre') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroSecNombre()" (ngModelChange)="filtroSecNombre.set($event)" />
           </th>
           <th>Descripción</th>
           <th class="th-narrow">
-            <span class="th-label">Estado</span>
+            <span class="th-sortable" (click)="ordenarPorSec('estado')">Estado <span class="orden-icono">{{ iconoOrdenSec('estado') }}</span></span>
             <select class="input input-th-filtro" [ngModel]="filtroSecEstado()" (ngModelChange)="filtroSecEstado.set($event)">
               <option value="">Todos</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
             </select>
           </th>
-          <th style="text-align: center;">Proveedores</th>
+          <th style="text-align: center;">
+            <span class="th-sortable" (click)="ordenarPorSec('proveedores')">Proveedores <span class="orden-icono">{{ iconoOrdenSec('proveedores') }}</span></span>
+          </th>
           <th>
             @if (hayFiltrosSec()) {
               <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosSec()">Limpiar</button>
@@ -341,7 +345,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (sec of sectoresFiltrados(); track sec.id) {
+        @for (sec of sectoresOrdenados(); track sec.id) {
           <tr>
             <td><strong>{{ sec.nombre }}</strong></td>
             <td>{{ sec.descripcion || '-' }}</td>

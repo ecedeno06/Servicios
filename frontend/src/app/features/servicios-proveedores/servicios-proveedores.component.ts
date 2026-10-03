@@ -108,6 +108,46 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   });
 
+  ordenColumnaSec = signal<string | null>(null);
+  ordenDireccionSec = signal<'asc' | 'desc'>('asc');
+
+  ordenarPorSec(columna: string): void {
+    if (this.ordenColumnaSec() === columna) {
+      this.ordenDireccionSec.set(this.ordenDireccionSec() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.ordenColumnaSec.set(columna);
+      this.ordenDireccionSec.set('asc');
+    }
+  }
+
+  iconoOrdenSec(columna: string): string {
+    if (this.ordenColumnaSec() !== columna) return '';
+    return this.ordenDireccionSec() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrdenSec(s: SectorProveedorItem, columna: string): string | number {
+    switch (columna) {
+      case 'nombre': return s.nombre.toLowerCase();
+      case 'estado': return s.activo ? 'activo' : 'inactivo';
+      case 'proveedores': return s.proveedores_count ?? 0;
+      default: return '';
+    }
+  }
+
+  sectoresOrdenados = computed(() => {
+    const columna = this.ordenColumnaSec();
+    const filtrados = this.sectoresFiltrados();
+    if (!columna) return filtrados;
+    const signo = this.ordenDireccionSec() === 'asc' ? 1 : -1;
+    return [...filtrados].sort((a, b) => {
+      const va = this.valorOrdenSec(a, columna);
+      const vb = this.valorOrdenSec(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
+    });
+  });
+
   // Filtros Proveedores
   filtroProvNombre = signal('');
   filtroProvSector = signal('');
@@ -141,6 +181,49 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (em && !(p.correo || '').toLowerCase().includes(em)) return false;
       if (tel && !(p.telefono || '').toLowerCase().includes(tel)) return false;
       return true;
+    });
+  });
+
+  ordenColumnaProv = signal<string | null>(null);
+  ordenDireccionProv = signal<'asc' | 'desc'>('asc');
+
+  ordenarPorProv(columna: string): void {
+    if (this.ordenColumnaProv() === columna) {
+      this.ordenDireccionProv.set(this.ordenDireccionProv() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.ordenColumnaProv.set(columna);
+      this.ordenDireccionProv.set('asc');
+    }
+  }
+
+  iconoOrdenProv(columna: string): string {
+    if (this.ordenColumnaProv() !== columna) return '';
+    return this.ordenDireccionProv() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrdenProv(p: Proveedor, columna: string): string | number {
+    switch (columna) {
+      case 'nombre': return p.nombre.toLowerCase();
+      case 'sector': return this.obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector).toLowerCase();
+      case 'contacto': return (p.contacto ?? '').toLowerCase();
+      case 'correo': return (p.correo ?? '').toLowerCase();
+      case 'telefono': return (p.telefono ?? '').toLowerCase();
+      case 'servicios': return p.servicios_count ?? 0;
+      default: return '';
+    }
+  }
+
+  proveedoresOrdenados = computed(() => {
+    const columna = this.ordenColumnaProv();
+    const filtrados = this.proveedoresFiltrados();
+    if (!columna) return filtrados;
+    const signo = this.ordenDireccionProv() === 'asc' ? 1 : -1;
+    return [...filtrados].sort((a, b) => {
+      const va = this.valorOrdenProv(a, columna);
+      const vb = this.valorOrdenProv(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
     });
   });
 
@@ -273,6 +356,54 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
       if (this.filtroSoloPendientes() && !(s.facturas_pendientes_count && s.facturas_pendientes_count > 0)) return false;
       return true;
+    });
+  });
+
+  // Orden por columna (click en el encabezado alterna asc/desc).
+  ordenColumnaServ = signal<string | null>(null);
+  ordenDireccionServ = signal<'asc' | 'desc'>('asc');
+
+  ordenarPorServ(columna: string): void {
+    if (this.ordenColumnaServ() === columna) {
+      this.ordenDireccionServ.set(this.ordenDireccionServ() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.ordenColumnaServ.set(columna);
+      this.ordenDireccionServ.set('asc');
+    }
+  }
+
+  iconoOrdenServ(columna: string): string {
+    if (this.ordenColumnaServ() !== columna) return '';
+    return this.ordenDireccionServ() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrdenServ(s: ServicioProveedor, columna: string): string | number {
+    switch (columna) {
+      case 'servicio': return s.servicio.toLowerCase();
+      case 'proveedor': return (s.proveedor_nombre ?? '').toLowerCase();
+      case 'sector': return this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector).toLowerCase();
+      case 'fechaFin': return s.es_indefinido || !s.fecha_fin ? Number.POSITIVE_INFINITY : new Date(s.fecha_fin).getTime();
+      case 'aviso': return this.diasRestantes(s) ?? Number.POSITIVE_INFINITY;
+      case 'costoMensual': return Number(s.costo_mensual) || 0;
+      case 'costoAnual': return Number(s.costo_anual) || 0;
+      case 'pagado': return Number(s.monto_total_pagado) || 0;
+      case 'estado': return s.estado.toLowerCase();
+      case 'facturas': return s.facturas_count ?? 0;
+      default: return '';
+    }
+  }
+
+  serviciosOrdenados = computed(() => {
+    const columna = this.ordenColumnaServ();
+    const filtrados = this.serviciosFiltrados();
+    if (!columna) return filtrados;
+    const signo = this.ordenDireccionServ() === 'asc' ? 1 : -1;
+    return [...filtrados].sort((a, b) => {
+      const va = this.valorOrdenServ(a, columna);
+      const vb = this.valorOrdenServ(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
     });
   });
 
