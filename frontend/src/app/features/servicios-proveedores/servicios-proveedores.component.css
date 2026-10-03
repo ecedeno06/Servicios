@@ -18,3 +18,20 @@
   font-family: var(--font-display);
   padding: 4px 12px;
 }
+
+/* Encabezados de columna: nombre y filtro apilados dentro del mismo th,
+   una sola fila de encabezado en vez de encabezado + fila de filtros
+   por separado (mismo patron que Equipos asignados). */
+.th-label { display: block; white-space: nowrap; margin-bottom: 6px; }
+
+.data-table thead th input.input-th-filtro,
+.data-table thead th select.input-th-filtro {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 5px 8px;
+  color: var(--text-heading);
+}
+
+.data-table thead th select.input-th-filtro { cursor: pointer; }

@@ -91,41 +91,56 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Servicio</th>
-          <th>Proveedor</th>
-          <th>Sector</th>
-          <th>No. Contrato</th>
-          <th>Fecha Fin</th>
-          <th>Aviso Previo</th>
-          <th>Costo Mensual</th>
-          <th>Costo Anual</th>
-          <th>Pagado</th>
-          <th class="th-narrow">Estado</th>
-          <th style="text-align: center;">Facturas</th>
-          <th></th>
-        </tr>
-        <tr class="filter-row">
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServNombre()" (ngModelChange)="filtroServNombre.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServProveedor()" (ngModelChange)="filtroServProveedor.set($event)" /></th>
           <th>
-            <select class="input" [ngModel]="filtroServSector()" (ngModelChange)="filtroServSector.set($event)">
+            <span class="th-label">Servicio</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServNombre()" (ngModelChange)="filtroServNombre.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Proveedor</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServProveedor()" (ngModelChange)="filtroServProveedor.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Sector</span>
+            <select class="input input-th-filtro" [ngModel]="filtroServSector()" (ngModelChange)="filtroServSector.set($event)">
               <option value="">Todos</option>
               @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServPagado()" (ngModelChange)="filtroServPagado.set($event)" /></th>
           <th>
-            <select class="input" [ngModel]="filtroServEstado()" (ngModelChange)="filtroServEstado.set($event)">
+            <span class="th-label">No. Contrato</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Fecha Fin</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFechaFin()" (ngModelChange)="filtroServFechaFin.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Aviso Previo</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Costo Mensual</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Costo Anual</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Pagado</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServPagado()" (ngModelChange)="filtroServPagado.set($event)" />
+          </th>
+          <th class="th-narrow">
+            <span class="th-label">Estado</span>
+            <select class="input input-th-filtro" [ngModel]="filtroServEstado()" (ngModelChange)="filtroServEstado.set($event)">
               <option value="">Todos</option>
               @for (est of estadosServicio; track est.valor) { <option [value]="est.valor">{{ est.etiqueta }}</option> }
             </select>
           </th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" /></th>
+          <th style="text-align: center;">
+            <span class="th-label">Facturas</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" />
+          </th>
           <th></th>
         </tr>
       </thead>
@@ -201,26 +216,30 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Proveedor</th>
-          <th>Sector</th>
-          <th>Contacto Principal</th>
-          <th>Correo</th>
-          <th>Teléfono</th>
-          <th style="text-align: center;">Servicios</th>
-          <th></th>
-        </tr>
-        <tr class="filter-row">
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvNombre()" (ngModelChange)="filtroProvNombre.set($event)" /></th>
           <th>
-            <select class="input" [ngModel]="filtroProvSector()" (ngModelChange)="filtroProvSector.set($event)">
+            <span class="th-label">Proveedor</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvNombre()" (ngModelChange)="filtroProvNombre.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Sector</span>
+            <select class="input input-th-filtro" [ngModel]="filtroProvSector()" (ngModelChange)="filtroProvSector.set($event)">
               <option value="">Todos</option>
               @for (sec of sectores(); track sec.id) { <option [value]="sec.id">{{ sec.nombre }}</option> }
             </select>
           </th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvContacto()" (ngModelChange)="filtroProvContacto.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvEmail()" (ngModelChange)="filtroProvEmail.set($event)" /></th>
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProvTelefono()" (ngModelChange)="filtroProvTelefono.set($event)" /></th>
-          <th></th>
+          <th>
+            <span class="th-label">Contacto Principal</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvContacto()" (ngModelChange)="filtroProvContacto.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Correo</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvEmail()" (ngModelChange)="filtroProvEmail.set($event)" />
+          </th>
+          <th>
+            <span class="th-label">Teléfono</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProvTelefono()" (ngModelChange)="filtroProvTelefono.set($event)" />
+          </th>
+          <th style="text-align: center;">Servicios</th>
           <th>
             @if (hayFiltrosProv()) {
               <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosProv()">Limpiar</button>
@@ -282,23 +301,20 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Nombre del Sector</th>
-          <th>Descripción</th>
-          <th class="th-narrow">Estado</th>
-          <th style="text-align: center;">Proveedores</th>
-          <th></th>
-        </tr>
-        <tr class="filter-row">
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroSecNombre()" (ngModelChange)="filtroSecNombre.set($event)" /></th>
-          <th></th>
           <th>
-            <select class="input" [ngModel]="filtroSecEstado()" (ngModelChange)="filtroSecEstado.set($event)">
+            <span class="th-label">Nombre del Sector</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroSecNombre()" (ngModelChange)="filtroSecNombre.set($event)" />
+          </th>
+          <th>Descripción</th>
+          <th class="th-narrow">
+            <span class="th-label">Estado</span>
+            <select class="input input-th-filtro" [ngModel]="filtroSecEstado()" (ngModelChange)="filtroSecEstado.set($event)">
               <option value="">Todos</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
             </select>
           </th>
-          <th></th>
+          <th style="text-align: center;">Proveedores</th>
           <th>
             @if (hayFiltrosSec()) {
               <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosSec()">Limpiar</button>
