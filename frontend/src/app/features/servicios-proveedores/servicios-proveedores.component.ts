@@ -246,30 +246,33 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   });
 
-  // Métricas KPI
-  kpiTotalServicios = computed(() => this.servicios().filter((s) => s.estado === 'activo').length);
+  // Métricas KPI: se calculan sobre serviciosFiltrados(), no sobre
+  // servicios() completo -- al aplicar cualquier filtro/busqueda (o
+  // tocar la tarjeta de Facturas Pendientes) las tarjetas reflejan solo
+  // lo que esta visible en la tabla en ese momento.
+  kpiTotalServicios = computed(() => this.serviciosFiltrados().filter((s) => s.estado === 'activo').length);
 
   kpiCostoMensualTotal = computed(() =>
-    this.servicios()
+    this.serviciosFiltrados()
       .filter((s) => s.estado === 'activo')
       .reduce((acc, s) => acc + (Number(s.costo_mensual) || 0), 0)
   );
 
   kpiCostoAnualTotal = computed(() =>
-    this.servicios()
+    this.serviciosFiltrados()
       .filter((s) => s.estado === 'activo')
       .reduce((acc, s) => acc + (Number(s.costo_anual) || 0), 0)
   );
 
   kpiFacturasPendientes = computed(() =>
-    this.servicios().reduce((acc, s) => acc + (s.facturas_pendientes_count || 0), 0)
+    this.serviciosFiltrados().reduce((acc, s) => acc + (s.facturas_pendientes_count || 0), 0)
   );
 
   // Suma de todo lo ya pagado (no filtra por estado, igual que facturas
   // pendientes: un servicio pausado/cancelado igual conserva su historial
   // de pagos).
   kpiTotalPagado = computed(() =>
-    this.servicios().reduce((acc, s) => acc + (Number(s.monto_total_pagado) || 0), 0)
+    this.serviciosFiltrados().reduce((acc, s) => acc + (Number(s.monto_total_pagado) || 0), 0)
   );
 
   // Click en la tarjeta "Facturas Pendientes": filtra la tabla a solo los
