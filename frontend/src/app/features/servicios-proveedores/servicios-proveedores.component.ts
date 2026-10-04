@@ -286,9 +286,24 @@ export class ServiciosProveedoresComponent implements OnInit {
     const campos: (string | number | null | undefined)[] = [
       s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
       s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s),
-      this.textoAvisoVencimiento(s), s.estado, s.facturas_count,
+      this.textoAvisoVencimiento(s), s.estado, s.facturas_count, s.observacion,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
+  }
+
+  // Columna "Observacion": texto expandible -- colapsado por defecto
+  // (una linea, con puntos suspensivos), se expande al hacer click.
+  private observacionesExpandidas = signal<Set<string>>(new Set());
+
+  estaObservacionExpandida(id: string): boolean {
+    return this.observacionesExpandidas().has(id);
+  }
+
+  toggleObservacion(id: string): void {
+    const set = new Set(this.observacionesExpandidas());
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    this.observacionesExpandidas.set(set);
   }
 
   // Filtros Servicios
@@ -303,12 +318,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServAviso = signal('');
   filtroServEstado = signal('');
   filtroServFacturas = signal('');
+  filtroServObservacion = signal('');
 
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
     this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
     this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
-    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas() || this.filtroSoloPendientes()
+    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas() || this.filtroServObservacion() ||
+    this.filtroSoloPendientes()
   ));
 
   limpiarFiltrosServ(): void {
@@ -325,6 +342,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServAviso.set('');
     this.filtroServEstado.set('');
     this.filtroServFacturas.set('');
+    this.filtroServObservacion.set('');
     this.filtroSoloPendientes.set(false);
   }
 
@@ -341,6 +359,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const aviso = this.filtroServAviso().trim().toLowerCase();
     const est = this.filtroServEstado();
     const fact = this.filtroServFacturas().trim().toLowerCase();
+    const obs = this.filtroServObservacion().trim().toLowerCase();
 
     return this.servicios().filter((s) => {
       if (fGeneral && !this.coincideBusquedaGeneralServicio(s, fGeneral)) return false;
@@ -353,6 +372,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (pagado && !String(s.monto_total_pagado ?? 0).toLowerCase().includes(pagado)) return false;
       if (fechaFin && !this.textoFechaFin(s).toLowerCase().includes(fechaFin)) return false;
       if (aviso && !this.textoAvisoVencimiento(s).toLowerCase().includes(aviso)) return false;
+      if (obs && !(s.observacion || '').toLowerCase().includes(obs)) return false;
       if (est && s.estado !== est) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
       if (this.filtroSoloPendientes() && !(s.facturas_pendientes_count && s.facturas_pendientes_count > 0)) return false;
@@ -390,6 +410,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       case 'pagado': return Number(s.monto_total_pagado) || 0;
       case 'estado': return s.estado.toLowerCase();
       case 'facturas': return s.facturas_count ?? 0;
+      case 'observacion': return (s.observacion ?? '').toLowerCase();
       default: return '';
     }
   }
@@ -491,6 +512,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     dias_aviso_vencimiento: [{ value: null as number | null, disabled: true }],
     no_contrato: [''],
     estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
+    observacion: [''],
     contactos: this.fb.array([]),
   });
 
@@ -827,6 +849,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       dias_aviso_vencimiento: null,
       no_contrato: '',
       estado: 'activo',
+      observacion: '',
     });
     this.onToggleIndefinido();
     this.panelServicioAbierto.set(true);
@@ -847,6 +870,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       dias_aviso_vencimiento: s.dias_aviso_vencimiento ?? null,
       no_contrato: s.no_contrato || '',
       estado: s.estado,
+      observacion: s.observacion || '',
     });
     this.onToggleIndefinido();
 

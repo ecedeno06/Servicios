@@ -147,6 +147,10 @@
             <span class="th-sortable" (click)="ordenarPorServ('facturas')">Facturas <span class="orden-icono">{{ iconoOrdenServ('facturas') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" />
           </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPorServ('observacion')">Observación <span class="orden-icono">{{ iconoOrdenServ('observacion') }}</span></span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServObservacion()" (ngModelChange)="filtroServObservacion.set($event)" />
+          </th>
           <th></th>
         </tr>
       </thead>
@@ -191,6 +195,14 @@
                 @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 9 ? '9+' : s.facturas_count }}</span> }
               </button>
             </td>
+            <td
+              class="col-observacion"
+              [class.expandida]="estaObservacionExpandida(s.id)"
+              [title]="s.observacion || ''"
+              (click)="toggleObservacion(s.id)"
+            >
+              {{ s.observacion || '-' }}
+            </td>
             <td class="table-actions">
               @if (tieneContactoEmail(s)) {
                 <button type="button" class="btn-icon" (click)="abrirModalEmail(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
@@ -216,7 +228,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="11">
+            <td colspan="12">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
@@ -555,6 +567,11 @@
               <option [value]="est.valor">{{ est.etiqueta }}</option>
             }
           </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Observación</label>
+          <textarea class="input" rows="3" formControlName="observacion" placeholder="Notas adicionales sobre este servicio..."></textarea>
         </div>
 
         <!-- Contactos JSON Dinámicos -->

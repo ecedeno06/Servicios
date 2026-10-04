@@ -392,6 +392,7 @@ export interface ServicioProveedor {
   es_indefinido: boolean;
   dias_aviso_vencimiento?: number | null;
   no_contrato?: string | null;
+  observacion?: string | null;
   contactos: ContactoProveedor[];
   estado: EstadoServicioProveedor;
   creado_por: string;
