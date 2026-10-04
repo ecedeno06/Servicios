@@ -50,38 +50,50 @@
   </div>
 </div>
 
-<div class="table-wrap">
+<div class="table-wrap table-wrap-compact">
   <table class="data-table">
     <thead>
       <tr>
         <th class="th-narrow">
           <input type="checkbox" [disabled]="!hayEnCurso()" (change)="toggleSeleccionarTodas()" title="Seleccionar todas las sesiones en curso" />
         </th>
-        <th>Usuario</th>
-        <th>Rol</th>
-        <th>IP / Ubicacion</th>
-        <th>Pais</th>
-        <th>Inicio de sesion</th>
-        <th>Cierre de sesion</th>
-        <th>Duracion</th>
-        <th>Motivo</th>
-        <th></th>
-      </tr>
-      <tr class="filter-row">
-        <th></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroUsuario()" (ngModelChange)="filtroUsuario.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroIpUbicacion()" (ngModelChange)="filtroIpUbicacion.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroPais()" (ngModelChange)="filtroPais.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroInicio()" (ngModelChange)="filtroInicio.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCierre()" (ngModelChange)="filtroCierre.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroDuracion()" (ngModelChange)="filtroDuracion.set($event)" /></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroMotivo()" (ngModelChange)="filtroMotivo.set($event)" /></th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('usuario')">Usuario <span class="orden-icono">{{ iconoOrden('usuario') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroUsuario()" (ngModelChange)="filtroUsuario.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('rol')">Rol <span class="orden-icono">{{ iconoOrden('rol') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('ip')">IP / Ubicacion <span class="orden-icono">{{ iconoOrden('ip') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroIpUbicacion()" (ngModelChange)="filtroIpUbicacion.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('pais')">Pais <span class="orden-icono">{{ iconoOrden('pais') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroPais()" (ngModelChange)="filtroPais.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('inicio')">Inicio de sesion <span class="orden-icono">{{ iconoOrden('inicio') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroInicio()" (ngModelChange)="filtroInicio.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('cierre')">Cierre de sesion <span class="orden-icono">{{ iconoOrden('cierre') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCierre()" (ngModelChange)="filtroCierre.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('duracion')">Duracion <span class="orden-icono">{{ iconoOrden('duracion') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroDuracion()" (ngModelChange)="filtroDuracion.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('motivo')">Motivo <span class="orden-icono">{{ iconoOrden('motivo') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroMotivo()" (ngModelChange)="filtroMotivo.set($event)" />
+        </th>
         <th></th>
       </tr>
     </thead>
     <tbody>
-      @for (s of sesionesFiltradas(); track s.id) {
+      @for (s of sesionesOrdenadas(); track s.id) {
         <tr>
           <td class="th-narrow">
             @if (esSeleccionable(s)) {

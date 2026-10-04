@@ -82,6 +82,52 @@ export class AuditoriaSesionesComponent implements OnInit {
     });
   });
 
+  // Orden por columna (click en el encabezado alterna asc/desc).
+  columnaOrden = signal<string | null>(null);
+  direccionOrden = signal<'asc' | 'desc'>('asc');
+
+  ordenarPor(columna: string): void {
+    if (this.columnaOrden() === columna) {
+      this.direccionOrden.set(this.direccionOrden() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.columnaOrden.set(columna);
+      this.direccionOrden.set('asc');
+    }
+  }
+
+  iconoOrden(columna: string): string {
+    if (this.columnaOrden() !== columna) return '';
+    return this.direccionOrden() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrden(s: SesionAuditoria, columna: string): string | number {
+    switch (columna) {
+      case 'usuario': return s.usuario_nombre.toLowerCase();
+      case 'rol': return (s.rol || '').toLowerCase();
+      case 'ip': return (s.ip_address || '').toLowerCase();
+      case 'pais': return (s.geo_pais || '').toLowerCase();
+      case 'inicio': return new Date(s.login_en).getTime();
+      case 'cierre': return s.logout_en ? new Date(s.logout_en).getTime() : Number.POSITIVE_INFINITY;
+      case 'duracion': return s.duracion_segundos ?? -1;
+      case 'motivo': return this.etiquetaMotivo(s.motivo_salida).toLowerCase();
+      default: return '';
+    }
+  }
+
+  sesionesOrdenadas = computed(() => {
+    const columna = this.columnaOrden();
+    const filtradas = this.sesionesFiltradas();
+    if (!columna) return filtradas;
+    const signo = this.direccionOrden() === 'asc' ? 1 : -1;
+    return [...filtradas].sort((a, b) => {
+      const va = this.valorOrden(a, columna);
+      const vb = this.valorOrden(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
+    });
+  });
+
   hayEnCurso = computed(() => this.sesionesFiltradas().some((s) => s.motivo_salida === 'en_curso'));
   totalSeleccionadas = computed(() => this.seleccionadas().size);
 

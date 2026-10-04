@@ -1,3 +1,27 @@
+/* Encabezados de columna: nombre ordenable (click alterna asc/desc) y el
+   filtro de esa columna, apilados dentro del mismo th -- una sola fila de
+   encabezado en vez de encabezado + fila de filtros por separado (mismo
+   patron que Equipos asignados / Servicios y Proveedores). */
+.th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+.data-table thead th input.input-th-filtro {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 5px 8px;
+  color: var(--text-heading);
+}
+
+/* El .table-wrap-compact global esta pensado para ~5 filas (320px); esta
+   tabla pidio ~10 filas visibles antes de necesitar scroll interno, asi
+   que se sobreescribe solo aqui (encapsulado al componente). */
+.table-wrap-compact {
+  max-height: 680px;
+}
+
 .mapa-modal-overlay {
   position: fixed;
   inset: 0;
