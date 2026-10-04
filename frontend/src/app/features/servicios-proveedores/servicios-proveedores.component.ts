@@ -787,7 +787,8 @@ export class ServiciosProveedoresComponent implements OnInit {
   // identifique de inmediato de que empresa y contrato viene el correo.
   private construirAsuntoCorreo(s: ServicioProveedor): string {
     const empresa = this.auth.empresaActiva()?.empresa_nombre;
-    const partes = [empresa?.toUpperCase(), s.servicio, s.no_contrato].filter((p): p is string => !!p);
+    const contrato = s.no_contrato ? `Contrato No.: ${s.no_contrato}` : null;
+    const partes = [empresa?.toUpperCase(), s.servicio, contrato].filter((p): p is string => !!p);
     return partes.join(' - ');
   }
 
