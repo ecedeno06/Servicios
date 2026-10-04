@@ -45,6 +45,7 @@ export class AuditoriaSesionesComponent implements OnInit {
   // aplicados en el cliente sobre lo ya cargado del servidor.
   filtroUsuario = signal('');
   filtroRol = signal('');
+  filtroEmpresa = signal('');
   filtroIpUbicacion = signal('');
   filtroPais = signal('');
   filtroInicio = signal('');
@@ -53,7 +54,7 @@ export class AuditoriaSesionesComponent implements OnInit {
   filtroMotivo = signal('');
 
   hayFiltrosColumna = computed(() =>
-    !!(this.filtroUsuario() || this.filtroRol() || this.filtroIpUbicacion() || this.filtroPais() ||
+    !!(this.filtroUsuario() || this.filtroRol() || this.filtroEmpresa() || this.filtroIpUbicacion() || this.filtroPais() ||
        this.filtroInicio() || this.filtroCierre() || this.filtroDuracion() || this.filtroMotivo())
   );
 
@@ -62,6 +63,7 @@ export class AuditoriaSesionesComponent implements OnInit {
 
     const fUsuario = this.filtroUsuario();
     const fRol = this.filtroRol();
+    const fEmpresa = this.filtroEmpresa();
     const fIp = this.filtroIpUbicacion();
     const fPais = this.filtroPais();
     const fInicio = this.filtroInicio();
@@ -72,6 +74,7 @@ export class AuditoriaSesionesComponent implements OnInit {
     return this.sesiones().filter((s) => {
       if (fUsuario && !contiene(`${s.usuario_nombre} ${s.usuario_email}`, fUsuario)) return false;
       if (fRol && !contiene(s.rol || '', fRol)) return false;
+      if (fEmpresa && !contiene(s.empresa_nombre || '', fEmpresa)) return false;
       if (fIp && !contiene(`${s.ip_address || ''} ${this.ubicacionTexto(s)}`, fIp)) return false;
       if (fPais && !contiene(s.geo_pais || '', fPais)) return false;
       if (fInicio && !contiene(this.formatoFecha(s.login_en), fInicio)) return false;
@@ -104,6 +107,7 @@ export class AuditoriaSesionesComponent implements OnInit {
     switch (columna) {
       case 'usuario': return s.usuario_nombre.toLowerCase();
       case 'rol': return (s.rol || '').toLowerCase();
+      case 'empresa': return (s.empresa_nombre || '').toLowerCase();
       case 'ip': return (s.ip_address || '').toLowerCase();
       case 'pais': return (s.geo_pais || '').toLowerCase();
       case 'inicio': return new Date(s.login_en).getTime();
@@ -140,6 +144,7 @@ export class AuditoriaSesionesComponent implements OnInit {
   limpiarFiltrosColumna(): void {
     this.filtroUsuario.set('');
     this.filtroRol.set('');
+    this.filtroEmpresa.set('');
     this.filtroIpUbicacion.set('');
     this.filtroPais.set('');
     this.filtroInicio.set('');

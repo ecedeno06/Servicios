@@ -66,6 +66,10 @@
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroRol()" (ngModelChange)="filtroRol.set($event)" />
         </th>
         <th>
+          <span class="th-sortable" (click)="ordenarPor('empresa')">Empresa <span class="orden-icono">{{ iconoOrden('empresa') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroEmpresa()" (ngModelChange)="filtroEmpresa.set($event)" />
+        </th>
+        <th>
           <span class="th-sortable" (click)="ordenarPor('ip')">IP / Ubicacion <span class="orden-icono">{{ iconoOrden('ip') }}</span></span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroIpUbicacion()" (ngModelChange)="filtroIpUbicacion.set($event)" />
         </th>
@@ -106,6 +110,7 @@
             <div class="text-muted text-sm">{{ s.usuario_email }}</div>
           </td>
           <td>{{ s.rol || '-' }}</td>
+          <td>{{ s.empresa_nombre || '-' }}</td>
           <td>
             <div class="flex items-center gap-8" style="justify-content:space-between;">
               <div>
@@ -132,7 +137,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="10">
+          <td colspan="11">
             <div class="empty-state">
               @if (cargando()) {
                 Cargando sesiones...
