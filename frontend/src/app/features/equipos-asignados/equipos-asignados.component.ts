@@ -5,7 +5,8 @@ import { EquiposAsignadosService } from '../../core/services/equipos-asignados.s
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
-import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Procesador, Producto } from '../../core/models/models';
+import { ProveedoresService } from '../../core/services/proveedores.service';
+import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -31,6 +32,7 @@ export class EquiposAsignadosComponent implements OnInit {
   categorias = signal<Categoria[]>([]);
   productos = signal<Producto[]>([]);
   procesadores = signal<Procesador[]>([]);
+  proveedores = signal<Proveedor[]>([]);
 
   seleccionado = signal<EquipoAsignado | null>(null);
   historial = signal<MovimientoEquipo[]>([]);
@@ -116,11 +118,13 @@ export class EquiposAsignadosComponent implements OnInit {
   filtroCpu = signal('');
   filtroRam = signal('');
   filtroDisco = signal('');
+  filtroProveedor = signal('');
 
   hayFiltros = computed(() => !!(
     this.busquedaGeneral() ||
     this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA() ||
-    this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco()
+    this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco() ||
+    this.filtroProveedor()
   ));
 
   private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
@@ -130,7 +134,7 @@ export class EquiposAsignadosComponent implements OnInit {
       this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'),
       this.textoVidaUtil(e), e.procesador_nombre, e.memoria_ram, e.disco_duro,
       e.numero_serie, e.numero_puertos, e.numero_puertos_hdmi, e.precio_usd, e.locacion_pais,
-      e.observacion, e.creado_por_nombre, e.modificado_por_nombre,
+      e.observacion, e.creado_por_nombre, e.modificado_por_nombre, e.proveedor_nombre,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -151,6 +155,7 @@ export class EquiposAsignadosComponent implements OnInit {
   valoresCpu = computed(() => this.valoresUnicos(this.equipos().map((e) => e.procesador_nombre)));
   valoresRam = computed(() => this.valoresUnicos(this.equipos().map((e) => e.memoria_ram)));
   valoresDisco = computed(() => this.valoresUnicos(this.equipos().map((e) => e.disco_duro)));
+  valoresProveedor = computed(() => this.valoresUnicos(this.equipos().map((e) => e.proveedor_nombre)));
 
   // Orden por columna (click en el encabezado alterna asc/desc).
   ordenColumna = signal<string | null>(null);
@@ -181,6 +186,7 @@ export class EquiposAsignadosComponent implements OnInit {
       case 'cpu': return (e.procesador_nombre ?? '').toLowerCase();
       case 'ram': return (e.memoria_ram ?? '').toLowerCase();
       case 'disco': return (e.disco_duro ?? '').toLowerCase();
+      case 'proveedor': return (e.proveedor_nombre ?? '').toLowerCase();
       default: return '';
     }
   }
@@ -196,6 +202,7 @@ export class EquiposAsignadosComponent implements OnInit {
     const fCpu = this.filtroCpu().trim().toLowerCase();
     const fRam = this.filtroRam().trim().toLowerCase();
     const fDisco = this.filtroDisco().trim().toLowerCase();
+    const fProveedor = this.filtroProveedor().trim().toLowerCase();
     const filtrados = this.equipos().filter((e) => {
       if (fGeneral && !this.coincideBusquedaGeneral(e, fGeneral)) return false;
       if (fCat && !e.categoria_nombre.toLowerCase().includes(fCat)) return false;
@@ -207,6 +214,7 @@ export class EquiposAsignadosComponent implements OnInit {
       if (fCpu && !(e.procesador_nombre ?? '-').toLowerCase().includes(fCpu)) return false;
       if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
       if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
+      if (fProveedor && !(e.proveedor_nombre ?? '-').toLowerCase().includes(fProveedor)) return false;
       return true;
     });
 
@@ -273,6 +281,7 @@ export class EquiposAsignadosComponent implements OnInit {
     numero_puertos_hdmi: [''],
     precio_usd: [''],
     locacion_pais: [''],
+    proveedor_id: [''],
   });
 
   // Senal propia (no el FormControl.value directo, que no es una senal y
@@ -292,6 +301,7 @@ export class EquiposAsignadosComponent implements OnInit {
     private categoriasSrv: CategoriasService,
     private productosSrv: ProductosService,
     private procesadoresSrv: ProcesadoresService,
+    private proveedoresSrv: ProveedoresService,
     private datePipe: DatePipe,
     private elRef: ElementRef<HTMLElement>
   ) {}
@@ -301,6 +311,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data));
     this.productosSrv.listar().subscribe((data) => this.productos.set(data));
     this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data));
+    this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
   }
 
   // Disparado solo por la interaccion real del usuario con el <select>
@@ -341,6 +352,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.filtroCpu.set('');
     this.filtroRam.set('');
     this.filtroDisco.set('');
+    this.filtroProveedor.set('');
   }
 
   etiquetaEstado(estado: EstadoEquipo): string {
@@ -392,6 +404,7 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_puertos_hdmi: e.numero_puertos_hdmi != null ? String(e.numero_puertos_hdmi) : '',
       precio_usd: e.precio_usd != null ? String(e.precio_usd) : '',
       locacion_pais: e.locacion_pais ?? '',
+      proveedor_id: e.proveedor_id ?? '',
     });
     this.cargarHistorial(e.id);
   }
@@ -408,7 +421,7 @@ export class EquiposAsignadosComponent implements OnInit {
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',
       procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
-      precio_usd: '', locacion_pais: '',
+      precio_usd: '', locacion_pais: '', proveedor_id: '',
     });
   }
 
@@ -432,6 +445,7 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_puertos_hdmi: raw.numero_puertos_hdmi !== '' && raw.numero_puertos_hdmi != null ? Number(raw.numero_puertos_hdmi) : null,
       precio_usd: raw.precio_usd !== '' && raw.precio_usd != null ? Number(raw.precio_usd) : null,
       locacion_pais: raw.locacion_pais?.trim() || null,
+      proveedor_id: raw.proveedor_id || null,
     };
     const actual = this.seleccionado();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);

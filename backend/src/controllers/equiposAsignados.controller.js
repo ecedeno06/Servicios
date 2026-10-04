@@ -6,12 +6,14 @@ const SELECT_BASE = `
     p.nombre as producto_nombre,
     c.nombre as categoria_nombre,
     pr.nombre as procesador_nombre,
+    prov.nombre as proveedor_nombre,
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre
   from equipos_asignados ea
   join productos p on p.id = ea.producto_id
   join categorias c on c.id = p.categoria_id
   left join procesadores pr on pr.id = ea.procesador_id
+  left join proveedores prov on prov.id = ea.proveedor_id
   join usuarios uc on uc.id = ea.creado_por
   left join usuarios um on um.id = ea.modificado_por
 `;
@@ -31,7 +33,7 @@ async function crear(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      precio_usd, locacion_pais,
+      precio_usd, locacion_pais, proveedor_id,
     } = req.body;
     if (!producto_id || !marca || !modelo) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
@@ -41,13 +43,13 @@ async function crear(req, res, next) {
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
           procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-          precio_usd, locacion_pais, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+          precio_usd, locacion_pais, proveedor_id, creado_por)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
        returning id`,
       [
         req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        precio_usd ?? null, locacion_pais || null,
+        precio_usd ?? null, locacion_pais || null, proveedor_id || null,
         req.usuario.id,
       ]
     );
@@ -73,7 +75,7 @@ async function actualizar(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      precio_usd, locacion_pais,
+      precio_usd, locacion_pais, proveedor_id,
     } = req.body;
     if (!producto_id || !marca || !modelo || !estado) {
       return res.status(400).json({ mensaje: 'producto_id, marca, modelo y estado son requeridos' });
@@ -106,13 +108,14 @@ async function actualizar(req, res, next) {
          numero_puertos_hdmi = $14,
          precio_usd = $15,
          locacion_pais = $16,
-         modificado_por = $17
-       where id = $18 and empresa_id = $19
+         proveedor_id = $17,
+         modificado_por = $18
+       where id = $19 and empresa_id = $20
        returning id`,
       [
         producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        precio_usd ?? null, locacion_pais || null,
+        precio_usd ?? null, locacion_pais || null, proveedor_id || null,
         req.usuario.id, req.params.id, req.empresaId,
       ]
     );
