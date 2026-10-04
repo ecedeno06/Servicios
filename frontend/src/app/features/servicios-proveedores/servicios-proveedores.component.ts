@@ -782,17 +782,22 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.contactosEmailSeleccionados.set(set);
   }
 
-  // mailto solo admite abrir el cliente de correo local. El asunto lleva
-  // el nombre de la empresa activa (ej. "BLUECORE - ...") para que el
-  // contacto del proveedor identifique de inmediato de que empresa viene
-  // el correo.
+  // "EMPRESA - Servicio - No.Contrato" (cualquiera de las 3 partes se
+  // omite si no esta disponible) -- para que el contacto del proveedor
+  // identifique de inmediato de que empresa y contrato viene el correo.
+  private construirAsuntoCorreo(s: ServicioProveedor): string {
+    const empresa = this.auth.empresaActiva()?.empresa_nombre;
+    const partes = [empresa?.toUpperCase(), s.servicio, s.no_contrato].filter((p): p is string => !!p);
+    return partes.join(' - ');
+  }
+
+  // mailto solo admite abrir el cliente de correo local.
   enviarCorreoSeleccionados(): void {
     const s = this.servicioEmailActual();
     const correos = Array.from(this.contactosEmailSeleccionados());
     if (!s || !correos.length) return;
 
-    const empresa = this.auth.empresaActiva()?.empresa_nombre;
-    const asunto = empresa ? `${empresa.toUpperCase()} - ${s.servicio}` : s.servicio;
+    const asunto = this.construirAsuntoCorreo(s);
     window.location.href = `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
     this.cerrarModalEmail();
   }
