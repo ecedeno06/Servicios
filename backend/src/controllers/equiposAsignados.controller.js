@@ -33,7 +33,7 @@ async function crear(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      precio_usd, locacion_pais, proveedor_id,
+      precio_usd, locacion_pais, proveedor_id, no_factura,
     } = req.body;
     if (!producto_id || !marca || !modelo) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
@@ -43,13 +43,13 @@ async function crear(req, res, next) {
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
           procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-          precio_usd, locacion_pais, proveedor_id, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+          precio_usd, locacion_pais, proveedor_id, no_factura, creado_por)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
        returning id`,
       [
         req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        precio_usd ?? null, locacion_pais || null, proveedor_id || null,
+        precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null,
         req.usuario.id,
       ]
     );
@@ -75,7 +75,7 @@ async function actualizar(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      precio_usd, locacion_pais, proveedor_id,
+      precio_usd, locacion_pais, proveedor_id, no_factura,
     } = req.body;
     if (!producto_id || !marca || !modelo || !estado) {
       return res.status(400).json({ mensaje: 'producto_id, marca, modelo y estado son requeridos' });
@@ -109,13 +109,14 @@ async function actualizar(req, res, next) {
          precio_usd = $15,
          locacion_pais = $16,
          proveedor_id = $17,
-         modificado_por = $18
-       where id = $19 and empresa_id = $20
+         no_factura = $18,
+         modificado_por = $19
+       where id = $20 and empresa_id = $21
        returning id`,
       [
         producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        precio_usd ?? null, locacion_pais || null, proveedor_id || null,
+        precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null,
         req.usuario.id, req.params.id, req.empresaId,
       ]
     );

@@ -151,6 +151,7 @@ export interface EquipoAsignado {
   locacion_pais: string | null;
   proveedor_id: string | null;
   proveedor_nombre: string | null;
+  no_factura: string | null;
   creado_por: string;
   creado_por_nombre: string;
   modificado_por: string | null;

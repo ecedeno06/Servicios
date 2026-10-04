@@ -119,12 +119,13 @@ export class EquiposAsignadosComponent implements OnInit {
   filtroRam = signal('');
   filtroDisco = signal('');
   filtroProveedor = signal('');
+  filtroNoFactura = signal('');
 
   hayFiltros = computed(() => !!(
     this.busquedaGeneral() ||
     this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA() ||
     this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco() ||
-    this.filtroProveedor()
+    this.filtroProveedor() || this.filtroNoFactura()
   ));
 
   private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
@@ -134,7 +135,7 @@ export class EquiposAsignadosComponent implements OnInit {
       this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'),
       this.textoVidaUtil(e), e.procesador_nombre, e.memoria_ram, e.disco_duro,
       e.numero_serie, e.numero_puertos, e.numero_puertos_hdmi, e.precio_usd, e.locacion_pais,
-      e.observacion, e.creado_por_nombre, e.modificado_por_nombre, e.proveedor_nombre,
+      e.observacion, e.creado_por_nombre, e.modificado_por_nombre, e.proveedor_nombre, e.no_factura,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -156,6 +157,7 @@ export class EquiposAsignadosComponent implements OnInit {
   valoresRam = computed(() => this.valoresUnicos(this.equipos().map((e) => e.memoria_ram)));
   valoresDisco = computed(() => this.valoresUnicos(this.equipos().map((e) => e.disco_duro)));
   valoresProveedor = computed(() => this.valoresUnicos(this.equipos().map((e) => e.proveedor_nombre)));
+  valoresNoFactura = computed(() => this.valoresUnicos(this.equipos().map((e) => e.no_factura)));
 
   // Orden por columna (click en el encabezado alterna asc/desc).
   ordenColumna = signal<string | null>(null);
@@ -187,6 +189,7 @@ export class EquiposAsignadosComponent implements OnInit {
       case 'ram': return (e.memoria_ram ?? '').toLowerCase();
       case 'disco': return (e.disco_duro ?? '').toLowerCase();
       case 'proveedor': return (e.proveedor_nombre ?? '').toLowerCase();
+      case 'noFactura': return (e.no_factura ?? '').toLowerCase();
       default: return '';
     }
   }
@@ -203,6 +206,7 @@ export class EquiposAsignadosComponent implements OnInit {
     const fRam = this.filtroRam().trim().toLowerCase();
     const fDisco = this.filtroDisco().trim().toLowerCase();
     const fProveedor = this.filtroProveedor().trim().toLowerCase();
+    const fNoFactura = this.filtroNoFactura().trim().toLowerCase();
     const filtrados = this.equipos().filter((e) => {
       if (fGeneral && !this.coincideBusquedaGeneral(e, fGeneral)) return false;
       if (fCat && !e.categoria_nombre.toLowerCase().includes(fCat)) return false;
@@ -215,6 +219,7 @@ export class EquiposAsignadosComponent implements OnInit {
       if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
       if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
       if (fProveedor && !(e.proveedor_nombre ?? '-').toLowerCase().includes(fProveedor)) return false;
+      if (fNoFactura && !(e.no_factura ?? '-').toLowerCase().includes(fNoFactura)) return false;
       return true;
     });
 
@@ -282,6 +287,7 @@ export class EquiposAsignadosComponent implements OnInit {
     precio_usd: [''],
     locacion_pais: [''],
     proveedor_id: [''],
+    no_factura: [''],
   });
 
   // Senal propia (no el FormControl.value directo, que no es una senal y
@@ -353,6 +359,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.filtroRam.set('');
     this.filtroDisco.set('');
     this.filtroProveedor.set('');
+    this.filtroNoFactura.set('');
   }
 
   etiquetaEstado(estado: EstadoEquipo): string {
@@ -405,6 +412,7 @@ export class EquiposAsignadosComponent implements OnInit {
       precio_usd: e.precio_usd != null ? String(e.precio_usd) : '',
       locacion_pais: e.locacion_pais ?? '',
       proveedor_id: e.proveedor_id ?? '',
+      no_factura: e.no_factura ?? '',
     });
     this.cargarHistorial(e.id);
   }
@@ -421,7 +429,7 @@ export class EquiposAsignadosComponent implements OnInit {
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',
       procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
-      precio_usd: '', locacion_pais: '', proveedor_id: '',
+      precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '',
     });
   }
 
@@ -446,6 +454,7 @@ export class EquiposAsignadosComponent implements OnInit {
       precio_usd: raw.precio_usd !== '' && raw.precio_usd != null ? Number(raw.precio_usd) : null,
       locacion_pais: raw.locacion_pais?.trim() || null,
       proveedor_id: raw.proveedor_id || null,
+      no_factura: raw.no_factura?.trim() || null,
     };
     const actual = this.seleccionado();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);
