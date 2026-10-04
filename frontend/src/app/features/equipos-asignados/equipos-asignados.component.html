@@ -97,13 +97,16 @@
             @for (v of valoresProveedor(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </th>
-        <th>
+        <!-- Columna "No. Factura" oculta hasta nueva orden -- para restaurarla,
+             descomentar este <th> y el <td> correspondiente mas abajo, y
+             volver el colspan del "empty-state" a 12. -->
+        <!-- <th>
           <span class="th-sortable" (click)="ordenarPor('noFactura')">No. Factura <span class="orden-icono">{{ iconoOrden('noFactura') }}</span></span>
           <select class="input input-th-filtro" [ngModel]="filtroNoFactura()" (ngModelChange)="filtroNoFactura.set($event)">
             <option value="">Todos</option>
             @for (v of valoresNoFactura(); track v) { <option [value]="v">{{ v }}</option> }
           </select>
-        </th>
+        </th> -->
         <th>Acciones</th>
       </tr>
     </thead>
@@ -122,7 +125,7 @@
           <td>{{ e.memoria_ram || '-' }}</td>
           <td>{{ e.disco_duro || '-' }}</td>
           <td>{{ e.proveedor_nombre || '-' }}</td>
-          <td>{{ e.no_factura || '-' }}</td>
+          <!-- <td>{{ e.no_factura || '-' }}</td> -->
           <td class="table-actions">
             <button type="button" class="btn-icon" title="Acciones" aria-label="Acciones" (click)="toggleMenuAccion($event, e)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
@@ -130,7 +133,7 @@
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="12"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
+        <tr><td colspan="11"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
       }
     </tbody>
   </table>
