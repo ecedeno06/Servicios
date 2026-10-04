@@ -193,9 +193,9 @@
             </td>
             <td class="table-actions">
               @if (tieneContactoEmail(s)) {
-                <a class="btn-icon" [href]="enlaceEmailServicio(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
+                <button type="button" class="btn-icon" (click)="abrirModalEmail(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-                </a>
+                </button>
               }
               @if (tieneContactoTelefono(s)) {
                 <a class="btn-icon" [href]="enlaceWhatsAppServicio(s)" target="_blank" title="Enviar WhatsApp a un contacto del servicio" aria-label="Enviar WhatsApp">
@@ -707,6 +707,46 @@
             }
           </div>
         }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL: elegir a cuales contactos enviarles correo -->
+@if (modalEmailAbierto()) {
+  <div class="modal-overlay" (click)="cerrarModalEmail()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <h3 style="margin:0;">Enviar correo</h3>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioEmailActual()?.servicio }}</p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
+        @for (c of contactosEmailModal(); track c.email) {
+          <label class="flex items-center gap-8" style="cursor: pointer;">
+            <input
+              type="checkbox"
+              [checked]="contactosEmailSeleccionados().has(c.email!)"
+              (change)="toggleContactoEmail(c.email!)"
+            />
+            <span>
+              <strong>{{ c.nombre }}</strong>
+              <span class="text-muted text-sm"> &middot; {{ c.email }}</span>
+            </span>
+          </label>
+        } @empty {
+          <p class="text-muted text-sm">Este servicio no tiene contactos con correo registrado.</p>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="contactosEmailSeleccionados().size === 0"
+          (click)="enviarCorreoSeleccionados()"
+        >
+          Enviar correo ({{ contactosEmailSeleccionados().size }})
+        </button>
+        <button type="button" class="btn btn-outline" (click)="cerrarModalEmail()">Cancelar</button>
       </div>
     </div>
   </div>

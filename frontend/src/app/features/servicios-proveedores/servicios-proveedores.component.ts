@@ -749,17 +749,52 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.contactosConTelefono(s).length > 0;
   }
 
-  // mailto solo admite abrir el cliente de correo local -- se mandan
-  // todos los correos de contacto como destinatarios, no solo el primero.
-  // El asunto lleva el nombre de la empresa activa (ej. "BLUECORE - ...")
-  // para que el contacto del proveedor identifique de inmediato de que
-  // empresa viene el correo.
-  enlaceEmailServicio(s: ServicioProveedor): string {
-    const correos = this.contactosConEmail(s).map((c) => c.email);
-    if (!correos.length) return '#';
+  // -------------------------------------------------------------------
+  // MODAL: seleccionar a cuales contactos del servicio enviarles correo
+  // (antes se mandaba a todos de una, sin poder elegir).
+  // -------------------------------------------------------------------
+  modalEmailAbierto = signal(false);
+  servicioEmailActual = signal<ServicioProveedor | null>(null);
+  contactosEmailSeleccionados = signal<Set<string>>(new Set());
+
+  contactosEmailModal = computed(() => {
+    const s = this.servicioEmailActual();
+    return s ? this.contactosConEmail(s) : [];
+  });
+
+  abrirModalEmail(s: ServicioProveedor): void {
+    this.servicioEmailActual.set(s);
+    // Todos marcados por defecto (mismo comportamiento de antes), el
+    // usuario desmarca los que no quiere incluir.
+    this.contactosEmailSeleccionados.set(new Set(this.contactosConEmail(s).map((c) => c.email!)));
+    this.modalEmailAbierto.set(true);
+  }
+
+  cerrarModalEmail(): void {
+    this.modalEmailAbierto.set(false);
+    this.servicioEmailActual.set(null);
+  }
+
+  toggleContactoEmail(email: string): void {
+    const set = new Set(this.contactosEmailSeleccionados());
+    if (set.has(email)) set.delete(email);
+    else set.add(email);
+    this.contactosEmailSeleccionados.set(set);
+  }
+
+  // mailto solo admite abrir el cliente de correo local. El asunto lleva
+  // el nombre de la empresa activa (ej. "BLUECORE - ...") para que el
+  // contacto del proveedor identifique de inmediato de que empresa viene
+  // el correo.
+  enviarCorreoSeleccionados(): void {
+    const s = this.servicioEmailActual();
+    const correos = Array.from(this.contactosEmailSeleccionados());
+    if (!s || !correos.length) return;
+
     const empresa = this.auth.empresaActiva()?.empresa_nombre;
     const asunto = empresa ? `${empresa.toUpperCase()} - ${s.servicio}` : s.servicio;
-    return `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
+    window.location.href = `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
+    this.cerrarModalEmail();
   }
 
   // wa.me solo admite un numero por enlace -- se usa el primer contacto
