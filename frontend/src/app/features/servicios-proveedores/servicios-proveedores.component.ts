@@ -809,6 +809,19 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.contactosEmailSeleccionados.set(set);
   }
 
+  // Muestra un check por un momento en el boton de copiar, para confirmar
+  // la accion sin interrumpir con un alert.
+  correoCopiado = signal<string | null>(null);
+
+  copiarCorreo(email: string): void {
+    navigator.clipboard?.writeText(email).then(() => {
+      this.correoCopiado.set(email);
+      setTimeout(() => {
+        if (this.correoCopiado() === email) this.correoCopiado.set(null);
+      }, 1500);
+    }).catch(() => {});
+  }
+
   // "EMPRESA - Servicio - No.Contrato" (cualquiera de las 3 partes se
   // omite si no esta disponible) -- para que el contacto del proveedor
   // identifique de inmediato de que empresa y contrato viene el correo.

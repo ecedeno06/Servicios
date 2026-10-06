@@ -765,17 +765,26 @@
 
       <div style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
         @for (c of contactosEmailModal(); track c.email) {
-          <label class="flex items-center gap-8" style="cursor: pointer;">
-            <input
-              type="checkbox"
-              [checked]="contactosEmailSeleccionados().has(c.email!)"
-              (change)="toggleContactoEmail(c.email!)"
-            />
-            <span>
-              <strong>{{ c.nombre }}</strong>
-              <span class="text-muted text-sm"> &middot; {{ c.email }}</span>
-            </span>
-          </label>
+          <div class="flex items-center gap-8" style="justify-content: space-between;">
+            <label class="flex items-center gap-8" style="cursor: pointer; flex: 1; min-width: 0;">
+              <input
+                type="checkbox"
+                [checked]="contactosEmailSeleccionados().has(c.email!)"
+                (change)="toggleContactoEmail(c.email!)"
+              />
+              <span>
+                <strong>{{ c.nombre }}</strong>
+                <span class="text-muted text-sm"> &middot; {{ c.email }}</span>
+              </span>
+            </label>
+            <button type="button" class="btn-icon" [title]="correoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarCorreo(c.email!)">
+              @if (correoCopiado() === c.email) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              }
+            </button>
+          </div>
         } @empty {
           <p class="text-muted text-sm">Este servicio no tiene contactos con correo registrado.</p>
         }
