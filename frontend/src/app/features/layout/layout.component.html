@@ -32,7 +32,7 @@
           </button>
           @if (grupoExpandido(item.codigo)) {
             @for (hijo of item.hijos; track hijo.id) {
-              <a class="nav-group-child" [routerLink]="hijo.ruta" routerLinkActive="active" [title]="hijo.nombre">
+              <a class="nav-group-child" [routerLink]="hijo.ruta" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [title]="hijo.nombre">
                 <span class="nav-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="iconoSvg(hijo.icono)"></svg>
                 </span>
