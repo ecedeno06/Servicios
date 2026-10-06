@@ -1,0 +1,108 @@
+<div class="page-header">
+  <div>
+    <h1>Reporte de servicios</h1>
+    <div class="desc">Servicios contratados con proveedor, sector, costo mensual y pagos totales en un rango de fechas</div>
+  </div>
+</div>
+
+<div class="card">
+  <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Proveedor</label>
+        <select class="input" formControlName="proveedor_id">
+          <option value="">Todos los proveedores</option>
+          @for (p of proveedores(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sector</label>
+        <select class="input" formControlName="sector_id">
+          <option value="">Todos los sectores</option>
+          @for (s of sectores(); track s.id) { <option [value]="s.id">{{ s.nombre }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Desde *</label>
+        <input class="input" type="date" formControlName="fechaInicio" />
+      </div>
+      <div class="form-group">
+        <label>Hasta *</label>
+        <input class="input" type="date" formControlName="fechaFin" />
+      </div>
+    </div>
+
+    @if (errorBuscar()) {
+      <div class="error-text mt-16">{{ errorBuscar() }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
+        {{ cargando() ? 'Buscando...' : 'Buscar' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+@if (buscado()) {
+  <div class="page-header mt-16">
+    <div>
+      <h2 style="margin:0;">Resultados</h2>
+      <div class="desc">{{ filas().length }} servicio(s) &middot; {{ totalSeleccionadas() }} seleccionado(s) para exportar</div>
+    </div>
+    <div class="flex items-center gap-8">
+      @if (errorPdf()) { <span class="error-text">{{ errorPdf() }}</span> }
+      @if (errorExcel()) { <span class="error-text">{{ errorExcel() }}</span> }
+      <button type="button" class="btn btn-outline" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
+        {{ generandoExcel() ? 'Generando...' : 'Descargar Excel' }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
+        {{ generandoPdf() ? 'Generando...' : 'Imprimir PDF' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap table-wrap-compact">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="th-narrow">
+            <input type="checkbox" [checked]="todasSeleccionadas()" (change)="toggleSeleccionarTodas()" title="Seleccionar todos" />
+          </th>
+          <th>Servicio</th>
+          <th>Proveedor</th>
+          <th>Sector</th>
+          <th>Estado</th>
+          <th>Costo Mensual</th>
+          <th>Pagos en Periodo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of filas(); track f.id) {
+          <tr>
+            <td class="th-narrow">
+              <input type="checkbox" [checked]="seleccionadas().has(f.id)" (change)="toggleSeleccion(f.id)" />
+            </td>
+            <td>{{ f.servicio }}</td>
+            <td>{{ f.proveedor_nombre }}</td>
+            <td>{{ f.sector_nombre || '-' }}</td>
+            <td><span class="badge" [class]="claseBadgeEstado(f.estado)">{{ f.estado }}</span></td>
+            <td>{{ f.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ f.pagos_total_rango | currency:'USD':'symbol':'1.2-2' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7"><div class="empty-state">Ningun servicio coincide con el filtro seleccionado.</div></td></tr>
+        }
+      </tbody>
+      @if (filas().length > 0) {
+        <tfoot>
+          <tr>
+            <td colspan="5" style="text-align:right; font-weight:600;">Totales</td>
+            <td style="font-weight:600;">{{ totalCostoMensual() | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td style="font-weight:600;">{{ totalPagosRango() | currency:'USD':'symbol':'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  </div>
+}

@@ -7,6 +7,8 @@ router.use(requireEmpresa);
 
 // Servicios
 router.get('/', requirePermiso('servicios_proveedores', 'ver'), ctrl.listar);
+// Antes de "/:id" -- si no, Express interpreta "reporte" como el :id.
+router.get('/reporte/pagos', requirePermiso('servicios_proveedores', 'ver'), ctrl.reportePagos);
 router.get('/:id', requirePermiso('servicios_proveedores', 'ver'), ctrl.obtenerPorId);
 router.post('/', requirePermiso('servicios_proveedores', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizar);

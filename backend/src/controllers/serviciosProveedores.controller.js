@@ -30,6 +30,40 @@ async function listar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/servicios-proveedores/reporte/pagos?desde=&hasta=
+// Una fila por servicio, con los pagos ("pagada") sumados solo dentro del
+// rango de fechas pedido -- distinto de monto_total_pagado en SELECT_BASE,
+// que es el acumulado historico completo.
+async function reportePagos(req, res, next) {
+  try {
+    const { desde, hasta } = req.query;
+    const { rows } = await pool.query(
+      `select
+         sp.id,
+         sp.servicio,
+         sp.costo_mensual,
+         sp.estado,
+         p.nombre as proveedor_nombre,
+         coalesce(sec.nombre, p.sector) as sector_nombre,
+         coalesce((
+           select sum(f.monto_factura)
+           from facturas_servicios_proveedores f
+           where f.servicio_proveedor_id = sp.id
+             and f.estado = 'pagada'
+             and ($1::date is null or f.fecha_factura >= $1::date)
+             and ($2::date is null or f.fecha_factura <= $2::date)
+         ), 0)::numeric as pagos_total_rango
+       from servicios_proveedores sp
+       join proveedores p on p.id = sp.proveedor_id
+       left join sectores_proveedores sec on sec.id = p.sector_id
+       where sp.empresa_id = $3
+       order by sp.servicio asc`,
+      [desde || null, hasta || null, req.empresaId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 async function obtenerPorId(req, res, next) {
   try {
     const { rows } = await pool.query(
@@ -311,6 +345,7 @@ module.exports = {
   crear,
   actualizar,
   eliminar,
+  reportePagos,
   listarFacturas,
   crearFactura,
   actualizarFactura,

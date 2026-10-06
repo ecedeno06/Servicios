@@ -377,6 +377,18 @@ export interface ContactoProveedor {
 
 export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado' | 'vencido' | 'inactivo';
 
+// Una fila del Reporte de Servicios: servicio + proveedor + sector + costo
+// mensual + pagos totales ("pagada") dentro del rango de fechas pedido.
+export interface ReporteServicioPagos {
+  id: string;
+  servicio: string;
+  proveedor_nombre: string;
+  sector_nombre: string | null;
+  costo_mensual: number;
+  estado: EstadoServicioProveedor;
+  pagos_total_rango: number;
+}
+
 export interface ServicioProveedor {
   id: string;
   empresa_id: string;

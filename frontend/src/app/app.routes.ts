@@ -12,6 +12,7 @@ import { ContratosComponent } from './features/contratos/contratos.component';
 import { ContratoDetalleComponent } from './features/contratos/contrato-detalle.component';
 import { RegistroHorasComponent } from './features/horas/registro-horas.component';
 import { ReporteHorasComponent } from './features/reportes/reporte-horas.component';
+import { ReporteServiciosComponent } from './features/reportes/reporte-servicios.component';
 import { UsuariosComponent } from './features/usuarios/usuarios.component';
 import { EmpresasComponent } from './features/empresas/empresas.component';
 import { PoliticaPasswordComponent } from './features/politica-password/politica-password.component';
@@ -36,7 +37,8 @@ export const routes: Routes = [
       { path: 'contratos', component: ContratosComponent, canActivate: [permisoGuard], data: { menu: 'contratos' } },
       { path: 'contratos/:id', component: ContratoDetalleComponent, canActivate: [permisoGuard], data: { menu: 'contratos' } },
       { path: 'horas', component: RegistroHorasComponent, canActivate: [permisoGuard], data: { menu: 'horas' } },
-      { path: 'reportes', component: ReporteHorasComponent, canActivate: [permisoGuard], data: { menu: 'reportes' } },
+      { path: 'reportes', component: ReporteHorasComponent, canActivate: [permisoGuard], data: { menu: 'reporte_horas' } },
+      { path: 'reportes/servicios', component: ReporteServiciosComponent, canActivate: [permisoGuard], data: { menu: 'reporte_servicios' } },
       { path: 'usuarios', component: UsuariosComponent, canActivate: [permisoGuard], data: { menu: 'usuarios' } },
       { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [permisoGuard], data: { menu: 'equipos_asignados' } },
       { path: 'servicios-proveedores', component: ServiciosProveedoresComponent, canActivate: [permisoGuard], data: { menu: 'servicios_proveedores' } },
