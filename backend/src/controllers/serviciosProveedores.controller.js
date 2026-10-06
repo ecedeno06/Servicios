@@ -54,7 +54,7 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -76,8 +76,8 @@ async function crear(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13, $14)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15)
        returning id`,
       [
         req.empresaId,
@@ -93,6 +93,7 @@ async function crear(req, res, next) {
         contactosJson,
         estadoFinal,
         observacion ? observacion.trim() : null,
+        url ? url.trim() : null,
         req.usuario.id,
       ]
     );
@@ -104,7 +105,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -134,8 +135,9 @@ async function actualizar(req, res, next) {
          contactos = $10::jsonb,
          estado = $11,
          observacion = $12,
-         modificado_por = $13
-       where id = $14 and empresa_id = $15`,
+         url = $13,
+         modificado_por = $14
+       where id = $15 and empresa_id = $16`,
       [
         proveedor_id,
         servicio.trim(),
@@ -149,6 +151,7 @@ async function actualizar(req, res, next) {
         contactosJson,
         estado || 'activo',
         observacion ? observacion.trim() : null,
+        url ? url.trim() : null,
         req.usuario.id,
         req.params.id,
         req.empresaId,

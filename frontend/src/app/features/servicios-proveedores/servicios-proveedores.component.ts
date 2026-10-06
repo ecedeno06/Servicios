@@ -493,6 +493,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     telefono: [''],
     telefono_codigo_pais: ['+507'],
     acepta_whatsapp: [false],
+    url: [''],
   });
 
   // -------------------------------------------------------------------
@@ -513,6 +514,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     no_contrato: [''],
     estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
     observacion: [''],
+    url: [''],
     contactos: this.fb.array([]),
   });
 
@@ -669,6 +671,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       telefono: '',
       telefono_codigo_pais: '+507',
       acepta_whatsapp: false,
+      url: '',
     });
     this.panelProveedorAbierto.set(true);
   }
@@ -684,6 +687,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       telefono: p.telefono || '',
       telefono_codigo_pais: p.telefono_codigo_pais || '+507',
       acepta_whatsapp: p.acepta_whatsapp,
+      url: p.url || '',
     });
     this.panelProveedorAbierto.set(true);
   }
@@ -850,6 +854,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       no_contrato: '',
       estado: 'activo',
       observacion: '',
+      url: '',
     });
     this.onToggleIndefinido();
     this.panelServicioAbierto.set(true);
@@ -871,6 +876,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       no_contrato: s.no_contrato || '',
       estado: s.estado,
       observacion: s.observacion || '',
+      url: s.url || '',
     });
     this.onToggleIndefinido();
 

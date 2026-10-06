@@ -36,7 +36,7 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id } = req.body;
+    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url } = req.body;
     if (!nombre) {
       return res.status(400).json({ mensaje: 'El nombre del proveedor es requerido' });
     }
@@ -54,8 +54,8 @@ async function crear(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into proveedores
-         (empresa_id, nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, creado_por)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         (empresa_id, nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        returning id`,
       [
         req.empresaId,
@@ -68,6 +68,7 @@ async function crear(req, res, next) {
         !!acepta_whatsapp,
         sectorNombreFinal || 'Otro',
         sectorIdFinal,
+        url ? url.trim() : null,
         req.usuario.id,
       ]
     );
@@ -79,7 +80,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id } = req.body;
+    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url } = req.body;
     if (!nombre) {
       return res.status(400).json({ mensaje: 'El nombre del proveedor es requerido' });
     }
@@ -112,8 +113,9 @@ async function actualizar(req, res, next) {
          acepta_whatsapp = $7,
          sector = $8,
          sector_id = $9,
-         modificado_por = $10
-       where id = $11 and empresa_id = $12`,
+         url = $10,
+         modificado_por = $11
+       where id = $12 and empresa_id = $13`,
       [
         nombre.trim(),
         descripcion ? descripcion.trim() : null,
@@ -124,6 +126,7 @@ async function actualizar(req, res, next) {
         !!acepta_whatsapp,
         sectorNombreFinal || 'Otro',
         sectorIdFinal,
+        url ? url.trim() : null,
         req.usuario.id,
         req.params.id,
         req.empresaId,

@@ -356,6 +356,7 @@ export interface Proveedor {
   sector: string;
   sector_id?: string | null;
   sector_nombre?: string | null;
+  url?: string | null;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;
@@ -396,6 +397,7 @@ export interface ServicioProveedor {
   dias_aviso_vencimiento?: number | null;
   no_contrato?: string | null;
   observacion?: string | null;
+  url?: string | null;
   contactos: ContactoProveedor[];
   estado: EstadoServicioProveedor;
   creado_por: string;
