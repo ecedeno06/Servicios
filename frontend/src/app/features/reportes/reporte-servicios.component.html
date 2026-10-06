@@ -8,6 +8,11 @@
 <div class="card">
   <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
     <div class="form-grid">
+      <!-- Proveedor y Sector ocultos hasta nueva orden (pedido explicito):
+           quedan redundantes con los filtros de columna de la tabla de
+           resultados. El formControl sigue activo (filtroForm, buscar(),
+           filtroActual()) -- para restaurarlos, descomentar estos dos
+           form-group.
       <div class="form-group">
         <label>Proveedor</label>
         <select class="input" formControlName="proveedor_id">
@@ -22,6 +27,7 @@
           @for (s of sectores(); track s.id) { <option [value]="s.id">{{ s.nombre }}</option> }
         </select>
       </div>
+      -->
       <div class="form-group">
         <label>Desde *</label>
         <input class="input" type="date" formControlName="fechaInicio" />
