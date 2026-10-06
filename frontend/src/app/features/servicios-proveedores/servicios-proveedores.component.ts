@@ -1057,6 +1057,14 @@ export class ServiciosProveedoresComponent implements OnInit {
     }
   }
 
+  // Un servicio con fecha de fin (no indefinido) tiene un costo anual
+  // estimado -- si ya se pago mas que eso, es una senal de que el contrato
+  // esta costando mas de lo presupuestado.
+  pagadoExcedeCostoAnual(s: ServicioProveedor): boolean {
+    if (s.es_indefinido) return false;
+    return Number(s.monto_total_pagado || 0) > Number(s.costo_anual || 0);
+  }
+
   claseBadgeEstadoFactura(e: EstadoFacturaServicio): string {
     switch (e) {
       case 'pagada': return 'badge-green';

@@ -191,7 +191,7 @@
             </td>
             <td class="col-compact">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td class="col-compact">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
             </td>

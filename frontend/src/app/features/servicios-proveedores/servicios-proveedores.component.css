@@ -69,3 +69,11 @@
   overflow: visible;
   text-overflow: clip;
 }
+
+/* Columna "Pagado": si ya se pago mas que el costo anual estimado de un
+   servicio con fecha de fin (no indefinido), se resalta en rojo para
+   llamar la atencion sobre el sobrecosto. */
+.pagado-excedido {
+  color: var(--red-600);
+  font-weight: 700;
+}
