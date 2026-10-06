@@ -40,6 +40,23 @@ export class LayoutComponent implements OnInit, OnDestroy {
   cambioPasswordObligatorio = computed(() => !!this.auth.usuario()?.debe_cambiar_password);
   sidebarColapsado = signal(localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1');
 
+  // Submenus (ej. "Reportes") plegados por defecto -- se abren con un
+  // click en el grupo, y arrancan ya abiertos si la ruta actual es una de
+  // sus opciones (ver ngOnInit), para no esconder la pantalla en la que
+  // el usuario ya esta parado.
+  gruposExpandidos = signal<Set<string>>(new Set());
+
+  toggleGrupo(codigo: string): void {
+    const set = new Set(this.gruposExpandidos());
+    if (set.has(codigo)) set.delete(codigo);
+    else set.add(codigo);
+    this.gruposExpandidos.set(set);
+  }
+
+  grupoExpandido(codigo: string): boolean {
+    return this.gruposExpandidos().has(codigo);
+  }
+
   notifAbiertas = signal(false);
   notificaciones = signal<NotificacionComentario[]>([]);
 
@@ -123,6 +140,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     this.inactividad.init();
     this.iniciarCronometroSesion();
+
+    const url = this.router.url;
+    const expandidos = new Set<string>();
+    for (const item of this.menu.menu()) {
+      if (item.hijos?.length && item.hijos.some((h) => h.ruta && url.startsWith(h.ruta))) {
+        expandidos.add(item.codigo);
+      }
+    }
+    this.gruposExpandidos.set(expandidos);
   }
 
   ngOnDestroy(): void {

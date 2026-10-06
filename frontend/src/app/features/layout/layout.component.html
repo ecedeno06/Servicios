@@ -15,16 +15,30 @@
     <nav class="sidebar-nav">
       @for (item of menu.menu(); track item.id) {
         @if (item.hijos.length > 0) {
-          @if (!sidebarColapsado()) {
-            <div class="nav-section-label">{{ item.nombre }}</div>
-          }
-          @for (hijo of item.hijos; track hijo.id) {
-            <a [routerLink]="hijo.ruta" routerLinkActive="active" [title]="hijo.nombre">
-              <span class="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="iconoSvg(hijo.icono)"></svg>
-              </span>
-              <span class="nav-label">{{ hijo.nombre }}</span>
-            </a>
+          <button
+            type="button"
+            class="nav-group-toggle"
+            [class.expanded]="grupoExpandido(item.codigo)"
+            [title]="item.nombre"
+            (click)="toggleGrupo(item.codigo)"
+          >
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="iconoSvg(item.icono)"></svg>
+            </span>
+            <span class="nav-label">{{ item.nombre }}</span>
+            <span class="nav-chevron">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </button>
+          @if (grupoExpandido(item.codigo)) {
+            @for (hijo of item.hijos; track hijo.id) {
+              <a class="nav-group-child" [routerLink]="hijo.ruta" routerLinkActive="active" [title]="hijo.nombre">
+                <span class="nav-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="iconoSvg(hijo.icono)"></svg>
+                </span>
+                <span class="nav-label">{{ hijo.nombre }}</span>
+              </a>
+            }
           }
         } @else {
           <a [routerLink]="item.ruta" routerLinkActive="active" [title]="item.nombre">

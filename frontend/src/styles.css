@@ -222,7 +222,8 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   height: 18px;
 }
 
-.sidebar.collapsed .sidebar-nav a {
+.sidebar.collapsed .sidebar-nav a,
+.sidebar.collapsed .nav-group-toggle {
   justify-content: center;
   padding: 10px 0;
 }
@@ -231,20 +232,60 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   display: none;
 }
 
-.nav-section-label {
-  padding: 14px 12px 4px;
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--slate-500);
-}
-
 .sidebar-nav a:hover { background: var(--slate-800); color: white; }
 .sidebar-nav a.active {
   background: var(--slate-800);
   color: white;
   box-shadow: inset 2px 0 0 var(--teal-500);
+}
+
+/* Submenu plegable (ej. "Reportes"): un boton con la misma pinta que los
+   links de nivel superior, mas una flecha que rota al expandir. */
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--slate-300);
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-group-toggle:hover { background: var(--slate-800); color: white; }
+
+.nav-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nav-chevron svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.15s ease;
+}
+
+.nav-group-toggle.expanded .nav-chevron svg {
+  transform: rotate(90deg);
+}
+
+.sidebar.collapsed .nav-chevron {
+  display: none;
+}
+
+.sidebar-nav a.nav-group-child {
+  padding-left: 30px;
 }
 
 .sidebar-footer {
