@@ -155,8 +155,9 @@ export class ReporteServiciosComponent implements OnInit {
 
     this.errorExcel.set(null);
     this.generandoExcel.set(true);
+    const empresa = this.auth.empresaActiva();
     this.excelSrv
-      .descargar(seleccion, this.filtroActual())
+      .descargar(seleccion, this.filtroActual(), { nombre: empresa?.empresa_nombre })
       .catch(() => this.errorExcel.set('No se pudo generar el Excel.'))
       .finally(() => this.generandoExcel.set(false));
   }

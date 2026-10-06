@@ -22,24 +22,64 @@ function formatearFecha(iso: string | null | undefined): string {
   return `${dia}/${mes}/${anio}`;
 }
 
+const TOTAL_COLUMNAS = 6; // Servicio, Proveedor, Sector, Estado, Costo Mensual, Pagos en Periodo
+
 @Injectable({ providedIn: 'root' })
 export class ReporteServiciosExcelService {
 
-  async descargar(filas: ReporteServicioPagos[], filtro: FiltroReporteServicios): Promise<void> {
+  async descargar(
+    filas: ReporteServicioPagos[],
+    filtro: FiltroReporteServicios,
+    empresa?: { nombre?: string | null }
+  ): Promise<void> {
     const ExcelJS = await cargarExcelJs();
     const libro = new ExcelJS.Workbook();
     const hoja = libro.addWorksheet('Reporte de servicios');
 
+    // Columnas solo por ancho/clave -- sin "header" para no disparar la fila
+    // de encabezados automatica de exceljs en la fila 1 (esta va mas abajo,
+    // despues del bloque de titulo/empresa/periodo).
     hoja.columns = [
-      { header: 'Servicio', key: 'servicio', width: 32 },
-      { header: 'Proveedor', key: 'proveedor', width: 26 },
-      { header: 'Sector', key: 'sector', width: 20 },
-      { header: 'Estado', key: 'estado', width: 14 },
-      { header: 'Costo Mensual (USD)', key: 'costoMensual', width: 20 },
-      { header: 'Pagos en Periodo (USD)', key: 'pagosPeriodo', width: 22 },
+      { key: 'servicio', width: 32 },
+      { key: 'proveedor', width: 26 },
+      { key: 'sector', width: 20 },
+      { key: 'estado', width: 14 },
+      { key: 'costoMensual', width: 20 },
+      { key: 'pagosPeriodo', width: 22 },
     ];
 
-    const encabezado = hoja.getRow(1);
+    // --- Bloque de titulo / empresa / periodo ---
+    const filaTitulo = hoja.addRow(['REPORTE DE SERVICIOS']);
+    hoja.mergeCells(filaTitulo.number, 1, filaTitulo.number, TOTAL_COLUMNAS);
+    filaTitulo.font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+    filaTitulo.alignment = { vertical: 'middle', horizontal: 'center' };
+    filaTitulo.height = 22;
+    filaTitulo.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+
+    if (empresa?.nombre) {
+      const filaEmpresa = hoja.addRow([`Empresa: ${empresa.nombre}`]);
+      hoja.mergeCells(filaEmpresa.number, 1, filaEmpresa.number, TOTAL_COLUMNAS);
+      filaEmpresa.font = { bold: true };
+    }
+
+    const filaPeriodo = hoja.addRow([`Periodo de pagos: ${formatearFecha(filtro.fechaInicio)} - ${formatearFecha(filtro.fechaFin)}`]);
+    hoja.mergeCells(filaPeriodo.number, 1, filaPeriodo.number, TOTAL_COLUMNAS);
+    filaPeriodo.font = { italic: true, color: { argb: 'FF666666' } };
+
+    if (filtro.proveedor || filtro.sector) {
+      const partes = [
+        filtro.proveedor ? `Proveedor: ${filtro.proveedor}` : null,
+        filtro.sector ? `Sector: ${filtro.sector}` : null,
+      ].filter(Boolean);
+      const filaFiltros = hoja.addRow([partes.join('          ')]);
+      hoja.mergeCells(filaFiltros.number, 1, filaFiltros.number, TOTAL_COLUMNAS);
+      filaFiltros.font = { italic: true, color: { argb: 'FF666666' } };
+    }
+
+    hoja.addRow([]); // separacion antes de la tabla
+
+    // --- Encabezado de la tabla ---
+    const encabezado = hoja.addRow(['Servicio', 'Proveedor', 'Sector', 'Estado', 'Costo Mensual (USD)', 'Pagos en Periodo (USD)']);
     encabezado.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     encabezado.eachCell((celda: any) => {
       celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
