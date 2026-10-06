@@ -222,6 +222,11 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
                 </a>
               }
+              @if (s.url) {
+                <a class="btn-icon" [href]="s.url" target="_blank" rel="noopener noreferrer" title="Abrir URL del servicio" aria-label="Abrir URL">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                </a>
+              }
               @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
                 <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirEditarServicio(s)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
