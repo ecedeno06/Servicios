@@ -39,15 +39,107 @@ export class ReporteServiciosComponent implements OnInit {
 
   seleccionadas = signal<Set<string>>(new Set());
 
+  // Filtros por columna, sobre los resultados ya traidos por el formulario
+  // de arriba (proveedor/sector/rango de fechas).
+  filtroServicio = signal('');
+  filtroProveedorCol = signal('');
+  filtroSectorCol = signal('');
+  filtroEstadoCol = signal('');
+  filtroCostoMensual = signal('');
+  filtroPagosPeriodo = signal('');
+
+  hayFiltrosColumna = computed(() => !!(
+    this.filtroServicio() || this.filtroProveedorCol() || this.filtroSectorCol() ||
+    this.filtroEstadoCol() || this.filtroCostoMensual() || this.filtroPagosPeriodo()
+  ));
+
+  limpiarFiltrosColumna(): void {
+    this.filtroServicio.set('');
+    this.filtroProveedorCol.set('');
+    this.filtroSectorCol.set('');
+    this.filtroEstadoCol.set('');
+    this.filtroCostoMensual.set('');
+    this.filtroPagosPeriodo.set('');
+  }
+
+  private valoresUnicos(valores: (string | null | undefined)[]): string[] {
+    const set = new Set(valores.filter((v): v is string => !!v));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  valoresProveedorCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.proveedor_nombre)));
+  valoresSectorCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.sector_nombre)));
+  valoresEstadoCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.estado)));
+
+  // Orden por columna (click en el encabezado alterna asc/desc).
+  ordenColumna = signal<string | null>(null);
+  ordenDireccion = signal<'asc' | 'desc'>('asc');
+
+  ordenarPor(columna: string): void {
+    if (this.ordenColumna() === columna) {
+      this.ordenDireccion.set(this.ordenDireccion() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.ordenColumna.set(columna);
+      this.ordenDireccion.set('asc');
+    }
+  }
+
+  iconoOrden(columna: string): string {
+    if (this.ordenColumna() !== columna) return '';
+    return this.ordenDireccion() === 'asc' ? '▲' : '▼';
+  }
+
+  private valorOrden(f: ReporteServicioPagos, columna: string): string | number {
+    switch (columna) {
+      case 'servicio': return f.servicio.toLowerCase();
+      case 'proveedor': return f.proveedor_nombre.toLowerCase();
+      case 'sector': return (f.sector_nombre ?? '').toLowerCase();
+      case 'estado': return f.estado.toLowerCase();
+      case 'costoMensual': return Number(f.costo_mensual ?? 0);
+      case 'pagosPeriodo': return Number(f.pagos_total_rango ?? 0);
+      default: return '';
+    }
+  }
+
+  filasFiltradas = computed(() => {
+    const fServicio = this.filtroServicio().trim().toLowerCase();
+    const fProveedor = this.filtroProveedorCol().trim().toLowerCase();
+    const fSector = this.filtroSectorCol().trim().toLowerCase();
+    const fEstado = this.filtroEstadoCol().trim().toLowerCase();
+    const fCostoMensual = this.filtroCostoMensual().trim().toLowerCase();
+    const fPagosPeriodo = this.filtroPagosPeriodo().trim().toLowerCase();
+
+    const filtradas = this.filas().filter((f) => {
+      if (fServicio && !f.servicio.toLowerCase().includes(fServicio)) return false;
+      if (fProveedor && !f.proveedor_nombre.toLowerCase().includes(fProveedor)) return false;
+      if (fSector && !(f.sector_nombre ?? '-').toLowerCase().includes(fSector)) return false;
+      if (fEstado && !f.estado.toLowerCase().includes(fEstado)) return false;
+      if (fCostoMensual && !String(f.costo_mensual ?? '').toLowerCase().includes(fCostoMensual)) return false;
+      if (fPagosPeriodo && !String(f.pagos_total_rango ?? '').toLowerCase().includes(fPagosPeriodo)) return false;
+      return true;
+    });
+
+    const columna = this.ordenColumna();
+    if (!columna) return filtradas;
+    const signo = this.ordenDireccion() === 'asc' ? 1 : -1;
+    return [...filtradas].sort((a, b) => {
+      const va = this.valorOrden(a, columna);
+      const vb = this.valorOrden(b, columna);
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
+    });
+  });
+
   todasSeleccionadas = computed(() => {
-    const filas = this.filas();
+    const filas = this.filasFiltradas();
     return filas.length > 0 && filas.every((f) => this.seleccionadas().has(f.id));
   });
 
   totalSeleccionadas = computed(() => this.seleccionadas().size);
 
-  totalCostoMensual = computed(() => this.filas().reduce((sum, f) => sum + Number(f.costo_mensual ?? 0), 0));
-  totalPagosRango = computed(() => this.filas().reduce((sum, f) => sum + Number(f.pagos_total_rango ?? 0), 0));
+  totalCostoMensual = computed(() => this.filasFiltradas().reduce((sum, f) => sum + Number(f.costo_mensual ?? 0), 0));
+  totalPagosRango = computed(() => this.filasFiltradas().reduce((sum, f) => sum + Number(f.pagos_total_rango ?? 0), 0));
 
   constructor(
     private fb: FormBuilder,
@@ -82,6 +174,8 @@ export class ReporteServiciosComponent implements OnInit {
         // Por defecto se seleccionan todos los resultados -- el usuario
         // puede destildar los que no quiere incluir en el PDF/Excel.
         this.seleccionadas.set(new Set(filtrados.map((f) => f.id)));
+        this.limpiarFiltrosColumna();
+        this.ordenColumna.set(null);
         this.buscado.set(true);
         this.cargando.set(false);
       },
@@ -103,7 +197,7 @@ export class ReporteServiciosComponent implements OnInit {
     if (this.todasSeleccionadas()) {
       this.seleccionadas.set(new Set());
     } else {
-      this.seleccionadas.set(new Set(this.filas().map((f) => f.id)));
+      this.seleccionadas.set(new Set(this.filasFiltradas().map((f) => f.id)));
     }
   }
 
