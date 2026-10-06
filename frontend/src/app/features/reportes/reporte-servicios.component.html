@@ -74,7 +74,10 @@
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('servicio')">Servicio <span class="orden-icono">{{ iconoOrden('servicio') }}</span></span>
-            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)" />
+            <select class="input input-th-filtro" [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)">
+              <option value="">Todos</option>
+              @for (v of valoresServicio(); track v) { <option [value]="v">{{ v }}</option> }
+            </select>
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrden('proveedor') }}</span></span>
@@ -99,11 +102,17 @@
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('costoMensual')">Costo Mensual <span class="orden-icono">{{ iconoOrden('costoMensual') }}</span></span>
-            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCostoMensual()" (ngModelChange)="filtroCostoMensual.set($event)" />
+            <select class="input input-th-filtro" [ngModel]="filtroCostoMensual()" (ngModelChange)="filtroCostoMensual.set($event)">
+              <option value="">Todos</option>
+              @for (v of valoresCostoMensual(); track v) { <option [value]="v">{{ v | currency:'USD':'symbol':'1.2-2' }}</option> }
+            </select>
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('pagosPeriodo')">Pagos en Periodo <span class="orden-icono">{{ iconoOrden('pagosPeriodo') }}</span></span>
-            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroPagosPeriodo()" (ngModelChange)="filtroPagosPeriodo.set($event)" />
+            <select class="input input-th-filtro" [ngModel]="filtroPagosPeriodo()" (ngModelChange)="filtroPagosPeriodo.set($event)">
+              <option value="">Todos</option>
+              @for (v of valoresPagosPeriodo(); track v) { <option [value]="v">{{ v | currency:'USD':'symbol':'1.2-2' }}</option> }
+            </select>
           </th>
         </tr>
       </thead>

@@ -67,9 +67,19 @@ export class ReporteServiciosComponent implements OnInit {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
+  valoresServicio = computed(() => this.valoresUnicos(this.filas().map((f) => f.servicio)));
   valoresProveedorCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.proveedor_nombre)));
   valoresSectorCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.sector_nombre)));
   valoresEstadoCol = computed(() => this.valoresUnicos(this.filas().map((f) => f.estado)));
+  // costo_mensual/pagos_total_rango llegan como numeric de Postgres (string
+  // en runtime pese al tipo "number" del modelo) -- se normalizan a string
+  // para poblar el <select> y se ordenan de menor a mayor (no alfabetico).
+  valoresCostoMensual = computed(() =>
+    this.valoresUnicos(this.filas().map((f) => String(f.costo_mensual))).sort((a, b) => Number(a) - Number(b))
+  );
+  valoresPagosPeriodo = computed(() =>
+    this.valoresUnicos(this.filas().map((f) => String(f.pagos_total_rango))).sort((a, b) => Number(a) - Number(b))
+  );
 
   // Orden por columna (click en el encabezado alterna asc/desc).
   ordenColumna = signal<string | null>(null);
