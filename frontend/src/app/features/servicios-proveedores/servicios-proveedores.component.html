@@ -699,11 +699,13 @@
 
           <div class="form-group" style="margin-top: 10px;">
             <label>Observaciones / No. comprobante</label>
-            <input class="input" formControlName="observaciones" placeholder="Referencia de transferencia..." />
+            <textarea class="input" rows="2" formControlName="observaciones" placeholder="Referencia de transferencia..."></textarea>
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-accent btn-sm" [disabled]="facturaForm.invalid">+ Agregar Factura</button>
+            <button type="submit" class="btn btn-accent btn-sm" [disabled]="facturaForm.invalid || guardandoFactura()">
+              {{ guardandoFactura() ? 'Guardando...' : '+ Agregar Factura' }}
+            </button>
           </div>
         </form>
       }

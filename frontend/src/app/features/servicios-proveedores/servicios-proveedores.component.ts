@@ -548,6 +548,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   servicioSeleccionado = signal<ServicioProveedor | null>(null);
   facturas = signal<FacturaServicioProveedor[]>([]);
   cargandoFacturas = signal(false);
+  guardandoFactura = signal(false);
 
   facturaForm = this.fb.group({
     fecha_factura: [new Date().toISOString().substring(0, 10), [Validators.required]],
@@ -949,6 +950,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   abrirFacturas(s: ServicioProveedor): void {
     this.servicioSeleccionado.set(s);
     this.panelFacturasAbierto.set(true);
+    this.guardandoFactura.set(false);
     this.facturaForm.reset({
       fecha_factura: new Date().toISOString().substring(0, 10),
       monto_factura: 0,
@@ -977,15 +979,19 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   guardarFactura(): void {
-    if (this.facturaForm.invalid) return;
+    // guardandoFactura evita que un doble clic o un Enter repetido mientras
+    // la peticion anterior sigue en vuelo registre la misma factura dos veces.
+    if (this.facturaForm.invalid || this.guardandoFactura()) return;
 
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
 
     const val = this.facturaForm.getRawValue() as any;
 
+    this.guardandoFactura.set(true);
     this.serviciosSrv.crearFactura(servicio.id, val).subscribe({
       next: () => {
+        this.guardandoFactura.set(false);
         this.facturaForm.reset({
           fecha_factura: new Date().toISOString().substring(0, 10),
           monto_factura: 0,
@@ -996,7 +1002,10 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.cargarFacturas(servicio.id);
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al registrar factura'),
+      error: (err) => {
+        this.guardandoFactura.set(false);
+        alert(err.error?.mensaje || 'Error al registrar factura');
+      },
     });
   }
 
