@@ -110,7 +110,7 @@
                explicito) -- el filtro (filtroServContrato) sigue activo
                para la busqueda general, solo se quito de la tabla. Para
                restaurarla, descomentar este th y el td de abajo y subir
-               colspan="12" de vuelta a 13.
+               colspan="11" de vuelta a 12.
           <th>
             <span class="th-label">No. Contrato</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" />
@@ -147,15 +147,21 @@
               @for (est of estadosServicio; track est.valor) { <option [value]="est.valor">{{ est.etiqueta }}</option> }
             </select>
           </th>
+          <!-- Columna "Facturas" oculta hasta nueva orden (pedido explicito)
+               -- el boton-icono se movio a la celda de Acciones; el filtro
+               (filtroServFacturas) sigue activo para la busqueda general,
+               solo se quito de la tabla. Para restaurarla, descomentar este
+               th y bajar colspan="11" de vuelta a 12.
           <th style="text-align: center;">
             <span class="th-sortable" (click)="ordenarPorServ('facturas')">Facturas <span class="orden-icono">{{ iconoOrdenServ('facturas') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServFacturas()" (ngModelChange)="filtroServFacturas.set($event)" />
           </th>
+          -->
           <!-- Columna "Observacion" oculta hasta nueva orden (pedido
                explicito) -- el filtro (filtroServObservacion) sigue
                activo para la busqueda general, solo se quito de la
                tabla. Para restaurarla, descomentar este th y el td de
-               abajo y subir colspan="12" de vuelta a 13.
+               abajo y subir colspan="11" de vuelta a 12.
           <th>
             <span class="th-sortable" (click)="ordenarPorServ('observacion')">Observación <span class="orden-icono">{{ iconoOrdenServ('observacion') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServObservacion()" (ngModelChange)="filtroServObservacion.set($event)" />
@@ -200,12 +206,15 @@
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
             </td>
+            <!-- Columna "Facturas" oculta hasta nueva orden, ver thead -- el
+                 boton se movio a la celda de Acciones de abajo.
             <td style="text-align: center;">
               <button type="button" class="btn-icon" title="Facturas" aria-label="Facturas" (click)="abrirFacturas(s)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
                 @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 9 ? '9+' : s.facturas_count }}</span> }
               </button>
             </td>
+            -->
             <!-- Columna "Observacion" oculta hasta nueva orden, ver thead.
             <td
               class="col-observacion"
@@ -217,6 +226,10 @@
             </td>
             -->
             <td class="table-actions">
+              <button type="button" class="btn-icon" title="Facturas" aria-label="Facturas" (click)="abrirFacturas(s)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
+                @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 9 ? '9+' : s.facturas_count }}</span> }
+              </button>
               @if (tieneContactoEmail(s)) {
                 <button type="button" class="btn-icon" (click)="abrirModalEmail(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
@@ -246,7 +259,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="12">
+            <td colspan="11">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
@@ -590,18 +603,19 @@
           <input class="input" type="url" formControlName="url" placeholder="https://..." />
         </div>
 
-        <div class="form-group" style="margin-top: 14px;">
-          <label>Estado *</label>
-          <select class="input" formControlName="estado">
-            @for (est of estadosServicio; track est.valor) {
-              <option [value]="est.valor">{{ est.etiqueta }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-top: 14px;">
-          <label>Responsable</label>
-          <input class="input" formControlName="responsable" placeholder="Ej. Juan Perez" />
+        <div class="form-grid" style="margin-top: 14px;">
+          <div class="form-group">
+            <label>Estado *</label>
+            <select class="input" formControlName="estado">
+              @for (est of estadosServicio; track est.valor) {
+                <option [value]="est.valor">{{ est.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Responsable</label>
+            <input class="input" formControlName="responsable" placeholder="Ej. Juan Perez" />
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
