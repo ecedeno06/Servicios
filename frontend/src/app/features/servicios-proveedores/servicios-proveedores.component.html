@@ -175,7 +175,16 @@
               }
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
-            <td [title]="s.observacion || ''">{{ s.responsable || '-' }}</td>
+            <td>
+              <span class="flex items-center gap-6">
+                @if (s.observacion) {
+                  <button type="button" class="info-icon-btn" title="Ver observación" aria-label="Ver observación" (click)="abrirModalObservacion(s)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </button>
+                }
+                <span>{{ s.responsable || '-' }}</span>
+              </span>
+            </td>
 
             <!-- Columna "No. Contrato" oculta hasta nueva orden, ver thead.
             <td><code>{{ s.no_contrato || '-' }}</code></td>
@@ -770,6 +779,20 @@
           </div>
         }
       </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL: ver la Observacion de un servicio -->
+@if (modalObservacionAbierta()) {
+  <div class="modal-overlay" (click)="cerrarModalObservacion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Observación</h2>
+        <button type="button" class="close" (click)="cerrarModalObservacion()">&times;</button>
+      </div>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioObservacionActual()?.servicio }}</p>
+      <div style="white-space: pre-wrap;">{{ servicioObservacionActual()?.observacion }}</div>
     </div>
   </div>
 }

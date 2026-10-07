@@ -817,6 +817,22 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
+  // MODAL: ver la Observacion de un servicio (icono junto a Responsable).
+  // -------------------------------------------------------------------
+  modalObservacionAbierta = signal(false);
+  servicioObservacionActual = signal<ServicioProveedor | null>(null);
+
+  abrirModalObservacion(s: ServicioProveedor): void {
+    this.servicioObservacionActual.set(s);
+    this.modalObservacionAbierta.set(true);
+  }
+
+  cerrarModalObservacion(): void {
+    this.modalObservacionAbierta.set(false);
+    this.servicioObservacionActual.set(null);
+  }
+
+  // -------------------------------------------------------------------
   // MODAL: seleccionar a cuales contactos del servicio enviarles correo
   // (antes se mandaba a todos de una, sin poder elegir).
   // -------------------------------------------------------------------

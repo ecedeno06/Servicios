@@ -87,3 +87,22 @@
   color: var(--red-600);
   font-weight: 700;
 }
+
+/* Icono de info junto a Responsable (abre el popup de Observacion). Sin
+   fondo/borde propio y con stroke="currentColor" en el svg -- hereda el
+   color de texto normal del tema activo y solo se resalta al hover. */
+.info-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.info-icon-btn svg { width: 14px; height: 14px; }
+.info-icon-btn:hover { color: var(--teal-600); }
