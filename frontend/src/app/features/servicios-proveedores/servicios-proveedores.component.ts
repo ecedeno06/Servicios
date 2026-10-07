@@ -286,7 +286,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const campos: (string | number | null | undefined)[] = [
       s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
       s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s),
-      this.textoAvisoVencimiento(s), s.estado, s.facturas_count, s.observacion,
+      this.textoAvisoVencimiento(s), s.estado, s.facturas_count, s.observacion, s.responsable,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -319,13 +319,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServEstado = signal('');
   filtroServFacturas = signal('');
   filtroServObservacion = signal('');
+  filtroServResponsable = signal('');
 
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
     this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
     this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
     this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas() || this.filtroServObservacion() ||
-    this.filtroSoloPendientes()
+    this.filtroServResponsable() || this.filtroSoloPendientes()
   ));
 
   limpiarFiltrosServ(): void {
@@ -343,6 +344,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServEstado.set('');
     this.filtroServFacturas.set('');
     this.filtroServObservacion.set('');
+    this.filtroServResponsable.set('');
     this.filtroSoloPendientes.set(false);
   }
 
@@ -360,6 +362,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const est = this.filtroServEstado();
     const fact = this.filtroServFacturas().trim().toLowerCase();
     const obs = this.filtroServObservacion().trim().toLowerCase();
+    const resp = this.filtroServResponsable().trim().toLowerCase();
 
     return this.servicios().filter((s) => {
       if (fGeneral && !this.coincideBusquedaGeneralServicio(s, fGeneral)) return false;
@@ -375,6 +378,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (obs && !(s.observacion || '').toLowerCase().includes(obs)) return false;
       if (est && s.estado !== est) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
+      if (resp && !(s.responsable || '').toLowerCase().includes(resp)) return false;
       if (this.filtroSoloPendientes() && !(s.facturas_pendientes_count && s.facturas_pendientes_count > 0)) return false;
       return true;
     });
@@ -411,6 +415,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       case 'estado': return s.estado.toLowerCase();
       case 'facturas': return s.facturas_count ?? 0;
       case 'observacion': return (s.observacion ?? '').toLowerCase();
+      case 'responsable': return (s.responsable ?? '').toLowerCase();
       default: return '';
     }
   }

@@ -42,14 +42,24 @@
 
 .data-table thead th select.input-th-filtro { cursor: pointer; }
 
-/* Columnas Aviso Previo / Costo Mensual / Costo Anual en Servicios
-   Contratados: 10px mas angostas que el resto (5px menos de padding
-   horizontal a cada lado), pedido explicito para que la tabla respire
-   menos en esas 3. */
+/* Columna Aviso Previo en Servicios Contratados: 10px mas angosta que el
+   resto (5px menos de padding horizontal a cada lado). */
 .data-table th.col-compact,
 .data-table td.col-compact {
   padding-left: 9px;
   padding-right: 9px;
+}
+
+/* Costo Mensual / Costo Anual: mas angostas aun que col-compact, para
+   dejarle espacio a la columna Responsable sin ensanchar toda la tabla
+   (pedido explicito). Las etiquetas del encabezado se acortaron
+   ("C. Mensual"/"C. Anual") para que el nowrap de .th-sortable no las
+   siga obligando a su ancho completo. */
+.data-table th.col-tight,
+.data-table td.col-tight {
+  padding-left: 6px;
+  padding-right: 6px;
+  width: 85px;
 }
 
 /* Columna "Observacion": texto expandible -- colapsada muestra una sola

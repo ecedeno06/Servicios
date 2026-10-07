@@ -110,7 +110,7 @@
                explicito) -- el filtro (filtroServContrato) sigue activo
                para la busqueda general, solo se quito de la tabla. Para
                restaurarla, descomentar este th y el td de abajo y subir
-               colspan="11" de vuelta a 12.
+               colspan="12" de vuelta a 13.
           <th>
             <span class="th-label">No. Contrato</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServContrato()" (ngModelChange)="filtroServContrato.set($event)" />
@@ -124,13 +124,17 @@
             <span class="th-sortable" (click)="ordenarPorServ('aviso')">Aviso Previo <span class="orden-icono">{{ iconoOrdenServ('aviso') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServAviso()" (ngModelChange)="filtroServAviso.set($event)" />
           </th>
-          <th class="col-compact">
-            <span class="th-sortable" (click)="ordenarPorServ('costoMensual')">Costo Mensual <span class="orden-icono">{{ iconoOrdenServ('costoMensual') }}</span></span>
+          <th class="col-tight">
+            <span class="th-sortable" (click)="ordenarPorServ('costoMensual')">C. Mensual <span class="orden-icono">{{ iconoOrdenServ('costoMensual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoMensual()" (ngModelChange)="filtroServCostoMensual.set($event)" />
           </th>
-          <th class="col-compact">
-            <span class="th-sortable" (click)="ordenarPorServ('costoAnual')">Costo Anual <span class="orden-icono">{{ iconoOrdenServ('costoAnual') }}</span></span>
+          <th class="col-tight">
+            <span class="th-sortable" (click)="ordenarPorServ('costoAnual')">C. Anual <span class="orden-icono">{{ iconoOrdenServ('costoAnual') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServCostoAnual()" (ngModelChange)="filtroServCostoAnual.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPorServ('responsable')">Responsable <span class="orden-icono">{{ iconoOrdenServ('responsable') }}</span></span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServResponsable()" (ngModelChange)="filtroServResponsable.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPorServ('pagado')">Pagado <span class="orden-icono">{{ iconoOrdenServ('pagado') }}</span></span>
@@ -151,7 +155,7 @@
                explicito) -- el filtro (filtroServObservacion) sigue
                activo para la busqueda general, solo se quito de la
                tabla. Para restaurarla, descomentar este th y el td de
-               abajo y subir colspan="11" de vuelta a 12.
+               abajo y subir colspan="12" de vuelta a 13.
           <th>
             <span class="th-sortable" (click)="ordenarPorServ('observacion')">Observación <span class="orden-icono">{{ iconoOrdenServ('observacion') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroServObservacion()" (ngModelChange)="filtroServObservacion.set($event)" />
@@ -189,8 +193,9 @@
                 {{ textoAvisoVencimiento(s) }}
               }
             </td>
-            <td class="col-compact">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td class="col-compact">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="col-tight">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="col-tight">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ s.responsable || '-' }}</td>
             <td [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
@@ -241,7 +246,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="11">
+            <td colspan="12">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
