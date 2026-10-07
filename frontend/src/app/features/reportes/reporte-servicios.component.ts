@@ -8,11 +8,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { ReporteServiciosPdfService } from '../../core/services/reporte-servicios-pdf.service';
 import { ReporteServiciosExcelService } from '../../core/services/reporte-servicios-excel.service';
 import { EstadoServicioProveedor, Proveedor, ReporteServicioPagos, SectorProveedorItem } from '../../core/models/models';
+import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 
 @Component({
   selector: 'app-reporte-servicios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MultiSelectFilterComponent],
   templateUrl: './reporte-servicios.component.html',
   styleUrl: './reporte-servicios.component.css',
 })
@@ -39,28 +40,34 @@ export class ReporteServiciosComponent implements OnInit {
 
   seleccionadas = signal<Set<string>>(new Set());
 
-  // Filtros por columna, sobre los resultados ya traidos por el formulario
-  // de arriba (proveedor/sector/rango de fechas).
-  filtroServicio = signal('');
-  filtroProveedorCol = signal('');
-  filtroSectorCol = signal('');
-  filtroEstadoCol = signal('');
-  filtroCostoMensual = signal('');
-  filtroPagosPeriodo = signal('');
+  // Filtros por columna, estilo Excel (seleccion multiple de valores) sobre
+  // los resultados ya traidos por el formulario de arriba (rango de
+  // fechas). Set vacio = sin filtro ("Todos").
+  filtroServicio = signal<Set<string>>(new Set());
+  filtroProveedorCol = signal<Set<string>>(new Set());
+  filtroSectorCol = signal<Set<string>>(new Set());
+  filtroEstadoCol = signal<Set<string>>(new Set());
+  filtroCostoMensual = signal<Set<string>>(new Set());
+  filtroPagosPeriodo = signal<Set<string>>(new Set());
 
   hayFiltrosColumna = computed(() => !!(
-    this.filtroServicio() || this.filtroProveedorCol() || this.filtroSectorCol() ||
-    this.filtroEstadoCol() || this.filtroCostoMensual() || this.filtroPagosPeriodo()
+    this.filtroServicio().size || this.filtroProveedorCol().size || this.filtroSectorCol().size ||
+    this.filtroEstadoCol().size || this.filtroCostoMensual().size || this.filtroPagosPeriodo().size
   ));
 
   limpiarFiltrosColumna(): void {
-    this.filtroServicio.set('');
-    this.filtroProveedorCol.set('');
-    this.filtroSectorCol.set('');
-    this.filtroEstadoCol.set('');
-    this.filtroCostoMensual.set('');
-    this.filtroPagosPeriodo.set('');
+    this.filtroServicio.set(new Set());
+    this.filtroProveedorCol.set(new Set());
+    this.filtroSectorCol.set(new Set());
+    this.filtroEstadoCol.set(new Set());
+    this.filtroCostoMensual.set(new Set());
+    this.filtroPagosPeriodo.set(new Set());
   }
+
+  formatoMoneda = (v: string): string => {
+    const n = Number(v);
+    return isNaN(n) ? v : n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  };
 
   private valoresUnicos(valores: (string | null | undefined)[]): string[] {
     const set = new Set(valores.filter((v): v is string => !!v));
@@ -112,20 +119,20 @@ export class ReporteServiciosComponent implements OnInit {
   }
 
   filasFiltradas = computed(() => {
-    const fServicio = this.filtroServicio().trim().toLowerCase();
-    const fProveedor = this.filtroProveedorCol().trim().toLowerCase();
-    const fSector = this.filtroSectorCol().trim().toLowerCase();
-    const fEstado = this.filtroEstadoCol().trim().toLowerCase();
-    const fCostoMensual = this.filtroCostoMensual().trim().toLowerCase();
-    const fPagosPeriodo = this.filtroPagosPeriodo().trim().toLowerCase();
+    const fServicio = this.filtroServicio();
+    const fProveedor = this.filtroProveedorCol();
+    const fSector = this.filtroSectorCol();
+    const fEstado = this.filtroEstadoCol();
+    const fCostoMensual = this.filtroCostoMensual();
+    const fPagosPeriodo = this.filtroPagosPeriodo();
 
     const filtradas = this.filas().filter((f) => {
-      if (fServicio && !f.servicio.toLowerCase().includes(fServicio)) return false;
-      if (fProveedor && !f.proveedor_nombre.toLowerCase().includes(fProveedor)) return false;
-      if (fSector && !(f.sector_nombre ?? '-').toLowerCase().includes(fSector)) return false;
-      if (fEstado && !f.estado.toLowerCase().includes(fEstado)) return false;
-      if (fCostoMensual && !String(f.costo_mensual ?? '').toLowerCase().includes(fCostoMensual)) return false;
-      if (fPagosPeriodo && !String(f.pagos_total_rango ?? '').toLowerCase().includes(fPagosPeriodo)) return false;
+      if (fServicio.size && !fServicio.has(f.servicio)) return false;
+      if (fProveedor.size && !fProveedor.has(f.proveedor_nombre)) return false;
+      if (fSector.size && !fSector.has(f.sector_nombre ?? '-')) return false;
+      if (fEstado.size && !fEstado.has(f.estado)) return false;
+      if (fCostoMensual.size && !fCostoMensual.has(String(f.costo_mensual))) return false;
+      if (fPagosPeriodo.size && !fPagosPeriodo.has(String(f.pagos_total_rango))) return false;
       return true;
     });
 

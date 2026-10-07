@@ -1,0 +1,32 @@
+<button type="button" class="ms-filtro-btn" [class.activo]="tieneFiltroActivo()" (click)="abrir($event)">
+  <span class="ms-filtro-label">{{ etiquetaBoton() }}</span>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-filtro-caret"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+
+@if (abierto()) {
+  <div class="dropdown-backdrop" (click)="cancelar()"></div>
+  <div class="ms-filtro-panel" [style.top.px]="pos()?.top" [style.left.px]="pos()?.left" (click)="$event.stopPropagation()">
+    <input class="input ms-filtro-buscar" type="text" placeholder="Buscar..." [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" />
+
+    <label class="ms-filtro-opcion ms-filtro-todo">
+      <input type="checkbox" [checked]="todoMarcado()" (change)="toggleTodo()" />
+      <span>(Seleccionar todo)</span>
+    </label>
+
+    <div class="ms-filtro-lista">
+      @for (v of valoresFiltrados(); track v) {
+        <label class="ms-filtro-opcion">
+          <input type="checkbox" [checked]="draft().has(v)" (change)="toggleValor(v)" />
+          <span>{{ formatoValor(v) }}</span>
+        </label>
+      } @empty {
+        <div class="ms-filtro-vacio">Sin resultados.</div>
+      }
+    </div>
+
+    <div class="ms-filtro-acciones">
+      <button type="button" class="btn btn-primary btn-sm" (click)="aceptar()">Aceptar</button>
+      <button type="button" class="btn btn-outline btn-sm" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+}

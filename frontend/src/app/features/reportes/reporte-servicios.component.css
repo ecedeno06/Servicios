@@ -4,22 +4,3 @@
 .th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
 .th-sortable:hover { color: var(--teal-600); }
 .orden-icono { font-size: 10px; display: inline-block; width: 10px; }
-
-.data-table thead th input.input-th-filtro {
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-  font-size: 12px;
-  padding: 5px 8px;
-  color: var(--text-heading);
-}
-
-.data-table thead th select.input-th-filtro {
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-  font-size: 12px;
-  padding: 5px 8px;
-  color: var(--text-heading);
-  cursor: pointer;
-}

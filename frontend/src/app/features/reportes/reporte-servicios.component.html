@@ -80,45 +80,27 @@
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('servicio')">Servicio <span class="orden-icono">{{ iconoOrden('servicio') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroServicio()" (ngModelChange)="filtroServicio.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresServicio(); track v) { <option [value]="v">{{ v }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresServicio()" [seleccionados]="filtroServicio()" (seleccionadosChange)="filtroServicio.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrden('proveedor') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroProveedorCol()" (ngModelChange)="filtroProveedorCol.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresProveedorCol(); track v) { <option [value]="v">{{ v }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresProveedorCol()" [seleccionados]="filtroProveedorCol()" (seleccionadosChange)="filtroProveedorCol.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('sector')">Sector <span class="orden-icono">{{ iconoOrden('sector') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroSectorCol()" (ngModelChange)="filtroSectorCol.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresSectorCol(); track v) { <option [value]="v">{{ v }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresSectorCol()" [seleccionados]="filtroSectorCol()" (seleccionadosChange)="filtroSectorCol.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroEstadoCol()" (ngModelChange)="filtroEstadoCol.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresEstadoCol(); track v) { <option [value]="v">{{ v }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresEstadoCol()" [seleccionados]="filtroEstadoCol()" (seleccionadosChange)="filtroEstadoCol.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('costoMensual')">Costo Mensual <span class="orden-icono">{{ iconoOrden('costoMensual') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroCostoMensual()" (ngModelChange)="filtroCostoMensual.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresCostoMensual(); track v) { <option [value]="v">{{ v | currency:'USD':'symbol':'1.2-2' }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresCostoMensual()" [seleccionados]="filtroCostoMensual()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroCostoMensual.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('pagosPeriodo')">Pagos en Periodo <span class="orden-icono">{{ iconoOrden('pagosPeriodo') }}</span></span>
-            <select class="input input-th-filtro" [ngModel]="filtroPagosPeriodo()" (ngModelChange)="filtroPagosPeriodo.set($event)">
-              <option value="">Todos</option>
-              @for (v of valoresPagosPeriodo(); track v) { <option [value]="v">{{ v | currency:'USD':'symbol':'1.2-2' }}</option> }
-            </select>
+            <app-multi-select-filter [valores]="valoresPagosPeriodo()" [seleccionados]="filtroPagosPeriodo()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroPagosPeriodo.set($event)" />
           </th>
         </tr>
       </thead>
