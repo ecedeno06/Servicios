@@ -410,6 +410,7 @@ export interface ServicioProveedor {
   no_contrato?: string | null;
   observacion?: string | null;
   url?: string | null;
+  responsable?: string | null;
   contactos: ContactoProveedor[];
   estado: EstadoServicioProveedor;
   creado_por: string;

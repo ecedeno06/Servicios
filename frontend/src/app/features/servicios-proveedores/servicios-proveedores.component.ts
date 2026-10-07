@@ -515,6 +515,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
     observacion: [''],
     url: [''],
+    responsable: [''],
     contactos: this.fb.array([]),
   });
 
@@ -869,6 +870,9 @@ export class ServiciosProveedoresComponent implements OnInit {
       estado: 'activo',
       observacion: '',
       url: '',
+      // Sugerido, no forzado: suele ser quien esta creando el servicio, pero
+      // queda editable (y vacio al editar uno existente, ver abajo).
+      responsable: this.auth.usuario()?.nombre || '',
     });
     this.onToggleIndefinido();
     this.panelServicioAbierto.set(true);
@@ -891,6 +895,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       estado: s.estado,
       observacion: s.observacion || '',
       url: s.url || '',
+      responsable: s.responsable || '',
     });
     this.onToggleIndefinido();
 
