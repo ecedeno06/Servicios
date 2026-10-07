@@ -80,11 +80,16 @@
 
 .ms-filtro-acciones {
   display: flex;
-  gap: 6px;
+  justify-content: center;
+  gap: 10px;
   margin-top: 4px;
 }
-.ms-filtro-acciones .btn {
-  flex: 1;
-  padding: 6px 0;
-  font-size: 12.5px;
+
+/* Icono de Aceptar relleno en el color de acento -- se distingue del
+   Cancelar (btn-icon neutro) como la accion principal del panel. */
+.ms-filtro-aceptar {
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+  color: white;
 }
+.ms-filtro-aceptar:hover { background: var(--teal-500); border-color: var(--teal-500); }

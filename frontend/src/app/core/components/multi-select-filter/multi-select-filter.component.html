@@ -25,8 +25,12 @@
     </div>
 
     <div class="ms-filtro-acciones">
-      <button type="button" class="btn btn-primary btn-sm" (click)="aceptar()">Aceptar</button>
-      <button type="button" class="btn btn-outline btn-sm" (click)="cancelar()">Cancelar</button>
+      <button type="button" class="btn-icon ms-filtro-aceptar" title="Aceptar" aria-label="Aceptar" (click)="aceptar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
+      <button type="button" class="btn-icon" title="Cancelar" aria-label="Cancelar" (click)="cancelar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+      </button>
     </div>
   </div>
 }
