@@ -16,10 +16,12 @@ import {
   SectorProveedorItem,
   ServicioProveedor
 } from '../../core/models/models';
+import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 
 const ESTADOS_SERVICIO: { valor: EstadoServicioProveedor; etiqueta: string }[] = [
   { valor: 'activo', etiqueta: 'Activo' },
   { valor: 'en pausa', etiqueta: 'En Pausa' },
+  { valor: 'no renovar', etiqueta: 'No Renovar' },
   { valor: 'vencido', etiqueta: 'Vencido' },
   { valor: 'inactivo', etiqueta: 'Inactivo' },
   { valor: 'cancelado', etiqueta: 'Cancelado' },
@@ -68,7 +70,7 @@ const CODIGOS_PAIS: { codigo: string; nombre: string }[] = [
 @Component({
   selector: 'app-servicios-proveedores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MultiSelectFilterComponent],
   providers: [CurrencyPipe, DatePipe],
   templateUrl: './servicios-proveedores.component.html',
   styleUrl: './servicios-proveedores.component.css',
@@ -306,79 +308,111 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.observacionesExpandidas.set(set);
   }
 
-  // Filtros Servicios
-  filtroServNombre = signal('');
-  filtroServProveedor = signal('');
-  filtroServSector = signal('');
+  // Filtros Servicios -- seleccion multiple estilo Excel (Set vacio = sin
+  // filtro / "Todos") en las columnas visibles de la tabla. Contrato,
+  // Facturas y Observacion quedan como texto libre: sus columnas estan
+  // ocultas (ver thead) y ya no tienen control en pantalla.
+  filtroServNombre = signal<Set<string>>(new Set());
+  filtroServProveedor = signal<Set<string>>(new Set());
+  filtroServSector = signal<Set<string>>(new Set());
   filtroServContrato = signal('');
-  filtroServCostoMensual = signal('');
-  filtroServCostoAnual = signal('');
-  filtroServPagado = signal('');
-  filtroServFechaFin = signal('');
-  filtroServAviso = signal('');
-  filtroServEstado = signal('');
+  filtroServCostoMensual = signal<Set<string>>(new Set());
+  filtroServCostoAnual = signal<Set<string>>(new Set());
+  filtroServPagado = signal<Set<string>>(new Set());
+  filtroServFechaFin = signal<Set<string>>(new Set());
+  filtroServAviso = signal<Set<string>>(new Set());
+  filtroServEstado = signal<Set<string>>(new Set());
   filtroServFacturas = signal('');
   filtroServObservacion = signal('');
-  filtroServResponsable = signal('');
+  filtroServResponsable = signal<Set<string>>(new Set());
+
+  private valoresUnicosServ(valores: (string | null | undefined)[]): string[] {
+    const set = new Set(valores.filter((v): v is string => !!v));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  valoresServNombre = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.servicio)));
+  valoresServProveedor = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.proveedor_nombre)));
+  valoresServSector = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector))));
+  valoresServFechaFin = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.textoFechaFin(s))));
+  valoresServAviso = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.textoAvisoVencimiento(s))));
+  valoresServCostoMensual = computed(() =>
+    this.valoresUnicosServ(this.servicios().map((s) => String(s.costo_mensual))).sort((a, b) => Number(a) - Number(b))
+  );
+  valoresServCostoAnual = computed(() =>
+    this.valoresUnicosServ(this.servicios().map((s) => String(s.costo_anual))).sort((a, b) => Number(a) - Number(b))
+  );
+  valoresServPagado = computed(() =>
+    this.valoresUnicosServ(this.servicios().map((s) => String(s.monto_total_pagado ?? 0))).sort((a, b) => Number(a) - Number(b))
+  );
+  valoresServEstado = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.estado)));
+  valoresServResponsable = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.responsable)));
+
+  formatoMonedaServ = (v: string): string => {
+    const n = Number(v);
+    return isNaN(n) ? v : n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  };
+
+  formatoEstadoServ = (v: string): string => ESTADOS_SERVICIO.find((e) => e.valor === v)?.etiqueta ?? v;
 
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
-    this.filtroServNombre() || this.filtroServProveedor() || this.filtroServSector() || this.filtroServContrato() ||
-    this.filtroServCostoMensual() || this.filtroServCostoAnual() || this.filtroServPagado() || this.filtroServFechaFin() ||
-    this.filtroServAviso() || this.filtroServEstado() || this.filtroServFacturas() || this.filtroServObservacion() ||
-    this.filtroServResponsable() || this.filtroSoloPendientes()
+    this.filtroServNombre().size || this.filtroServProveedor().size || this.filtroServSector().size || this.filtroServContrato() ||
+    this.filtroServCostoMensual().size || this.filtroServCostoAnual().size || this.filtroServPagado().size || this.filtroServFechaFin().size ||
+    this.filtroServAviso().size || this.filtroServEstado().size || this.filtroServFacturas() || this.filtroServObservacion() ||
+    this.filtroServResponsable().size || this.filtroSoloPendientes()
   ));
 
   limpiarFiltrosServ(): void {
     this.busquedaGeneralServInput.set('');
     this.busquedaGeneralServ.set('');
-    this.filtroServNombre.set('');
-    this.filtroServProveedor.set('');
-    this.filtroServSector.set('');
+    this.filtroServNombre.set(new Set());
+    this.filtroServProveedor.set(new Set());
+    this.filtroServSector.set(new Set());
     this.filtroServContrato.set('');
-    this.filtroServCostoMensual.set('');
-    this.filtroServCostoAnual.set('');
-    this.filtroServPagado.set('');
-    this.filtroServFechaFin.set('');
-    this.filtroServAviso.set('');
-    this.filtroServEstado.set('');
+    this.filtroServCostoMensual.set(new Set());
+    this.filtroServCostoAnual.set(new Set());
+    this.filtroServPagado.set(new Set());
+    this.filtroServFechaFin.set(new Set());
+    this.filtroServAviso.set(new Set());
+    this.filtroServEstado.set(new Set());
     this.filtroServFacturas.set('');
     this.filtroServObservacion.set('');
-    this.filtroServResponsable.set('');
+    this.filtroServResponsable.set(new Set());
     this.filtroSoloPendientes.set(false);
   }
 
   serviciosFiltrados = computed(() => {
     const fGeneral = this.busquedaGeneralServ().trim().toLowerCase();
-    const nom = this.filtroServNombre().trim().toLowerCase();
-    const prov = this.filtroServProveedor().trim().toLowerCase();
+    const nom = this.filtroServNombre();
+    const prov = this.filtroServProveedor();
     const sec = this.filtroServSector();
     const ctr = this.filtroServContrato().trim().toLowerCase();
-    const costoM = this.filtroServCostoMensual().trim().toLowerCase();
-    const costoA = this.filtroServCostoAnual().trim().toLowerCase();
-    const pagado = this.filtroServPagado().trim().toLowerCase();
-    const fechaFin = this.filtroServFechaFin().trim().toLowerCase();
-    const aviso = this.filtroServAviso().trim().toLowerCase();
+    const costoM = this.filtroServCostoMensual();
+    const costoA = this.filtroServCostoAnual();
+    const pagado = this.filtroServPagado();
+    const fechaFin = this.filtroServFechaFin();
+    const aviso = this.filtroServAviso();
     const est = this.filtroServEstado();
     const fact = this.filtroServFacturas().trim().toLowerCase();
     const obs = this.filtroServObservacion().trim().toLowerCase();
-    const resp = this.filtroServResponsable().trim().toLowerCase();
+    const resp = this.filtroServResponsable();
 
     return this.servicios().filter((s) => {
       if (fGeneral && !this.coincideBusquedaGeneralServicio(s, fGeneral)) return false;
-      if (nom && !s.servicio.toLowerCase().includes(nom)) return false;
-      if (prov && !(s.proveedor_nombre || '').toLowerCase().includes(prov)) return false;
-      if (sec && s.proveedor_sector_id !== sec && s.proveedor_sector !== sec) return false;
+      if (nom.size && !nom.has(s.servicio)) return false;
+      if (prov.size && !prov.has(s.proveedor_nombre ?? '')) return false;
+      if (sec.size && !sec.has(this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector))) return false;
       if (ctr && !(s.no_contrato || '').toLowerCase().includes(ctr)) return false;
-      if (costoM && !String(s.costo_mensual ?? '').toLowerCase().includes(costoM)) return false;
-      if (costoA && !String(s.costo_anual ?? '').toLowerCase().includes(costoA)) return false;
-      if (pagado && !String(s.monto_total_pagado ?? 0).toLowerCase().includes(pagado)) return false;
-      if (fechaFin && !this.textoFechaFin(s).toLowerCase().includes(fechaFin)) return false;
-      if (aviso && !this.textoAvisoVencimiento(s).toLowerCase().includes(aviso)) return false;
+      if (costoM.size && !costoM.has(String(s.costo_mensual))) return false;
+      if (costoA.size && !costoA.has(String(s.costo_anual))) return false;
+      if (pagado.size && !pagado.has(String(s.monto_total_pagado ?? 0))) return false;
+      if (fechaFin.size && !fechaFin.has(this.textoFechaFin(s))) return false;
+      if (aviso.size && !aviso.has(this.textoAvisoVencimiento(s))) return false;
       if (obs && !(s.observacion || '').toLowerCase().includes(obs)) return false;
-      if (est && s.estado !== est) return false;
+      if (est.size && !est.has(s.estado)) return false;
       if (fact && !String(s.facturas_count ?? 0).toLowerCase().includes(fact)) return false;
-      if (resp && !(s.responsable || '').toLowerCase().includes(resp)) return false;
+      if (resp.size && !resp.has(s.responsable ?? '')) return false;
       if (this.filtroSoloPendientes() && !(s.facturas_pendientes_count && s.facturas_pendientes_count > 0)) return false;
       return true;
     });
@@ -1073,6 +1107,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     switch (e) {
       case 'activo': return 'badge-green';
       case 'en pausa': return 'badge-amber';
+      case 'no renovar': return 'badge-amber';
       case 'vencido': return 'badge-red';
       case 'cancelado': return 'badge-red';
       case 'inactivo': return 'badge-slate';
