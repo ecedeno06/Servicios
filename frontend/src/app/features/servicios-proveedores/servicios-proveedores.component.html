@@ -792,7 +792,7 @@
         <button type="button" class="close" (click)="cerrarModalObservacion()">&times;</button>
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioObservacionActual()?.servicio }}</p>
-      <div style="white-space: pre-wrap;">{{ servicioObservacionActual()?.observacion }}</div>
+      <div style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ servicioObservacionActual()?.observacion }}</div>
     </div>
   </div>
 }
