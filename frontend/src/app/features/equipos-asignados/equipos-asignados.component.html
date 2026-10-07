@@ -29,73 +29,43 @@
       <tr>
         <th>
           <span class="th-sortable" (click)="ordenarPor('categoria')">Categoria <span class="orden-icono">{{ iconoOrden('categoria') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresCategoria(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresCategoria()" [seleccionados]="filtroCategoria()" (seleccionadosChange)="filtroCategoria.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('marcaModelo')">Marca / Modelo <span class="orden-icono">{{ iconoOrden('marcaModelo') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroMarcaModelo()" (ngModelChange)="filtroMarcaModelo.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresMarcaModelo(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresMarcaModelo()" [seleccionados]="filtroMarcaModelo()" (seleccionadosChange)="filtroMarcaModelo.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresEstado(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresEstado()" [seleccionados]="filtroEstado()" (seleccionadosChange)="filtroEstado.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('asignadaA')">Asignado a <span class="orden-icono">{{ iconoOrden('asignadaA') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroAsignadaA()" (ngModelChange)="filtroAsignadaA.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresAsignadaA(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresAsignadaA()" [seleccionados]="filtroAsignadaA()" (seleccionadosChange)="filtroAsignadaA.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('entrada')">Entrada <span class="orden-icono">{{ iconoOrden('entrada') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroEntrada()" (ngModelChange)="filtroEntrada.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresEntrada(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresEntrada()" [seleccionados]="filtroEntrada()" (seleccionadosChange)="filtroEntrada.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('vidaUtil')">Vida util <span class="orden-icono">{{ iconoOrden('vidaUtil') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroVidaUtil()" (ngModelChange)="filtroVidaUtil.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresVidaUtil(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresVidaUtil()" [seleccionados]="filtroVidaUtil()" (seleccionadosChange)="filtroVidaUtil.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('cpu')">CPU <span class="orden-icono">{{ iconoOrden('cpu') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroCpu()" (ngModelChange)="filtroCpu.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresCpu(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresCpu()" [seleccionados]="filtroCpu()" (seleccionadosChange)="filtroCpu.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('ram')">Memoria RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroRam()" (ngModelChange)="filtroRam.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresRam(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresRam()" [seleccionados]="filtroRam()" (seleccionadosChange)="filtroRam.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('disco')">Disco duro <span class="orden-icono">{{ iconoOrden('disco') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroDisco()" (ngModelChange)="filtroDisco.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresDisco(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresDisco()" [seleccionados]="filtroDisco()" (seleccionadosChange)="filtroDisco.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrden('proveedor') }}</span></span>
-          <select class="input input-th-filtro" [ngModel]="filtroProveedor()" (ngModelChange)="filtroProveedor.set($event)">
-            <option value="">Todos</option>
-            @for (v of valoresProveedor(); track v) { <option [value]="v">{{ v }}</option> }
-          </select>
+          <app-multi-select-filter [valores]="valoresProveedor()" [seleccionados]="filtroProveedor()" (seleccionadosChange)="filtroProveedor.set($event)" />
         </th>
         <!-- Columna "No. Factura" oculta hasta nueva orden -- para restaurarla,
              descomentar este <th> y el <td> correspondiente mas abajo, y

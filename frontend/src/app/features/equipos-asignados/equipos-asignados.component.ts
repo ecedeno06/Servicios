@@ -7,6 +7,7 @@ import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
+import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -20,7 +21,7 @@ const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
 @Component({
   selector: 'app-equipos-asignados',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, MultiSelectFilterComponent],
   providers: [DatePipe],
   templateUrl: './equipos-asignados.component.html',
   styleUrl: './equipos-asignados.component.css',
@@ -108,24 +109,25 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  // Filtros por columna
-  filtroCategoria = signal('');
-  filtroMarcaModelo = signal('');
-  filtroEstado = signal('');
-  filtroAsignadaA = signal('');
-  filtroEntrada = signal('');
-  filtroVidaUtil = signal('');
-  filtroCpu = signal('');
-  filtroRam = signal('');
-  filtroDisco = signal('');
-  filtroProveedor = signal('');
-  filtroNoFactura = signal('');
+  // Filtros por columna -- seleccion multiple estilo Excel (Set vacio =
+  // sin filtro / "Todos").
+  filtroCategoria = signal<Set<string>>(new Set());
+  filtroMarcaModelo = signal<Set<string>>(new Set());
+  filtroEstado = signal<Set<string>>(new Set());
+  filtroAsignadaA = signal<Set<string>>(new Set());
+  filtroEntrada = signal<Set<string>>(new Set());
+  filtroVidaUtil = signal<Set<string>>(new Set());
+  filtroCpu = signal<Set<string>>(new Set());
+  filtroRam = signal<Set<string>>(new Set());
+  filtroDisco = signal<Set<string>>(new Set());
+  filtroProveedor = signal<Set<string>>(new Set());
+  filtroNoFactura = signal<Set<string>>(new Set());
 
   hayFiltros = computed(() => !!(
     this.busquedaGeneral() ||
-    this.filtroCategoria() || this.filtroMarcaModelo() || this.filtroEstado() || this.filtroAsignadaA() ||
-    this.filtroEntrada() || this.filtroVidaUtil() || this.filtroCpu() || this.filtroRam() || this.filtroDisco() ||
-    this.filtroProveedor() || this.filtroNoFactura()
+    this.filtroCategoria().size || this.filtroMarcaModelo().size || this.filtroEstado().size || this.filtroAsignadaA().size ||
+    this.filtroEntrada().size || this.filtroVidaUtil().size || this.filtroCpu().size || this.filtroRam().size || this.filtroDisco().size ||
+    this.filtroProveedor().size || this.filtroNoFactura().size
   ));
 
   private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
@@ -196,30 +198,30 @@ export class EquiposAsignadosComponent implements OnInit {
 
   equiposFiltrados = computed(() => {
     const fGeneral = this.busquedaGeneral().trim().toLowerCase();
-    const fCat = this.filtroCategoria().trim().toLowerCase();
-    const fMarcaModelo = this.filtroMarcaModelo().trim().toLowerCase();
-    const fEstado = this.filtroEstado().trim().toLowerCase();
-    const fAsignada = this.filtroAsignadaA().trim().toLowerCase();
-    const fEntrada = this.filtroEntrada().trim().toLowerCase();
-    const fVidaUtil = this.filtroVidaUtil().trim().toLowerCase();
-    const fCpu = this.filtroCpu().trim().toLowerCase();
-    const fRam = this.filtroRam().trim().toLowerCase();
-    const fDisco = this.filtroDisco().trim().toLowerCase();
-    const fProveedor = this.filtroProveedor().trim().toLowerCase();
-    const fNoFactura = this.filtroNoFactura().trim().toLowerCase();
+    const fCat = this.filtroCategoria();
+    const fMarcaModelo = this.filtroMarcaModelo();
+    const fEstado = this.filtroEstado();
+    const fAsignada = this.filtroAsignadaA();
+    const fEntrada = this.filtroEntrada();
+    const fVidaUtil = this.filtroVidaUtil();
+    const fCpu = this.filtroCpu();
+    const fRam = this.filtroRam();
+    const fDisco = this.filtroDisco();
+    const fProveedor = this.filtroProveedor();
+    const fNoFactura = this.filtroNoFactura();
     const filtrados = this.equipos().filter((e) => {
       if (fGeneral && !this.coincideBusquedaGeneral(e, fGeneral)) return false;
-      if (fCat && !e.categoria_nombre.toLowerCase().includes(fCat)) return false;
-      if (fMarcaModelo && !`${e.marca} ${e.modelo}`.toLowerCase().includes(fMarcaModelo)) return false;
-      if (fEstado && !this.etiquetaEstado(e.estado).toLowerCase().includes(fEstado)) return false;
-      if (fAsignada && !(e.asignada_a ?? '').toLowerCase().includes(fAsignada)) return false;
-      if (fEntrada && !(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC') ?? '').toLowerCase().includes(fEntrada)) return false;
-      if (fVidaUtil && !this.textoVidaUtil(e).toLowerCase().includes(fVidaUtil)) return false;
-      if (fCpu && !(e.procesador_nombre ?? '-').toLowerCase().includes(fCpu)) return false;
-      if (fRam && !(e.memoria_ram ?? '-').toLowerCase().includes(fRam)) return false;
-      if (fDisco && !(e.disco_duro ?? '-').toLowerCase().includes(fDisco)) return false;
-      if (fProveedor && !(e.proveedor_nombre ?? '-').toLowerCase().includes(fProveedor)) return false;
-      if (fNoFactura && !(e.no_factura ?? '-').toLowerCase().includes(fNoFactura)) return false;
+      if (fCat.size && !fCat.has(e.categoria_nombre)) return false;
+      if (fMarcaModelo.size && !fMarcaModelo.has(`${e.marca} ${e.modelo}`)) return false;
+      if (fEstado.size && !fEstado.has(this.etiquetaEstado(e.estado))) return false;
+      if (fAsignada.size && !fAsignada.has(e.asignada_a ?? '')) return false;
+      if (fEntrada.size && !fEntrada.has(this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC') ?? '')) return false;
+      if (fVidaUtil.size && !fVidaUtil.has(this.textoVidaUtil(e))) return false;
+      if (fCpu.size && !fCpu.has(e.procesador_nombre ?? '')) return false;
+      if (fRam.size && !fRam.has(e.memoria_ram ?? '')) return false;
+      if (fDisco.size && !fDisco.has(e.disco_duro ?? '')) return false;
+      if (fProveedor.size && !fProveedor.has(e.proveedor_nombre ?? '')) return false;
+      if (fNoFactura.size && !fNoFactura.has(e.no_factura ?? '')) return false;
       return true;
     });
 
@@ -349,17 +351,17 @@ export class EquiposAsignadosComponent implements OnInit {
   limpiarFiltros(): void {
     this.busquedaGeneralInput.set('');
     this.busquedaGeneral.set('');
-    this.filtroCategoria.set('');
-    this.filtroMarcaModelo.set('');
-    this.filtroEstado.set('');
-    this.filtroAsignadaA.set('');
-    this.filtroEntrada.set('');
-    this.filtroVidaUtil.set('');
-    this.filtroCpu.set('');
-    this.filtroRam.set('');
-    this.filtroDisco.set('');
-    this.filtroProveedor.set('');
-    this.filtroNoFactura.set('');
+    this.filtroCategoria.set(new Set());
+    this.filtroMarcaModelo.set(new Set());
+    this.filtroEstado.set(new Set());
+    this.filtroAsignadaA.set(new Set());
+    this.filtroEntrada.set(new Set());
+    this.filtroVidaUtil.set(new Set());
+    this.filtroCpu.set(new Set());
+    this.filtroRam.set(new Set());
+    this.filtroDisco.set(new Set());
+    this.filtroProveedor.set(new Set());
+    this.filtroNoFactura.set(new Set());
   }
 
   etiquetaEstado(estado: EstadoEquipo): string {
