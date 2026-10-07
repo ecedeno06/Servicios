@@ -175,7 +175,7 @@
               }
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
-            <td>{{ s.responsable || '-' }}</td>
+            <td [title]="s.observacion || ''">{{ s.responsable || '-' }}</td>
 
             <!-- Columna "No. Contrato" oculta hasta nueva orden, ver thead.
             <td><code>{{ s.no_contrato || '-' }}</code></td>
