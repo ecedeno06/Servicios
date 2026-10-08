@@ -750,6 +750,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   abrirNuevoSector(): void {
     this.sectorEdicion.set(null);
+    this.guardandoSector.set(false);
     this.sectorForm.reset({
       nombre: '',
       descripcion: '',
@@ -760,6 +761,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   abrirEditarSector(s: SectorProveedorItem): void {
     this.sectorEdicion.set(s);
+    this.guardandoSector.set(false);
     this.sectorForm.patchValue({
       nombre: s.nombre,
       descripcion: s.descripcion || '',
@@ -773,8 +775,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.sectorEdicion.set(null);
   }
 
+  guardandoSector = signal(false);
+
   guardarSector(): void {
-    if (this.sectorForm.invalid) return;
+    if (this.sectorForm.invalid || this.guardandoSector()) return;
 
     const val = this.sectorForm.getRawValue() as any;
     const edicion = this.sectorEdicion();
@@ -783,12 +787,17 @@ export class ServiciosProveedoresComponent implements OnInit {
       ? this.sectoresSrv.actualizar(edicion.id, val)
       : this.sectoresSrv.crear(val);
 
+    this.guardandoSector.set(true);
     req.subscribe({
       next: () => {
+        this.guardandoSector.set(false);
         this.cerrarPanelSector();
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al guardar sector'),
+      error: (err) => {
+        this.guardandoSector.set(false);
+        alert(err.error?.mensaje || 'Error al guardar sector');
+      },
     });
   }
 
@@ -811,6 +820,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   abrirNuevoProveedor(): void {
     this.proveedorEdicion.set(null);
+    this.guardandoProveedor.set(false);
     const primerSectorId = this.sectores().length > 0 ? this.sectores()[0].id : '';
     this.proveedorForm.reset({
       nombre: '',
@@ -828,6 +838,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   abrirEditarProveedor(p: Proveedor): void {
     this.proveedorEdicion.set(p);
+    this.guardandoProveedor.set(false);
     this.proveedorForm.patchValue({
       nombre: p.nombre,
       sector_id: p.sector_id || (this.sectores().find((sec) => sec.nombre === p.sector)?.id || ''),
@@ -847,8 +858,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.proveedorEdicion.set(null);
   }
 
+  guardandoProveedor = signal(false);
+
   guardarProveedor(): void {
-    if (this.proveedorForm.invalid) return;
+    if (this.proveedorForm.invalid || this.guardandoProveedor()) return;
 
     const val = this.proveedorForm.getRawValue() as any;
     const edicion = this.proveedorEdicion();
@@ -857,12 +870,17 @@ export class ServiciosProveedoresComponent implements OnInit {
       ? this.proveedoresSrv.actualizar(edicion.id, val)
       : this.proveedoresSrv.crear(val);
 
+    this.guardandoProveedor.set(true);
     req.subscribe({
       next: () => {
+        this.guardandoProveedor.set(false);
         this.cerrarPanelProveedor();
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al guardar proveedor'),
+      error: (err) => {
+        this.guardandoProveedor.set(false);
+        alert(err.error?.mensaje || 'Error al guardar proveedor');
+      },
     });
   }
 
@@ -1042,6 +1060,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   abrirNuevoServicio(): void {
     this.servicioEdicion.set(null);
+    this.guardandoServicio.set(false);
     this.contactosArray.clear();
     this.imagenesArray.clear();
     this.errorArchivoImagen.set(null);
@@ -1068,6 +1087,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   abrirEditarServicio(s: ServicioProveedor): void {
     this.servicioEdicion.set(s);
+    this.guardandoServicio.set(false);
     this.contactosArray.clear();
     this.imagenesArray.clear();
     this.errorArchivoImagen.set(null);
@@ -1127,8 +1147,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.servicioForm.patchValue({ costo_anual: +(mensual * 12).toFixed(2) });
   }
 
+  guardandoServicio = signal(false);
+
   guardarServicio(): void {
-    if (this.servicioForm.invalid) return;
+    if (this.servicioForm.invalid || this.guardandoServicio()) return;
 
     const val = this.servicioForm.getRawValue() as any;
     const edicion = this.servicioEdicion();
@@ -1137,12 +1159,17 @@ export class ServiciosProveedoresComponent implements OnInit {
       ? this.serviciosSrv.actualizar(edicion.id, val)
       : this.serviciosSrv.crear(val);
 
+    this.guardandoServicio.set(true);
     req.subscribe({
       next: () => {
+        this.guardandoServicio.set(false);
         this.cerrarPanelServicio();
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al guardar servicio'),
+      error: (err) => {
+        this.guardandoServicio.set(false);
+        alert(err.error?.mensaje || 'Error al guardar servicio');
+      },
     });
   }
 

@@ -466,7 +466,7 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="sectorForm.invalid">Guardar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="sectorForm.invalid || guardandoSector()">{{ guardandoSector() ? 'Grabando...' : 'Guardar' }}</button>
           <button type="button" class="btn btn-outline" (click)="cerrarPanelSector()">Cancelar</button>
         </div>
       </form>
@@ -539,7 +539,7 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="proveedorForm.invalid">Guardar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="proveedorForm.invalid || guardandoProveedor()">{{ guardandoProveedor() ? 'Grabando...' : 'Guardar' }}</button>
           <button type="button" class="btn btn-outline" (click)="cerrarPanelProveedor()">Cancelar</button>
         </div>
       </form>
@@ -723,7 +723,7 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="servicioForm.invalid">Guardar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="servicioForm.invalid || guardandoServicio()">{{ guardandoServicio() ? 'Grabando...' : 'Guardar' }}</button>
           <button type="button" class="btn btn-outline" (click)="cerrarPanelServicio()">Cancelar</button>
         </div>
       </form>
