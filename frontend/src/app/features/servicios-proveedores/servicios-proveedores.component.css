@@ -42,24 +42,42 @@
 
 .data-table thead th select.input-th-filtro { cursor: pointer; }
 
-/* Columna Aviso Previo en Servicios Contratados: 10px mas angosta que el
-   resto (5px menos de padding horizontal a cada lado). */
+/* Columna Aviso Previo en Servicios Contratados: angosta (padding reducido
+   + ancho fijo) para que no se ensanche solo por el texto del encabezado. */
 .data-table th.col-compact,
 .data-table td.col-compact {
   padding-left: 9px;
   padding-right: 9px;
+  width: 95px;
 }
 
-/* Costo Mensual / Costo Anual: mas angostas aun que col-compact, para
-   dejarle espacio a la columna Responsable sin ensanchar toda la tabla
-   (pedido explicito). Las etiquetas del encabezado se acortaron
-   ("C. Mensual"/"C. Anual") para que el nowrap de .th-sortable no las
-   siga obligando a su ancho completo. */
+/* Costo Anual: angosta, para dejarle espacio a la columna Responsable sin
+   ensanchar toda la tabla (pedido explicito). La etiqueta del encabezado
+   se acorto ("C. Anual") para que el nowrap de .th-sortable no la siga
+   obligando a su ancho completo. */
 .data-table th.col-tight,
 .data-table td.col-tight {
   padding-left: 6px;
   padding-right: 6px;
   width: 85px;
+}
+
+/* Costo Mensual: un poco mas angosta aun que col-tight (pedido explicito). */
+.data-table th.col-tighter,
+.data-table td.col-tighter {
+  padding-left: 6px;
+  padding-right: 6px;
+  width: 70px;
+}
+
+/* Pagado: sin clase de ancho previa (quedaba con el padding default de
+   14px); se angosta un poco para que no domine la fila junto con el
+   icono de tendencia (pedido explicito). */
+.data-table th.col-pagado,
+.data-table td.col-pagado {
+  padding-left: 8px;
+  padding-right: 8px;
+  width: 105px;
 }
 
 /* Columna "Observacion": texto expandible -- colapsada muestra una sola

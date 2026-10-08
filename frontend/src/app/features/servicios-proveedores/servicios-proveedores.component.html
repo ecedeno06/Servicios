@@ -125,7 +125,7 @@
             <span class="th-sortable" (click)="ordenarPorServ('aviso')">Aviso Previo <span class="orden-icono">{{ iconoOrdenServ('aviso') }}</span></span>
             <app-multi-select-filter [valores]="valoresServAviso()" [seleccionados]="filtroServAviso()" (seleccionadosChange)="filtroServAviso.set($event)" />
           </th>
-          <th class="col-tight">
+          <th class="col-tighter">
             <span class="th-sortable" (click)="ordenarPorServ('costoMensual')">C. Mensual <span class="orden-icono">{{ iconoOrdenServ('costoMensual') }}</span></span>
             <app-multi-select-filter [valores]="valoresServCostoMensual()" [seleccionados]="filtroServCostoMensual()" [formatoValor]="formatoMonedaServ" (seleccionadosChange)="filtroServCostoMensual.set($event)" />
           </th>
@@ -133,7 +133,7 @@
             <span class="th-sortable" (click)="ordenarPorServ('costoAnual')">C. Anual <span class="orden-icono">{{ iconoOrdenServ('costoAnual') }}</span></span>
             <app-multi-select-filter [valores]="valoresServCostoAnual()" [seleccionados]="filtroServCostoAnual()" [formatoValor]="formatoMonedaServ" (seleccionadosChange)="filtroServCostoAnual.set($event)" />
           </th>
-          <th>
+          <th class="col-pagado">
             <span class="th-sortable" (click)="ordenarPorServ('pagado')">Pagado <span class="orden-icono">{{ iconoOrdenServ('pagado') }}</span></span>
             <app-multi-select-filter [valores]="valoresServPagado()" [seleccionados]="filtroServPagado()" [formatoValor]="formatoMonedaServ" (seleccionadosChange)="filtroServPagado.set($event)" />
           </th>
@@ -203,9 +203,9 @@
                 {{ textoAvisoVencimiento(s) }}
               }
             </td>
-            <td class="col-tight">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td class="col-tighter">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td class="col-tight">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">
+            <td class="col-pagado" [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">
               <span class="flex items-center gap-6">
                 <span>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</span>
                 @if (indicadorPagado(s) === 'up') {
