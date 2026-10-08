@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
@@ -621,14 +620,21 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.imagenesArray.removeAt(index);
   }
 
-  // Angular sanitiza por defecto cualquier [href]/[src] cuyo esquema no
-  // reconozca (http/https/mailto/tel/ftp/file/sms) -- un data: URI queda
-  // reescrito a "unsafe:data:..." y el link no navega a ningun lado (el
-  // click no hace nada). bypassSecurityTrustUrl() es seguro aca porque el
-  // contenido es el propio adjunto base64 que ya validamos al subirlo, no
-  // una URL arbitraria ingresada por el usuario.
-  urlSegura(base64: string): SafeUrl {
-    return this.sanitizer.bypassSecurityTrustUrl(base64);
+  // Un <a href="data:..."> no alcanza: ademas del sanitizado de Angular
+  // (ya resuelto con bypassSecurityTrustUrl), Chrome/Edge bloquean la
+  // navegacion de nivel superior (pestana nueva) a un data: URI como
+  // medida anti-phishing -- el click simplemente no hace nada, sin error
+  // visible. La forma que si funciona es convertir el base64 a un Blob y
+  // abrir su blob: URL, que no cae bajo esa restriccion.
+  abrirAdjunto(base64: string): void {
+    const [meta, datos] = base64.split(',');
+    const tipo = meta.match(/data:(.*);base64/)?.[1] || 'application/octet-stream';
+    const binario = atob(datos);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
   private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
@@ -708,8 +714,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private serviciosSrv: ServiciosProveedoresService,
     private datePipe: DatePipe,
     private auth: AuthService,
-    public menu: MenuService,
-    private sanitizer: DomSanitizer
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {
