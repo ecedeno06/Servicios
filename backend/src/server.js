@@ -14,7 +14,10 @@ const app = express();
 app.set('trust proxy', true);
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
-app.use(express.json({ limit: '5mb' }));
+// 15mb (antes 5mb): los servicios contratados ahora pueden llevar adjuntos
+// (PDF/PNG/JPG) en base64 dentro del payload -- el limite por archivo y la
+// cantidad maxima de adjuntos se validan aparte en el controller.
+app.use(express.json({ limit: '15mb' }));
 app.use(morgan('dev'));
 
 app.get('/health', (req, res) => res.json({ ok: true, servicio: 'horas-servicio-backend' }));

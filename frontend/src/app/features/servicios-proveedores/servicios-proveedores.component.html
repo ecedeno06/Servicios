@@ -677,6 +677,45 @@
           </div>
         </div>
 
+        <!-- Imagenes y Documentos (PDF/PNG/JPG en base64) -->
+        <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 13px;">Imágenes y Documentos</label>
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              #inputArchivoImagen
+              hidden
+              (change)="onSeleccionArchivoImagen($event)"
+            />
+            <button type="button" class="btn btn-outline btn-sm" (click)="inputArchivoImagen.click()">+ Adjuntar archivo</button>
+          </div>
+
+          @if (errorArchivoImagen()) {
+            <div class="error-text" style="margin-bottom: 8px;">{{ errorArchivoImagen() }}</div>
+          }
+
+          <div formArrayName="imagenes">
+            @for (iGroup of imagenesArray.controls; track $index) {
+              <div [formGroupName]="$index" class="card" style="margin-bottom: 10px; padding: 12px;">
+                <div class="form-group">
+                  <label style="font-size: 11px;">Descripción</label>
+                  <input class="input" formControlName="descripcion" placeholder="Ej. Factura escaneada, contrato firmado..." />
+                </div>
+                <div class="text-muted text-sm" style="margin-top: 6px;">
+                  Agregado el {{ iGroup.get('fecha')?.value | date:'dd/MM/yyyy HH:mm' }} por {{ iGroup.get('creado_por')?.value }}
+                </div>
+                <div class="flex items-center gap-8" style="margin-top: 8px;">
+                  <a [href]="iGroup.get('imagen_base64')?.value" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Ver / Descargar</a>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="eliminarImagen($index)">Eliminar</button>
+                </div>
+              </div>
+            } @empty {
+              <div class="desc" style="font-style: italic;">No se han adjuntado imágenes o documentos.</div>
+            }
+          </div>
+        </div>
+
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="servicioForm.invalid">Guardar</button>
           <button type="button" class="btn btn-outline" (click)="cerrarPanelServicio()">Cancelar</button>

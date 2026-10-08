@@ -22,3 +22,16 @@ export function redimensionarImagen(archivo: File, maxDimension: number): Promis
     lector.readAsDataURL(archivo);
   });
 }
+
+// Lee un archivo tal cual (sin pasar por canvas) y lo devuelve como data URI
+// base64 -- a diferencia de redimensionarImagen(), no recomprime ni
+// redimensiona, asi que sirve tanto para PDF como para PNG/JPG cuando se
+// quiere guardar el archivo exactamente como lo subio el usuario.
+export function leerArchivoComoBase64(archivo: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const lector = new FileReader();
+    lector.onerror = () => reject(lector.error);
+    lector.onload = () => resolve(lector.result as string);
+    lector.readAsDataURL(archivo);
+  });
+}

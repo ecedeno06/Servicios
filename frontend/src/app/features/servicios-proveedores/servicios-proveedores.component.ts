@@ -12,11 +12,13 @@ import {
   EstadoServicioProveedor,
   FacturaServicioProveedor,
   FormaPagoFactura,
+  ImagenServicioProveedor,
   Proveedor,
   SectorProveedorItem,
   ServicioProveedor
 } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
+import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
 const ESTADOS_SERVICIO: { valor: EstadoServicioProveedor; etiqueta: string }[] = [
   { valor: 'activo', etiqueta: 'Activo' },
@@ -568,6 +570,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     url: [''],
     responsable: [''],
     contactos: this.fb.array([]),
+    imagenes: this.fb.array([]),
   });
 
   // "Indefinido" deshabilita y limpia fecha_fin y dias_aviso_vencimiento --
@@ -591,6 +594,63 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   get contactosArray(): FormArray {
     return this.servicioForm.get('contactos') as FormArray;
+  }
+
+  // -------------------------------------------------------------------
+  // IMAGENES Y DOCUMENTOS (adjuntos del servicio, PDF/PNG/JPG en base64)
+  // -------------------------------------------------------------------
+  get imagenesArray(): FormArray {
+    return this.servicioForm.get('imagenes') as FormArray;
+  }
+
+  private crearImagenGroup(img: ImagenServicioProveedor): FormGroup {
+    return this.fb.group({
+      fecha: [img.fecha],
+      descripcion: [img.descripcion || ''],
+      imagen_base64: [img.imagen_base64, Validators.required],
+      creado_por: [img.creado_por],
+    });
+  }
+
+  agregarImagenEntry(img: ImagenServicioProveedor): void {
+    this.imagenesArray.push(this.crearImagenGroup(img));
+  }
+
+  eliminarImagen(index: number): void {
+    this.imagenesArray.removeAt(index);
+  }
+
+  private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
+  private readonly MAX_ARCHIVO_BYTES = 5 * 1024 * 1024; // 5MB, antes de inflarse a base64
+  private readonly MAX_IMAGENES = 20;
+  errorArchivoImagen = signal<string | null>(null);
+
+  // El archivo se guarda tal cual lo sube el usuario (base64 sin recomprimir
+  // ni redimensionar) -- pedido explicito, distinto del avatar/logo que si
+  // pasan por redimensionarImagen().
+  onSeleccionArchivoImagen(event: Event): void {
+    this.errorArchivoImagen.set(null);
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+
+    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorArchivoImagen.set('Solo se permiten archivos PDF, PNG o JPG.');
+    } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorArchivoImagen.set('El archivo supera el tamaño máximo permitido (5MB).');
+    } else if (this.imagenesArray.length >= this.MAX_IMAGENES) {
+      this.errorArchivoImagen.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+    } else {
+      leerArchivoComoBase64(archivo).then((base64) => {
+        this.agregarImagenEntry({
+          fecha: new Date().toISOString(),
+          descripcion: '',
+          imagen_base64: base64,
+          creado_por: this.auth.usuario()?.nombre || '',
+        });
+      }).catch(() => this.errorArchivoImagen.set('No se pudo leer el archivo.'));
+    }
+    input.value = '';
   }
 
   // -------------------------------------------------------------------
@@ -946,6 +1006,8 @@ export class ServiciosProveedoresComponent implements OnInit {
   abrirNuevoServicio(): void {
     this.servicioEdicion.set(null);
     this.contactosArray.clear();
+    this.imagenesArray.clear();
+    this.errorArchivoImagen.set(null);
     this.servicioForm.reset({
       proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
       servicio: '',
@@ -970,6 +1032,8 @@ export class ServiciosProveedoresComponent implements OnInit {
   abrirEditarServicio(s: ServicioProveedor): void {
     this.servicioEdicion.set(s);
     this.contactosArray.clear();
+    this.imagenesArray.clear();
+    this.errorArchivoImagen.set(null);
 
     this.servicioForm.patchValue({
       proveedor_id: s.proveedor_id,
@@ -990,6 +1054,9 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     if (Array.isArray(s.contactos)) {
       s.contactos.forEach((c) => this.agregarContacto(c));
+    }
+    if (Array.isArray(s.imagenes)) {
+      s.imagenes.forEach((img) => this.agregarImagenEntry(img));
     }
 
     this.panelServicioAbierto.set(true);

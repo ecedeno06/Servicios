@@ -375,6 +375,15 @@ export interface ContactoProveedor {
   cargo?: string;
 }
 
+// Adjunto (PDF/PNG/JPG en base64) de un servicio contratado. fecha y
+// creado_por se fijan al subir el archivo, no son editables en la UI.
+export interface ImagenServicioProveedor {
+  fecha: string;
+  descripcion?: string;
+  imagen_base64: string;
+  creado_por: string;
+}
+
 export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado' | 'vencido' | 'inactivo' | 'no renovar';
 
 // Una fila del Reporte de Servicios: servicio + proveedor + sector + costo
@@ -412,6 +421,7 @@ export interface ServicioProveedor {
   url?: string | null;
   responsable?: string | null;
   contactos: ContactoProveedor[];
+  imagenes: ImagenServicioProveedor[];
   estado: EstadoServicioProveedor;
   creado_por: string;
   creado_por_nombre?: string;
