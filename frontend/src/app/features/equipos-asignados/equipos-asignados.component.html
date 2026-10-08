@@ -83,7 +83,14 @@
     <tbody>
       @for (e of equiposFiltrados(); track e.id) {
         <tr class="row-clickable" [class.row-selected]="seleccionado()?.id === e.id" [attr.data-equipo-id]="e.id" tabindex="-1" (click)="seleccionar(e)">
-          <td>{{ e.categoria_nombre }}</td>
+          <td>
+            <span class="flex items-center gap-6">
+              <button type="button" class="info-icon-btn" title="Ver observación e histórico" aria-label="Ver observación e histórico" (click)="abrirModalInfoEquipo($event, e)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </button>
+              <span>{{ e.categoria_nombre }}</span>
+            </span>
+          </td>
           <td [title]="e.numero_serie ? 'N/S: ' + e.numero_serie : 'Sin numero de serie'">{{ e.marca }} {{ e.modelo }}</td>
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
           <td>{{ e.asignada_a || '-' }}</td>
@@ -339,6 +346,57 @@
           <button type="button" class="btn btn-outline" (click)="cerrarAccion()">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL: Observacion + Historico de movimientos de un equipo (icono junto a Categoria) -->
+@if (equipoInfoActual(); as equipoInfo) {
+  <div class="modal-overlay" (click)="cerrarModalInfoEquipo()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ equipoInfo.marca }} {{ equipoInfo.modelo }}</h2>
+        <button class="close" (click)="cerrarModalInfoEquipo()">&times;</button>
+      </div>
+
+      <h3 style="font-size:13px;">Observación</h3>
+      <p class="text-sm" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ equipoInfo.observacion || 'Sin observación.' }}</p>
+
+      <h3 class="mt-16" style="font-size:13px;">Histórico de movimientos</h3>
+      @if (cargandoHistorialInfo()) {
+        <p class="text-muted text-sm">Cargando...</p>
+      } @else if (historialInfoEquipo().length === 0) {
+        <p class="text-muted text-sm">Sin movimientos registrados.</p>
+      } @else {
+        <ul class="historial-lista">
+          @for (m of historialInfoEquipo(); track m.id) {
+            <li>
+              <div class="flex items-center gap-8" style="flex-wrap:wrap;">
+                <span class="text-muted text-sm">{{ m.fecha_cambio | date:'dd/MM/yyyy HH:mm' }}</span>
+                &middot;
+                @if (!m.estado_anterior) {
+                  <span class="text-muted text-sm">Alta:</span>
+                } @else if (m.estado_anterior !== m.estado_nuevo) {
+                  <span class="badge" [class]="claseEstado(m.estado_anterior)">{{ etiquetaEstado(m.estado_anterior) }}</span>
+                  <span class="text-muted">&rarr;</span>
+                }
+                <span class="badge" [class]="claseEstado(m.estado_nuevo)">{{ etiquetaEstado(m.estado_nuevo) }}</span>
+                @if (m.asignada_a && m.asignada_a_anterior && m.asignada_a !== m.asignada_a_anterior) {
+                  <span class="text-muted text-sm">reasignado de {{ m.asignada_a_anterior }} a {{ m.asignada_a }}</span>
+                } @else if (m.asignada_a && m.asignada_a !== m.asignada_a_anterior) {
+                  <span class="text-muted text-sm">asignado a {{ m.asignada_a }}</span>
+                } @else if (!m.asignada_a && m.asignada_a_anterior) {
+                  <span class="text-muted text-sm">se quito la asignacion a {{ m.asignada_a_anterior }}</span>
+                }
+                <span class="text-muted text-sm">&middot; por {{ m.registrado_por_nombre }}</span>
+              </div>
+              @if (m.observacion) {
+                <div class="text-sm mt-8">{{ m.observacion }}</div>
+              }
+            </li>
+          }
+        </ul>
+      }
     </div>
   </div>
 }

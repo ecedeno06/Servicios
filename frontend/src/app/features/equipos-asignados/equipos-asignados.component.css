@@ -35,3 +35,23 @@
 .th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
 .th-sortable:hover { color: var(--teal-600); }
 .orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+/* Icono de info junto a Categoria (abre el popup de Observacion +
+   Historico de movimientos). Sin fondo/borde propio, hereda el color de
+   texto normal y solo se resalta al hover -- mismo patron que en
+   Servicios y Proveedores. */
+.info-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.info-icon-btn svg { width: 14px; height: 14px; }
+.info-icon-btn:hover { color: var(--teal-600); }

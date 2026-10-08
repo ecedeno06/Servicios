@@ -52,6 +52,32 @@ export class EquiposAsignadosComponent implements OnInit {
     );
   });
 
+  // Popup de Observacion + Historico de movimientos, abierto desde el
+  // icono junto a Categoria -- usa senales propias (no "historial"/
+  // "seleccionado") para no pisar el historico que ya se muestra debajo
+  // del formulario cuando hay un equipo distinto abierto para editar.
+  equipoInfoActual = signal<EquipoAsignado | null>(null);
+  historialInfoEquipo = signal<MovimientoEquipo[]>([]);
+  cargandoHistorialInfo = signal(false);
+
+  abrirModalInfoEquipo(event: MouseEvent, e: EquipoAsignado): void {
+    event.stopPropagation();
+    this.equipoInfoActual.set(e);
+    this.cargandoHistorialInfo.set(true);
+    this.srv.historial(e.id).subscribe({
+      next: (data) => {
+        this.historialInfoEquipo.set(data);
+        this.cargandoHistorialInfo.set(false);
+      },
+      error: () => this.cargandoHistorialInfo.set(false),
+    });
+  }
+
+  cerrarModalInfoEquipo(): void {
+    this.equipoInfoActual.set(null);
+    this.historialInfoEquipo.set([]);
+  }
+
   // Menu desplegable de acciones rapidas por fila (boton de elipsis). Se
   // posiciona con "position: fixed" a partir del boton que lo abrio, para
   // que no quede recortado por el scroll interno de la tabla compacta
