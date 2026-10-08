@@ -570,7 +570,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     url: [''],
     responsable: [''],
     contactos: this.fb.array([]),
-    imagenes: this.fb.array([]),
   });
 
   // "Indefinido" deshabilita y limpia fecha_fin y dias_aviso_vencimiento --
@@ -599,25 +598,34 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   // IMAGENES Y DOCUMENTOS (adjuntos del servicio, PDF/PNG/JPG en base64)
   // -------------------------------------------------------------------
-  get imagenesArray(): FormArray {
-    return this.servicioForm.get('imagenes') as FormArray;
+  // Tabla propia (servicio_adjuntos), no un FormArray: a diferencia de
+  // Contactos, cada adjunto se guarda/borra al instante contra su propio
+  // endpoint (igual que Facturas), sin pasar por el "Guardar" del
+  // servicio. Por eso vive en una senal aparte, no dentro de servicioForm.
+  imagenesServicioActual = signal<ImagenServicioProveedor[]>([]);
+  guardandoAdjunto = signal(false);
+
+  agregarImagenEntry(img: ImagenServicioProveedor): void {
+    this.imagenesServicioActual.update((arr) => [img, ...arr]);
   }
 
-  private crearImagenGroup(img: ImagenServicioProveedor): FormGroup {
-    return this.fb.group({
-      fecha: [img.fecha],
-      descripcion: [img.descripcion || ''],
-      imagen_base64: [img.imagen_base64, Validators.required],
-      creado_por: [img.creado_por],
+  eliminarImagen(adjuntoId: string): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    if (!confirm('Eliminar este adjunto?')) return;
+    this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId).subscribe({
+      next: () => this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
-  agregarImagenEntry(img: ImagenServicioProveedor): void {
-    this.imagenesArray.push(this.crearImagenGroup(img));
-  }
-
-  eliminarImagen(index: number): void {
-    this.imagenesArray.removeAt(index);
+  actualizarDescripcionAdjunto(adjuntoId: string, descripcion: string): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    this.serviciosSrv.actualizarAdjunto(servicio.id, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.imagenesServicioActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
   }
 
   // Un <a href="data:..."> no alcanza: ademas del sanitizado de Angular
@@ -672,21 +680,34 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   private procesarArchivoImagen(archivo: File): void {
     this.errorArchivoImagen.set(null);
-    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+    const servicio = this.servicioEdicion();
+    if (!servicio) {
+      // No deberia poder dispararse -- el control queda deshabilitado
+      // hasta que el servicio existe (igual que Facturas, ver template).
+      this.errorArchivoImagen.set('Guarda el servicio antes de adjuntar archivos.');
+    } else if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
       this.errorArchivoImagen.set('Solo se permiten archivos PDF, PNG o JPG.');
     } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
       this.errorArchivoImagen.set('El archivo supera el tamaño máximo permitido (5MB).');
-    } else if (this.imagenesArray.length >= this.MAX_IMAGENES) {
+    } else if (this.imagenesServicioActual().length >= this.MAX_IMAGENES) {
       this.errorArchivoImagen.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
     } else {
+      this.guardandoAdjunto.set(true);
       leerArchivoComoBase64(archivo).then((base64) => {
-        this.agregarImagenEntry({
-          fecha: new Date().toISOString(),
-          descripcion: '',
-          imagen_base64: base64,
-          creado_por: this.auth.usuario()?.nombre || '',
+        this.serviciosSrv.crearAdjunto(servicio.id, { imagen_base64: base64 }).subscribe({
+          next: (nuevo) => {
+            this.guardandoAdjunto.set(false);
+            this.agregarImagenEntry(nuevo);
+          },
+          error: (err) => {
+            this.guardandoAdjunto.set(false);
+            this.errorArchivoImagen.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+          },
         });
-      }).catch(() => this.errorArchivoImagen.set('No se pudo leer el archivo.'));
+      }).catch(() => {
+        this.guardandoAdjunto.set(false);
+        this.errorArchivoImagen.set('No se pudo leer el archivo.');
+      });
     }
   }
 
@@ -948,15 +969,21 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   modalObservacionAbierta = signal(false);
   servicioObservacionActual = signal<ServicioProveedor | null>(null);
+  // La fila de la lista ya no trae "imagenes" (vive en su propia tabla) --
+  // se piden aparte, solo al abrir el popup.
+  imagenesObservacionModal = signal<ImagenServicioProveedor[]>([]);
 
   abrirModalObservacion(s: ServicioProveedor): void {
     this.servicioObservacionActual.set(s);
+    this.imagenesObservacionModal.set([]);
     this.modalObservacionAbierta.set(true);
+    this.serviciosSrv.listarAdjuntos(s.id).subscribe((data) => this.imagenesObservacionModal.set(data));
   }
 
   cerrarModalObservacion(): void {
     this.modalObservacionAbierta.set(false);
     this.servicioObservacionActual.set(null);
+    this.imagenesObservacionModal.set([]);
   }
 
   // Parte la Observacion en lineas para poder ofrecer un boton de copiar
@@ -1062,7 +1089,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.servicioEdicion.set(null);
     this.guardandoServicio.set(false);
     this.contactosArray.clear();
-    this.imagenesArray.clear();
+    this.imagenesServicioActual.set([]);
     this.errorArchivoImagen.set(null);
     this.servicioForm.reset({
       proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
@@ -1089,8 +1116,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.servicioEdicion.set(s);
     this.guardandoServicio.set(false);
     this.contactosArray.clear();
-    this.imagenesArray.clear();
+    this.imagenesServicioActual.set([]);
     this.errorArchivoImagen.set(null);
+    // La fila de la lista ya no trae "imagenes" (vive en su propia tabla
+    // ahora) -- se piden aparte, solo al abrir para editar.
+    this.serviciosSrv.obtener(s.id).subscribe((completo) => {
+      this.imagenesServicioActual.set(completo.imagenes || []);
+    });
 
     this.servicioForm.patchValue({
       proveedor_id: s.proveedor_id,
@@ -1111,9 +1143,6 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     if (Array.isArray(s.contactos)) {
       s.contactos.forEach((c) => this.agregarContacto(c));
-    }
-    if (Array.isArray(s.imagenes)) {
-      s.imagenes.forEach((img) => this.agregarImagenEntry(img));
     }
 
     this.panelServicioAbierto.set(true);

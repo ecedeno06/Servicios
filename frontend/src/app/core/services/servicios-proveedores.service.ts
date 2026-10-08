@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos } from '../models/models';
+import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos, ImagenServicioProveedor } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ServiciosProveedoresService {
@@ -53,5 +53,22 @@ export class ServiciosProveedoresService {
 
   eliminarFactura(servicioId: string, facturaId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}`);
+  }
+
+  // ADJUNTOS (imagenes/documentos)
+  listarAdjuntos(servicioId: string): Observable<ImagenServicioProveedor[]> {
+    return this.http.get<ImagenServicioProveedor[]>(`${this.base}/${servicioId}/adjuntos`);
+  }
+
+  crearAdjunto(servicioId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
+    return this.http.post<ImagenServicioProveedor>(`${this.base}/${servicioId}/adjuntos`, data);
+  }
+
+  actualizarAdjunto(servicioId: string, adjuntoId: string, data: { descripcion?: string }): Observable<ImagenServicioProveedor> {
+    return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`, data);
+  }
+
+  eliminarAdjunto(servicioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`);
   }
 }

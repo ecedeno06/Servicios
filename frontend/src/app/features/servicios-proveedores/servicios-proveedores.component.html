@@ -677,49 +677,57 @@
           </div>
         </div>
 
-        <!-- Imagenes y Documentos (PDF/PNG/JPG en base64) -->
+        <!-- Imagenes y Documentos (PDF/PNG/JPG en base64) -- se guardan/borran
+             al instante contra su propio endpoint (igual que Facturas), no
+             forman parte del payload de "Guardar" de este formulario. -->
         <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
             <label style="font-weight: 600; font-size: 13px;">Imágenes y Documentos</label>
-            <div class="flex items-center gap-8">
-              <div class="paste-area" tabindex="0" title="Haz clic aqui y presiona Ctrl+V para pegar una imagen" (paste)="onPasteImagen($event)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-                <span>Pegar (Ctrl+V)</span>
+            @if (servicioEdicion()) {
+              <div class="flex items-center gap-8">
+                <div class="paste-area" tabindex="0" title="Haz clic aqui y presiona Ctrl+V para pegar una imagen" (paste)="onPasteImagen($event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                  <span>Pegar (Ctrl+V)</span>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                  #inputArchivoImagen
+                  hidden
+                  (change)="onSeleccionArchivoImagen($event)"
+                />
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjunto()" (click)="inputArchivoImagen.click()">
+                  {{ guardandoAdjunto() ? 'Subiendo...' : '+ Adjuntar archivo' }}
+                </button>
               </div>
-              <input
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                #inputArchivoImagen
-                hidden
-                (change)="onSeleccionArchivoImagen($event)"
-              />
-              <button type="button" class="btn btn-outline btn-sm" (click)="inputArchivoImagen.click()">+ Adjuntar archivo</button>
-            </div>
+            }
           </div>
 
-          @if (errorArchivoImagen()) {
-            <div class="error-text" style="margin-bottom: 8px;">{{ errorArchivoImagen() }}</div>
-          }
+          @if (!servicioEdicion()) {
+            <div class="desc" style="font-style: italic;">Guarda el servicio para poder adjuntar archivos.</div>
+          } @else {
+            @if (errorArchivoImagen()) {
+              <div class="error-text" style="margin-bottom: 8px;">{{ errorArchivoImagen() }}</div>
+            }
 
-          <div formArrayName="imagenes">
-            @for (iGroup of imagenesArray.controls; track $index) {
-              <div [formGroupName]="$index" class="card" style="margin-bottom: 10px; padding: 12px;">
+            @for (img of imagenesServicioActual(); track img.id) {
+              <div class="card" style="margin-bottom: 10px; padding: 12px;">
                 <div class="form-group">
                   <label style="font-size: 11px;">Descripción</label>
-                  <input class="input" formControlName="descripcion" placeholder="Ej. Factura escaneada, contrato firmado..." />
+                  <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, contrato firmado..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)" />
                 </div>
                 <div class="text-muted text-sm" style="margin-top: 6px;">
-                  Agregado el {{ iGroup.get('fecha')?.value | date:'dd/MM/yyyy HH:mm' }} por {{ iGroup.get('creado_por')?.value }}
+                  Agregado el {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} por {{ img.creado_por_nombre }}
                 </div>
                 <div class="flex items-center gap-8" style="margin-top: 8px;">
-                  <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(iGroup.get('imagen_base64')?.value)">Ver / Descargar</button>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="eliminarImagen($index)">Eliminar</button>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="eliminarImagen(img.id)">Eliminar</button>
                 </div>
               </div>
             } @empty {
               <div class="desc" style="font-style: italic;">No se han adjuntado imágenes o documentos.</div>
             }
-          </div>
+          }
         </div>
 
         <div class="form-actions">
@@ -865,11 +873,11 @@
         }
       </div>
 
-      @if ((servicioObservacionActual()?.imagenes?.length ?? 0) > 0) {
+      @if (imagenesObservacionModal().length > 0) {
         <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
           <label style="font-weight: 600; font-size: 12px;">Imágenes y Documentos</label>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
-            @for (img of servicioObservacionActual()?.imagenes; track $index) {
+            @for (img of imagenesObservacionModal(); track img.id) {
               <div class="flex items-center gap-8" style="justify-content: space-between;">
                 <span class="text-sm" style="overflow-wrap: anywhere;">{{ img.descripcion || ('Adjunto ' + ($index + 1)) }}</span>
                 <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">

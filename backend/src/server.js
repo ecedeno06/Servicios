@@ -14,10 +14,12 @@ const app = express();
 app.set('trust proxy', true);
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
-// 15mb (antes 5mb): los servicios contratados ahora pueden llevar adjuntos
-// (PDF/PNG/JPG) en base64 dentro del payload -- el limite por archivo y la
-// cantidad maxima de adjuntos se validan aparte en el controller.
-app.use(express.json({ limit: '15mb' }));
+// 8mb: un adjunto de servicio (PDF/PNG/JPG) viaja en su propio POST, con
+// un tope de ~7MB de texto base64 validado en el controller -- 8mb le deja
+// margen para el resto del JSON sin volver a acercarse al limite viejo de
+// 15mb (que existia solo porque el formulario completo podia llevar varios
+// adjuntos embebidos a la vez).
+app.use(express.json({ limit: '8mb' }));
 app.use(morgan('dev'));
 
 app.get('/health', (req, res) => res.json({ ok: true, servicio: 'horas-servicio-backend' }));

@@ -378,10 +378,13 @@ export interface ContactoProveedor {
 // Adjunto (PDF/PNG/JPG en base64) de un servicio contratado. fecha y
 // creado_por se fijan al subir el archivo, no son editables en la UI.
 export interface ImagenServicioProveedor {
+  id: string;
   fecha: string;
-  descripcion?: string;
+  descripcion?: string | null;
   imagen_base64: string;
   creado_por: string;
+  creado_por_nombre?: string;
+  created_at: string;
 }
 
 export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado' | 'vencido' | 'inactivo' | 'no renovar';
@@ -421,7 +424,9 @@ export interface ServicioProveedor {
   url?: string | null;
   responsable?: string | null;
   contactos: ContactoProveedor[];
-  imagenes: ImagenServicioProveedor[];
+  // Opcional: listar() ya no la trae (vive en su propia tabla ahora), solo
+  // llega poblada cuando se pide obtenerPorId().
+  imagenes?: ImagenServicioProveedor[];
   estado: EstadoServicioProveedor;
   creado_por: string;
   creado_por_nombre?: string;
