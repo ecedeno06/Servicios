@@ -7,4 +7,4 @@
 
 /* Estado "No Renovar": rojo solido mas llamativo que el badge-red global
    (fondo rojo claro / texto rojo oscuro, usado para Vencido/Cancelado). */
-.badge-red-solid { background: var(--red-600); color: white; }
+.badge-red-solid { background: var(--red-600); color: white; text-align: center; }
