@@ -13,7 +13,9 @@ const SELECT_BASE = `
     um.nombre as modificado_por_nombre,
     (select count(*)::int from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id) as facturas_count,
     (select count(*)::int from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pendiente') as facturas_pendientes_count,
-    (select coalesce(sum(f.monto_factura), 0)::numeric from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada') as monto_total_pagado
+    (select coalesce(sum(f.monto_factura), 0)::numeric from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada') as monto_total_pagado,
+    (select f.monto_factura from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada' order by f.fecha_factura desc, f.created_at desc limit 1) as ultimo_pago_monto,
+    (select f.monto_factura from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada' order by f.fecha_factura desc, f.created_at desc limit 1 offset 1) as penultimo_pago_monto
   from servicios_proveedores sp
   join proveedores p on p.id = sp.proveedor_id
   join usuarios uc on uc.id = sp.creado_por

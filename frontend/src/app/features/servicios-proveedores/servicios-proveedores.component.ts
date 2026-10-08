@@ -497,21 +497,15 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.serviciosFiltrados().reduce((acc, s) => acc + (Number(s.monto_total_pagado) || 0), 0)
   );
 
-  // Promedio de "Pagado" sobre la tabla ya filtrada -- base de comparacion
-  // para la flechita de aumento/disminucion junto al monto de cada fila.
-  promedioPagadoServ = computed(() => {
-    const filas = this.serviciosFiltrados();
-    return filas.length ? this.kpiTotalPagado() / filas.length : 0;
-  });
-
-  // '' = igual al promedio (sin flechita). Compara contra el promedio ya
-  // redondeado a centavos para no marcar diferencias de centesimas que el
-  // usuario ni ve en pantalla.
+  // Compara el monto de la ultima factura pagada del servicio contra el de
+  // la anterior -- '' si no hay al menos dos pagos para comparar, o si el
+  // monto no cambio (redondeado a centavos).
   indicadorPagado(s: ServicioProveedor): 'up' | 'down' | '' {
-    const promedio = Math.round(this.promedioPagadoServ() * 100) / 100;
-    const pagado = Math.round((Number(s.monto_total_pagado) || 0) * 100) / 100;
-    if (pagado > promedio) return 'up';
-    if (pagado < promedio) return 'down';
+    if (s.ultimo_pago_monto == null || s.penultimo_pago_monto == null) return '';
+    const ultimo = Math.round(Number(s.ultimo_pago_monto) * 100) / 100;
+    const anterior = Math.round(Number(s.penultimo_pago_monto) * 100) / 100;
+    if (ultimo > anterior) return 'up';
+    if (ultimo < anterior) return 'down';
     return '';
   }
 

@@ -422,6 +422,8 @@ export interface ServicioProveedor {
   facturas_count?: number;
   facturas_pendientes_count?: number;
   monto_total_pagado?: number;
+  ultimo_pago_monto?: number | null;
+  penultimo_pago_monto?: number | null;
   facturas?: FacturaServicioProveedor[];
 }
 
