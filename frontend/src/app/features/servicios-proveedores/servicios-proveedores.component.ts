@@ -629,11 +629,32 @@ export class ServiciosProveedoresComponent implements OnInit {
   // ni redimensionar) -- pedido explicito, distinto del avatar/logo que si
   // pasan por redimensionarImagen().
   onSeleccionArchivoImagen(event: Event): void {
-    this.errorArchivoImagen.set(null);
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
-    if (!archivo) return;
+    if (archivo) this.procesarArchivoImagen(archivo);
+    input.value = '';
+  }
 
+  // Mismo patron de "pegar" que el selector de foto de perfil
+  // (selector-foto.component.ts, onPasteFoto) -- Ctrl+V sobre el recuadro
+  // de pegado, pero sin pasar por redimensionarImagen() (pedido explicito
+  // de guardar el archivo tal cual).
+  onPasteImagen(event: ClipboardEvent): void {
+    this.errorArchivoImagen.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoImagen(archivo);
+        return;
+      }
+    }
+    this.errorArchivoImagen.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoImagen(archivo: File): void {
+    this.errorArchivoImagen.set(null);
     if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
       this.errorArchivoImagen.set('Solo se permiten archivos PDF, PNG o JPG.');
     } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
@@ -650,7 +671,6 @@ export class ServiciosProveedoresComponent implements OnInit {
         });
       }).catch(() => this.errorArchivoImagen.set('No se pudo leer el archivo.'));
     }
-    input.value = '';
   }
 
   // -------------------------------------------------------------------
