@@ -864,6 +864,22 @@
           }
         }
       </div>
+
+      @if ((servicioObservacionActual()?.imagenes?.length ?? 0) > 0) {
+        <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+          <label style="font-weight: 600; font-size: 12px;">Imágenes y Documentos</label>
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+            @for (img of servicioObservacionActual()?.imagenes; track $index) {
+              <div class="flex items-center gap-8" style="justify-content: space-between;">
+                <span class="text-sm" style="overflow-wrap: anywhere;">{{ img.descripcion || ('Adjunto ' + ($index + 1)) }}</span>
+                <a class="btn-icon" [href]="img.imagen_base64" target="_blank" rel="noopener noreferrer" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
   </div>
 }
