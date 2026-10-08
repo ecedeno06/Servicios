@@ -1,7 +1,7 @@
 const { pool } = require('../config/db');
 
 const MAX_ADJUNTOS = 20;
-const MAX_IMAGEN_BASE64_CHARS = 7 * 1024 * 1024; // ~7MB de texto base64 (~5MB de archivo real)
+const MAX_IMAGEN_BASE64_CHARS = 4 * 1024 * 1024; // ~4MB de texto base64 (~3MB de archivo real)
 const IMAGEN_BASE64_PREFIJO = /^data:(image\/png|image\/jpeg|application\/pdf);base64,/;
 
 const SELECT_BASE = `
@@ -394,7 +394,7 @@ async function crearAdjunto(req, res, next) {
       return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
     }
     if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
-      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (5MB)' });
+      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
     }
 
     const { rows: cuenta } = await pool.query(

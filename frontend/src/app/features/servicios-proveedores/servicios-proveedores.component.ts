@@ -667,7 +667,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
-  private readonly MAX_ARCHIVO_BYTES = 5 * 1024 * 1024; // 5MB, antes de inflarse a base64
+  private readonly MAX_ARCHIVO_BYTES = 3 * 1024 * 1024; // 3MB, antes de inflarse a base64
   private readonly MAX_IMAGENES = 20;
   errorArchivoImagen = signal<string | null>(null);
 
@@ -709,7 +709,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     } else if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
       this.errorArchivoImagen.set('Solo se permiten archivos PDF, PNG o JPG.');
     } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
-      this.errorArchivoImagen.set('El archivo supera el tamaño máximo permitido (5MB).');
+      this.errorArchivoImagen.set('El archivo supera el tamaño máximo permitido (3MB).');
     } else if (this.imagenesServicioActual().length >= this.MAX_IMAGENES) {
       this.errorArchivoImagen.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
     } else {
