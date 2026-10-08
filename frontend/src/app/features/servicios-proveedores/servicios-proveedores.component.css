@@ -116,4 +116,9 @@
 }
 .indicador-pagado-up { color: var(--green-600); }
 .indicador-pagado-down { color: var(--red-600); }
+
+/* Estado "No Renovar": pedido explicito de un rojo solido mas llamativo
+   que el badge-red global (fondo rojo claro / texto rojo oscuro, usado
+   para Vencido/Cancelado) -- este queda solo para este estado puntual. */
+.badge-red-solid { background: var(--red-600); color: white; }
 .info-icon-btn:hover { color: var(--teal-600); }

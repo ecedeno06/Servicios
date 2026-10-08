@@ -4,3 +4,7 @@
 .th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
 .th-sortable:hover { color: var(--teal-600); }
 .orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+/* Estado "No Renovar": rojo solido mas llamativo que el badge-red global
+   (fondo rojo claro / texto rojo oscuro, usado para Vencido/Cancelado). */
+.badge-red-solid { background: var(--red-600); color: white; }

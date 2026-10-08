@@ -1135,7 +1135,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     switch (e) {
       case 'activo': return 'badge-green';
       case 'en pausa': return 'badge-amber';
-      case 'no renovar': return 'badge-amber';
+      case 'no renovar': return 'badge-red-solid';
       case 'vencido': return 'badge-red';
       case 'cancelado': return 'badge-red';
       case 'inactivo': return 'badge-slate';
