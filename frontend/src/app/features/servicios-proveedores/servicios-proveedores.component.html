@@ -801,7 +801,24 @@
         <button type="button" class="close" (click)="cerrarModalObservacion()">&times;</button>
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioObservacionActual()?.servicio }}</p>
-      <div style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ servicioObservacionActual()?.observacion }}</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        @for (linea of lineasObservacionModal(); track $index) {
+          @if (linea.esUrl) {
+            <div class="flex items-center gap-6">
+              <a [href]="linea.texto.trim()" target="_blank" rel="noopener noreferrer" style="overflow-wrap: anywhere;">{{ linea.texto }}</a>
+              <button type="button" class="info-icon-btn" [title]="textoCopiado() === linea.texto ? 'Copiado' : 'Copiar enlace'" aria-label="Copiar enlace" (click)="copiarTexto(linea.texto)">
+                @if (textoCopiado() === linea.texto) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
+              </button>
+            </div>
+          } @else {
+            <div style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ linea.texto }}</div>
+          }
+        }
+      </div>
     </div>
   </div>
 }

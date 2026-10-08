@@ -844,6 +844,28 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.servicioObservacionActual.set(null);
   }
 
+  // Parte la Observacion en lineas para poder ofrecer un boton de copiar
+  // junto a las que son un link completo (ej. el link de VaultWarden/tarjeta).
+  lineasObservacionModal = computed(() => {
+    const obs = this.servicioObservacionActual()?.observacion;
+    if (!obs) return [];
+    return obs.split('\n').map((linea) => ({
+      texto: linea,
+      esUrl: /^https?:\/\//i.test(linea.trim()),
+    }));
+  });
+
+  textoCopiado = signal<string | null>(null);
+
+  copiarTexto(texto: string): void {
+    navigator.clipboard?.writeText(texto.trim()).then(() => {
+      this.textoCopiado.set(texto);
+      setTimeout(() => {
+        if (this.textoCopiado() === texto) this.textoCopiado.set(null);
+      }, 1500);
+    }).catch(() => {});
+  }
+
   // -------------------------------------------------------------------
   // MODAL: seleccionar a cuales contactos del servicio enviarles correo
   // (antes se mandaba a todos de una, sin poder elegir).
