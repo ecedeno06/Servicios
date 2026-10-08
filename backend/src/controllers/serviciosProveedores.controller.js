@@ -473,6 +473,118 @@ async function eliminarAdjunto(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// -------------------------------------------------------------
+// ADJUNTOS DE FACTURA (imagenes/documentos -- PDF/PNG/JPG en base64)
+// -------------------------------------------------------------
+
+async function verificarFactura(req) {
+  const { rows: fact } = await pool.query(
+    `select f.id
+     from facturas_servicios_proveedores f
+     join servicios_proveedores sp on sp.id = f.servicio_proveedor_id
+     where f.id = $1 and f.servicio_proveedor_id = $2 and sp.empresa_id = $3`,
+    [req.params.facturaId, req.params.id, req.empresaId]
+  );
+  return !!fact[0];
+}
+
+async function listarAdjuntosFactura(req, res, next) {
+  try {
+    if (!(await verificarFactura(req))) return res.status(404).json({ mensaje: 'Factura no encontrada' });
+
+    const { rows } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from factura_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.factura_id = $1
+       order by a.fecha desc, a.created_at desc`,
+      [req.params.facturaId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearAdjuntoFactura(req, res, next) {
+  try {
+    const { descripcion, imagen_base64 } = req.body;
+
+    if (!(await verificarFactura(req))) return res.status(404).json({ mensaje: 'Factura no encontrada' });
+
+    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    }
+    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+    }
+
+    const { rows: cuenta } = await pool.query(
+      'select count(*)::int as n from factura_adjuntos where factura_id = $1',
+      [req.params.facturaId]
+    );
+    if (cuenta[0].n >= MAX_ADJUNTOS) {
+      return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS} archivos adjuntos` });
+    }
+
+    const { rows } = await pool.query(
+      `insert into factura_adjuntos (factura_id, descripcion, imagen_base64, creado_por)
+       values ($1, $2, $3, $4)
+       returning id`,
+      [req.params.facturaId, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from factura_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [rows[0].id]
+    );
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarAdjuntoFactura(req, res, next) {
+  try {
+    const { descripcion } = req.body;
+
+    if (!(await verificarFactura(req))) return res.status(404).json({ mensaje: 'Factura no encontrada' });
+
+    const { rows: adj } = await pool.query(
+      'select id from factura_adjuntos where id = $1 and factura_id = $2',
+      [req.params.adjuntoId, req.params.facturaId]
+    );
+    if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+
+    await pool.query(
+      'update factura_adjuntos set descripcion = $1 where id = $2',
+      [descripcion ? descripcion.trim() : null, req.params.adjuntoId]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from factura_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [req.params.adjuntoId]
+    );
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarAdjuntoFactura(req, res, next) {
+  try {
+    if (!(await verificarFactura(req))) return res.status(404).json({ mensaje: 'Factura no encontrada' });
+
+    const { rowCount } = await pool.query(
+      'delete from factura_adjuntos where id = $1 and factura_id = $2',
+      [req.params.adjuntoId, req.params.facturaId]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar,
   obtenerPorId,
@@ -488,4 +600,8 @@ module.exports = {
   crearAdjunto,
   actualizarAdjunto,
   eliminarAdjunto,
+  listarAdjuntosFactura,
+  crearAdjuntoFactura,
+  actualizarAdjuntoFactura,
+  eliminarAdjuntoFactura,
 };

@@ -71,4 +71,21 @@ export class ServiciosProveedoresService {
   eliminarAdjunto(servicioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`);
   }
+
+  // ADJUNTOS DE FACTURA (imagenes/documentos)
+  listarAdjuntosFactura(servicioId: string, facturaId: string): Observable<ImagenServicioProveedor[]> {
+    return this.http.get<ImagenServicioProveedor[]>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos`);
+  }
+
+  crearAdjuntoFactura(servicioId: string, facturaId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
+    return this.http.post<ImagenServicioProveedor>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos`, data);
+  }
+
+  actualizarAdjuntoFactura(servicioId: string, facturaId: string, adjuntoId: string, data: { descripcion?: string }): Observable<ImagenServicioProveedor> {
+    return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`, data);
+  }
+
+  eliminarAdjuntoFactura(servicioId: string, facturaId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`);
+  }
 }

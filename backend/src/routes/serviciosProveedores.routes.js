@@ -26,4 +26,10 @@ router.post('/:id/adjuntos', requirePermiso('servicios_proveedores', 'crear'), c
 router.put('/:id/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjunto);
 router.delete('/:id/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjunto);
 
+// Adjuntos de una factura (imagenes/documentos)
+router.get('/:id/facturas/:facturaId/adjuntos', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarAdjuntosFactura);
+router.post('/:id/facturas/:facturaId/adjuntos', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearAdjuntoFactura);
+router.put('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoFactura);
+router.delete('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoFactura);
+
 module.exports = router;

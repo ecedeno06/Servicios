@@ -749,6 +749,99 @@ export class ServiciosProveedoresComponent implements OnInit {
     observaciones: [''],
   });
 
+  // Adjuntos de una factura puntual: solo una factura a la vez muestra su
+  // lista expandida (mismo criterio simple que el popup de Observacion),
+  // identificada por facturaAdjuntosAbiertaId. Reutiliza abrirAdjunto/
+  // tipoArchivoLabel/tamanoArchivo (genericos, ya definidos mas arriba).
+  facturaAdjuntosAbiertaId = signal<string | null>(null);
+  adjuntosFacturaActual = signal<ImagenServicioProveedor[]>([]);
+  guardandoAdjuntoFactura = signal(false);
+  errorArchivoAdjuntoFactura = signal<string | null>(null);
+
+  toggleAdjuntosFactura(f: FacturaServicioProveedor): void {
+    if (this.facturaAdjuntosAbiertaId() === f.id) {
+      this.facturaAdjuntosAbiertaId.set(null);
+      this.adjuntosFacturaActual.set([]);
+      return;
+    }
+    const servicio = this.servicioSeleccionado();
+    if (!servicio) return;
+    this.facturaAdjuntosAbiertaId.set(f.id);
+    this.errorArchivoAdjuntoFactura.set(null);
+    this.adjuntosFacturaActual.set([]);
+    this.serviciosSrv.listarAdjuntosFactura(servicio.id, f.id).subscribe((data) => this.adjuntosFacturaActual.set(data));
+  }
+
+  eliminarAdjuntoFactura(adjuntoId: string, f: FacturaServicioProveedor): void {
+    const servicio = this.servicioSeleccionado();
+    if (!servicio) return;
+    if (!confirm('Eliminar este adjunto?')) return;
+    this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId).subscribe({
+      next: () => this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+    });
+  }
+
+  actualizarDescripcionAdjuntoFactura(adjuntoId: string, descripcion: string, f: FacturaServicioProveedor): void {
+    const servicio = this.servicioSeleccionado();
+    if (!servicio) return;
+    this.serviciosSrv.actualizarAdjuntoFactura(servicio.id, f.id, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.adjuntosFacturaActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
+  }
+
+  onSeleccionArchivoAdjuntoFactura(event: Event, f: FacturaServicioProveedor): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoAdjuntoFactura(archivo, f);
+    input.value = '';
+  }
+
+  onPasteAdjuntoFactura(event: ClipboardEvent, f: FacturaServicioProveedor): void {
+    this.errorArchivoAdjuntoFactura.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoAdjuntoFactura(archivo, f);
+        return;
+      }
+    }
+    this.errorArchivoAdjuntoFactura.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoAdjuntoFactura(archivo: File, f: FacturaServicioProveedor): void {
+    this.errorArchivoAdjuntoFactura.set(null);
+    const servicio = this.servicioSeleccionado();
+    if (!servicio) return;
+    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorArchivoAdjuntoFactura.set('Solo se permiten archivos PDF, PNG o JPG.');
+    } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorArchivoAdjuntoFactura.set('El archivo supera el tamaño máximo permitido (3MB).');
+    } else if (this.adjuntosFacturaActual().length >= this.MAX_IMAGENES) {
+      this.errorArchivoAdjuntoFactura.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+    } else {
+      this.guardandoAdjuntoFactura.set(true);
+      leerArchivoComoBase64(archivo).then((base64) => {
+        this.serviciosSrv.crearAdjuntoFactura(servicio.id, f.id, { imagen_base64: base64 }).subscribe({
+          next: (nuevo) => {
+            this.guardandoAdjuntoFactura.set(false);
+            this.adjuntosFacturaActual.update((arr) => [nuevo, ...arr]);
+          },
+          error: (err) => {
+            this.guardandoAdjuntoFactura.set(false);
+            this.errorArchivoAdjuntoFactura.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+          },
+        });
+      }).catch(() => {
+        this.guardandoAdjuntoFactura.set(false);
+        this.errorArchivoAdjuntoFactura.set('No se pudo leer el archivo.');
+      });
+    }
+  }
+
   constructor(
     private fb: FormBuilder,
     private sectoresSrv: SectoresProveedoresService,
@@ -1253,6 +1346,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.panelFacturasAbierto.set(false);
     this.servicioSeleccionado.set(null);
     this.facturas.set([]);
+    this.facturaAdjuntosAbiertaId.set(null);
+    this.adjuntosFacturaActual.set([]);
   }
 
   cargarFacturas(servicioId: string): void {
