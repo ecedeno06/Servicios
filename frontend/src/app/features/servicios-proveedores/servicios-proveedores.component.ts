@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
@@ -620,6 +621,16 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.imagenesArray.removeAt(index);
   }
 
+  // Angular sanitiza por defecto cualquier [href]/[src] cuyo esquema no
+  // reconozca (http/https/mailto/tel/ftp/file/sms) -- un data: URI queda
+  // reescrito a "unsafe:data:..." y el link no navega a ningun lado (el
+  // click no hace nada). bypassSecurityTrustUrl() es seguro aca porque el
+  // contenido es el propio adjunto base64 que ya validamos al subirlo, no
+  // una URL arbitraria ingresada por el usuario.
+  urlSegura(base64: string): SafeUrl {
+    return this.sanitizer.bypassSecurityTrustUrl(base64);
+  }
+
   private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
   private readonly MAX_ARCHIVO_BYTES = 5 * 1024 * 1024; // 5MB, antes de inflarse a base64
   private readonly MAX_IMAGENES = 20;
@@ -697,7 +708,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     private serviciosSrv: ServiciosProveedoresService,
     private datePipe: DatePipe,
     private auth: AuthService,
-    public menu: MenuService
+    public menu: MenuService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
