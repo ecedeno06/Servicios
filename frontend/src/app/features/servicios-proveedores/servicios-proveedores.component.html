@@ -223,7 +223,7 @@
             <td style="text-align: center;">
               <button type="button" class="btn-icon" title="Facturas" aria-label="Facturas" (click)="abrirFacturas(s)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
-                @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 9 ? '9+' : s.facturas_count }}</span> }
+                @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 99 ? '99+' : s.facturas_count }}</span> }
               </button>
             </td>
             -->
@@ -240,7 +240,7 @@
             <td class="table-actions">
               <button type="button" class="btn-icon" title="Facturas" aria-label="Facturas" (click)="abrirFacturas(s)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
-                @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 9 ? '9+' : s.facturas_count }}</span> }
+                @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 99 ? '99+' : s.facturas_count }}</span> }
               </button>
               @if (tieneContactoEmail(s)) {
                 <button type="button" class="btn-icon" (click)="abrirModalEmail(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">

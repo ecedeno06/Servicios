@@ -431,13 +431,16 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  min-width: 15px;
-  height: 15px;
+  /* min-width/height alcanzan para 3 digitos ("999") sin recortar texto;
+     border-radius se mantiene en la mitad de la altura para que siga
+     siendo un circulo con 1 digito y una pastilla con 2-3. */
+  min-width: 22px;
+  height: 16px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 3px;
+  padding: 0 4px;
 }
 
 .session-timer {
