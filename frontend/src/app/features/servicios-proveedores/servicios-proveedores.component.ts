@@ -645,6 +645,27 @@ export class ServiciosProveedoresComponent implements OnInit {
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
+  // Etiqueta legible a partir del prefijo "data:<tipo>;base64,..." del
+  // adjunto -- para mostrar "Documento PDF"/"Imagen PNG"/"Imagen JPG" en
+  // vez de obligar a poner una descripcion solo para identificar el tipo.
+  tipoArchivoLabel(base64: string): string {
+    if (base64.startsWith('data:application/pdf')) return 'Documento PDF';
+    if (base64.startsWith('data:image/png')) return 'Imagen PNG';
+    if (base64.startsWith('data:image/jpeg')) return 'Imagen JPG';
+    return 'Archivo';
+  }
+
+  // Tamano real del archivo a partir del largo del texto base64 (3 bytes
+  // de binario por cada 4 caracteres base64, menos el padding "=").
+  tamanoArchivo(base64: string): string {
+    const datos = base64.split(',')[1] || '';
+    const padding = (datos.match(/=+$/) || [''])[0].length;
+    const bytes = Math.max(0, (datos.length * 3) / 4 - padding);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
   private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
   private readonly MAX_ARCHIVO_BYTES = 5 * 1024 * 1024; // 5MB, antes de inflarse a base64
   private readonly MAX_IMAGENES = 20;

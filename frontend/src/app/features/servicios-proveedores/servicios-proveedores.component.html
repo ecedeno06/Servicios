@@ -712,12 +712,13 @@
 
             @for (img of imagenesServicioActual(); track img.id) {
               <div class="card" style="margin-bottom: 10px; padding: 12px;">
-                <div class="form-group">
+                <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                <div class="text-muted text-sm" style="margin-top: 2px;">
+                  {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ img.creado_por_nombre }}
+                </div>
+                <div class="form-group" style="margin-top: 8px;">
                   <label style="font-size: 11px;">Descripción</label>
                   <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, contrato firmado..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)" />
-                </div>
-                <div class="text-muted text-sm" style="margin-top: 6px;">
-                  Agregado el {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} por {{ img.creado_por_nombre }}
                 </div>
                 <div class="flex items-center gap-8" style="margin-top: 8px;">
                   <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
@@ -876,10 +877,18 @@
       @if (imagenesObservacionModal().length > 0) {
         <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
           <label style="font-weight: 600; font-size: 12px;">Imágenes y Documentos</label>
-          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
             @for (img of imagenesObservacionModal(); track img.id) {
               <div class="flex items-center gap-8" style="justify-content: space-between;">
-                <span class="text-sm" style="overflow-wrap: anywhere;">{{ img.descripcion || ('Adjunto ' + ($index + 1)) }}</span>
+                <div style="overflow-wrap: anywhere;">
+                  <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                  <div class="text-muted text-sm" style="margin-top: 2px;">
+                    {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ img.creado_por_nombre }}
+                  </div>
+                  @if (img.descripcion) {
+                    <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                  }
+                </div>
                 <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
                 </button>
