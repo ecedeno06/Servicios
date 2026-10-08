@@ -105,4 +105,15 @@
   flex-shrink: 0;
 }
 .info-icon-btn svg { width: 14px; height: 14px; }
+
+/* Flechita junto a "Pagado": compara el monto de esa fila contra el
+   promedio de la tabla ya filtrada (indicadorPagado()). Arriba/verde =
+   pago por encima del promedio, abajo/rojo = por debajo. */
+.indicador-pagado {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.indicador-pagado-up { color: var(--green-600); }
+.indicador-pagado-down { color: var(--red-600); }
 .info-icon-btn:hover { color: var(--teal-600); }

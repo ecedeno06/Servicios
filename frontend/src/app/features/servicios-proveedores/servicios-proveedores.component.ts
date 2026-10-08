@@ -497,6 +497,24 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.serviciosFiltrados().reduce((acc, s) => acc + (Number(s.monto_total_pagado) || 0), 0)
   );
 
+  // Promedio de "Pagado" sobre la tabla ya filtrada -- base de comparacion
+  // para la flechita de aumento/disminucion junto al monto de cada fila.
+  promedioPagadoServ = computed(() => {
+    const filas = this.serviciosFiltrados();
+    return filas.length ? this.kpiTotalPagado() / filas.length : 0;
+  });
+
+  // '' = igual al promedio (sin flechita). Compara contra el promedio ya
+  // redondeado a centavos para no marcar diferencias de centesimas que el
+  // usuario ni ve en pantalla.
+  indicadorPagado(s: ServicioProveedor): 'up' | 'down' | '' {
+    const promedio = Math.round(this.promedioPagadoServ() * 100) / 100;
+    const pagado = Math.round((Number(s.monto_total_pagado) || 0) * 100) / 100;
+    if (pagado > promedio) return 'up';
+    if (pagado < promedio) return 'down';
+    return '';
+  }
+
   // Click en la tarjeta "Facturas Pendientes": filtra la tabla a solo los
   // servicios que tienen al menos una factura pendiente.
   filtroSoloPendientes = signal(false);

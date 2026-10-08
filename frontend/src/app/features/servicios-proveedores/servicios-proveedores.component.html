@@ -205,7 +205,16 @@
             </td>
             <td class="col-tight">{{ s.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td class="col-tight">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">
+              <span class="flex items-center gap-6">
+                <span>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</span>
+                @if (indicadorPagado(s) === 'up') {
+                  <svg class="indicador-pagado indicador-pagado-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" title="Por encima del promedio"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                } @else if (indicadorPagado(s) === 'down') {
+                  <svg class="indicador-pagado indicador-pagado-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" title="Por debajo del promedio"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                }
+              </span>
+            </td>
             <td>
               <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
             </td>
