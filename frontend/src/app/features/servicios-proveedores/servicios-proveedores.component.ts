@@ -1439,6 +1439,11 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
+  anularFactura(f: FacturaServicioProveedor): void {
+    if (!confirm('¿Marcar esta factura como anulada?')) return;
+    this.cambiarEstadoFactura(f, 'anulada');
+  }
+
   eliminarFactura(f: FacturaServicioProveedor): void {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;

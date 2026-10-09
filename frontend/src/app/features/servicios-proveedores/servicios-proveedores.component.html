@@ -830,17 +830,25 @@
                     <span class="badge" [class]="claseBadgeEstadoFactura(f.estado)">{{ f.estado }}</span>
 
                     @if (f.estado === 'pendiente') {
-                      <button type="button" class="btn btn-outline btn-sm" (click)="cambiarEstadoFactura(f, 'pagada')">
-                        Marcar Pagada
+                      <button type="button" class="btn-icon" (click)="cambiarEstadoFactura(f, 'pagada')" title="Marcar como pagada" aria-label="Marcar como pagada">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                       </button>
                     }
 
-                    <button type="button" class="btn btn-outline btn-sm" (click)="toggleAdjuntosFactura(f)">
-                      {{ facturaAdjuntosAbiertaId() === f.id ? 'Ocultar adjuntos' : 'Adjuntos' }}
+                    @if (f.estado !== 'anulada') {
+                      <button type="button" class="btn-icon" (click)="anularFactura(f)" title="Marcar como anulada" aria-label="Marcar como anulada">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+                      </button>
+                    }
+
+                    <button type="button" class="btn-icon" (click)="toggleAdjuntosFactura(f)" [title]="facturaAdjuntosAbiertaId() === f.id ? 'Ocultar adjuntos' : 'Adjuntos'" [attr.aria-label]="facturaAdjuntosAbiertaId() === f.id ? 'Ocultar adjuntos' : 'Adjuntos'">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </button>
 
                     @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
-                      <button type="button" class="btn btn-danger btn-sm" (click)="eliminarFactura(f)">&times;</button>
+                      <button type="button" class="btn-icon btn-icon-danger" (click)="eliminarFactura(f)" title="Eliminar factura" aria-label="Eliminar factura">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
                     }
                   </div>
                 </div>
