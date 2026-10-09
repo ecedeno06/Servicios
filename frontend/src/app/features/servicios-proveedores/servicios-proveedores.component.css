@@ -1,5 +1,22 @@
 /* Estilos específicos del componente (la mayoría se heredan del styles.css global) */
 
+/* La clase global .table-actions pone display:flex directo en el <td>,
+   lo que lo saca del layout normal de celda: en filas altas (ej. un
+   nombre de servicio largo que hace wrap a varias lineas) el td-flex
+   solo ocupa el alto de su contenido y el resto de la fila queda sin
+   cubrir, mostrando blanco en vez del fondo gris de :hover/.row-selected
+   -- visible solo en esta tabla porque es la unica con filas de alto
+   variable. Se revierte aqui (encapsulado al componente) a celda normal
+   y el flex se mueve a un <div> interno que si crece con el <td>. */
+.table-actions { display: table-cell; text-align: right; }
+.table-actions .actions-inner {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
+
 /* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
    demasiado espacio vacio en pantallas anchas -- se angosta solo aqui
    (encapsulado al componente, no afecta el Dashboard que comparte la
