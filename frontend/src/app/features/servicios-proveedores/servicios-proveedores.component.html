@@ -166,7 +166,7 @@
       </thead>
       <tbody>
         @for (s of serviciosOrdenados(); track s.id) {
-          <tr>
+          <tr [class.row-selected]="servicioEdicion()?.id === s.id">
             <td [title]="tooltipContactos(s)"><strong>{{ s.servicio }}</strong></td>
             <td>
               <span class="flex items-center gap-6">

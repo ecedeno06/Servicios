@@ -22,6 +22,7 @@
 
   --teal-600: #0d9488;
   --teal-500: #14b8a6;
+  --teal-300: #5eead4;
   --teal-100: #ccfbf1;
 
   --amber-500: #f59e0b;
@@ -649,7 +650,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
    botones-icono tienen su propio color (var(--text-body)) que no hereda
    del td, asi que tambien hay que fijarlo o quedan invisibles (icono
    claro sobre el mismo fondo teal claro). */
-.row-selected { background: var(--teal-100) !important; }
+.row-selected { background: var(--teal-300) !important; }
 .row-selected td { color: var(--slate-900) !important; }
 .row-selected .btn-icon:not(.btn-icon-danger) {
   color: var(--slate-900);
@@ -735,7 +736,7 @@ table.data-table {
 }
 
 .data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover { background: var(--bg-row-hover); }
+.data-table tbody tr:hover { background: var(--bg-surface-hover); }
 
 .table-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
