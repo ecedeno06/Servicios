@@ -43,10 +43,6 @@
   --bg-surface: var(--white);
   --bg-surface-muted: var(--slate-100);
   --bg-surface-hover: var(--slate-50);
-  /* Un paso mas marcado que --bg-surface-hover, solo para la fila
-     resaltada de las tablas (pedido explicito: el hover quedaba muy
-     palido sobre fondo blanco). */
-  --bg-row-hover: var(--slate-100);
   --text-heading: var(--slate-950);
   --text-body: var(--slate-900);
   --text-muted: var(--slate-500);
@@ -72,7 +68,6 @@
   --bg-surface: #161d2b;
   --bg-surface-muted: #1e2636;
   --bg-surface-hover: #202a3c;
-  --bg-row-hover: #27334a;
   --text-heading: #f1f5f9;
   --text-body: #e2e8f0;
   --text-muted: #94a3b8;
@@ -87,7 +82,6 @@
     --bg-surface: #161d2b;
     --bg-surface-muted: #1e2636;
     --bg-surface-hover: #202a3c;
-    --bg-row-hover: #27334a;
     --text-heading: #f1f5f9;
     --text-body: #e2e8f0;
     --text-muted: #94a3b8;
@@ -736,7 +730,17 @@ table.data-table {
 }
 
 .data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover { background: var(--bg-surface-hover); }
+/* Mismo color que .row-selected (fila elegida para editar) -- pedido
+   explicito de usar esa barra de seleccion de forma consistente en toda
+   tabla, incluido el simple hover de las que no tienen fila "elegida"
+   propiamente (ej. Servicios Contratados). Texto/iconos fijos a oscuro
+   por la misma razon que en .row-selected (ver comentario de abajo). */
+.data-table tbody tr:hover:not(.row-selected) { background: var(--teal-300); }
+.data-table tbody tr:hover:not(.row-selected) td { color: var(--slate-900); }
+.data-table tbody tr:hover:not(.row-selected) .btn-icon:not(.btn-icon-danger) {
+  color: var(--slate-900);
+  border-color: var(--slate-300);
+}
 
 .table-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
