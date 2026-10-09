@@ -207,6 +207,9 @@
             <td class="col-tight">{{ s.costo_anual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td class="col-pagado" [class.pagado-excedido]="pagadoExcedeCostoAnual(s)">
               <span class="flex items-center gap-6">
+                <button type="button" class="info-icon-btn" title="Ver facturas y adjuntos" aria-label="Ver facturas y adjuntos" (click)="abrirModalFacturasInfo(s)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
                 <span>{{ (s.monto_total_pagado || 0) | currency:'USD':'symbol':'1.2-2' }}</span>
                 @if (indicadorPagado(s) === 'up') {
                   <svg class="indicador-pagado indicador-pagado-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" title="El ultimo pago subio respecto al anterior"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -948,6 +951,69 @@
               </div>
             }
           </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- MODAL: ver Facturas y sus adjuntos de un servicio (icono junto a Pagado) -->
+@if (modalFacturasInfoAbierta()) {
+  <div class="modal-overlay" (click)="cerrarModalFacturasInfo()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Facturas y Adjuntos</h2>
+        <button type="button" class="close" (click)="cerrarModalFacturasInfo()">&times;</button>
+      </div>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioFacturasInfoActual()?.servicio }}</p>
+
+      @if (cargandoFacturasInfoModal()) {
+        <div class="desc" style="padding: 16px 0;">Cargando facturas...</div>
+      } @else {
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          @for (f of facturasInfoModal(); track f.id) {
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+              <div class="flex items-center gap-8" style="justify-content: space-between;">
+                <div>
+                  <div style="font-size: 14px; font-weight: 700; color: var(--text-heading);">
+                    {{ f.monto_factura | currency:'USD':'symbol':'1.2-2' }}
+                  </div>
+                  <div class="desc" style="margin-top: 2px;">
+                    Fecha: {{ f.fecha_factura | date:'mediumDate' }} | {{ f.forma_pago }}
+                  </div>
+                  @if (f.observaciones) {
+                    <div class="desc" style="font-style: italic; margin-top: 2px;">{{ f.observaciones }}</div>
+                  }
+                </div>
+                <span class="badge" [class]="claseBadgeEstadoFactura(f.estado)">{{ f.estado }}</span>
+              </div>
+
+              @if (f.adjuntos.length > 0) {
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                  @for (img of f.adjuntos; track img.id) {
+                    <div class="flex items-center gap-8" style="justify-content: space-between;">
+                      <div style="overflow-wrap: anywhere;">
+                        <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                        <div class="text-muted text-sm" style="margin-top: 2px;">
+                          {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ img.creado_por_nombre }}
+                        </div>
+                        @if (img.descripcion) {
+                          <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                        }
+                      </div>
+                      <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="desc" style="font-style: italic; margin-top: 8px;">Sin adjuntos.</div>
+              }
+            </div>
+          } @empty {
+            <div class="empty-state">No hay facturas registradas para este servicio.</div>
+          }
         </div>
       }
     </div>

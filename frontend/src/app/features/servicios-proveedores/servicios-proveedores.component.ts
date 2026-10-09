@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
 import { SectoresProveedoresService } from '../../core/services/sectores-proveedores.service';
@@ -1120,6 +1121,39 @@ export class ServiciosProveedoresComponent implements OnInit {
         if (this.textoCopiado() === texto) this.textoCopiado.set(null);
       }, 1500);
     }).catch(() => {});
+  }
+
+  // -------------------------------------------------------------------
+  // MODAL: ver Facturas y sus adjuntos de un servicio (icono junto a
+  // Pagado) -- solo lectura, mismo patron de popup que Observacion.
+  // -------------------------------------------------------------------
+  modalFacturasInfoAbierta = signal(false);
+  servicioFacturasInfoActual = signal<ServicioProveedor | null>(null);
+  facturasInfoModal = signal<(FacturaServicioProveedor & { adjuntos: ImagenServicioProveedor[] })[]>([]);
+  cargandoFacturasInfoModal = signal(false);
+
+  abrirModalFacturasInfo(s: ServicioProveedor): void {
+    this.servicioFacturasInfoActual.set(s);
+    this.facturasInfoModal.set([]);
+    this.modalFacturasInfoAbierta.set(true);
+    this.cargandoFacturasInfoModal.set(true);
+    this.serviciosSrv.listarFacturas(s.id).subscribe((facturas) => {
+      if (!facturas.length) {
+        this.facturasInfoModal.set([]);
+        this.cargandoFacturasInfoModal.set(false);
+        return;
+      }
+      forkJoin(facturas.map((f) => this.serviciosSrv.listarAdjuntosFactura(s.id, f.id))).subscribe((listas) => {
+        this.facturasInfoModal.set(facturas.map((f, i) => ({ ...f, adjuntos: listas[i] })));
+        this.cargandoFacturasInfoModal.set(false);
+      });
+    });
+  }
+
+  cerrarModalFacturasInfo(): void {
+    this.modalFacturasInfoAbierta.set(false);
+    this.servicioFacturasInfoActual.set(null);
+    this.facturasInfoModal.set([]);
   }
 
   // -------------------------------------------------------------------
