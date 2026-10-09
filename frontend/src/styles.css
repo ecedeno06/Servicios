@@ -621,7 +621,21 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   overflow: auto;
+  /* Forzar un color neutro y delgado para el scrollbar horizontal (en
+     vez del que trae el navegador/SO por defecto, que puede salir
+     teñido con el color de acento del sistema) -- se nota sobre todo en
+     pantallas angostas donde la tabla de Servicios Contratados excede
+     el ancho disponible. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
 }
+.table-wrap::-webkit-scrollbar { height: 8px; width: 8px; }
+.table-wrap::-webkit-scrollbar-track { background: transparent; }
+.table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* Variante compacta: ~5 filas visibles + scroll interno, con el
    encabezado (incluida la fila de filtros) fijo mientras se recorre. */
