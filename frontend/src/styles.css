@@ -42,6 +42,10 @@
   --bg-surface: var(--white);
   --bg-surface-muted: var(--slate-100);
   --bg-surface-hover: var(--slate-50);
+  /* Un paso mas marcado que --bg-surface-hover, solo para la fila
+     resaltada de las tablas (pedido explicito: el hover quedaba muy
+     palido sobre fondo blanco). */
+  --bg-row-hover: var(--slate-100);
   --text-heading: var(--slate-950);
   --text-body: var(--slate-900);
   --text-muted: var(--slate-500);
@@ -67,6 +71,7 @@
   --bg-surface: #161d2b;
   --bg-surface-muted: #1e2636;
   --bg-surface-hover: #202a3c;
+  --bg-row-hover: #27334a;
   --text-heading: #f1f5f9;
   --text-body: #e2e8f0;
   --text-muted: #94a3b8;
@@ -81,6 +86,7 @@
     --bg-surface: #161d2b;
     --bg-surface-muted: #1e2636;
     --bg-surface-hover: #202a3c;
+    --bg-row-hover: #27334a;
     --text-heading: #f1f5f9;
     --text-body: #e2e8f0;
     --text-muted: #94a3b8;
@@ -729,7 +735,7 @@ table.data-table {
 }
 
 .data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover { background: var(--bg-surface-hover); }
+.data-table tbody tr:hover { background: var(--bg-row-hover); }
 
 .table-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
