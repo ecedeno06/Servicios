@@ -169,10 +169,17 @@
           <tr>
             <td [title]="tooltipContactos(s)"><strong>{{ s.servicio }}</strong></td>
             <td>
-              <span>{{ s.proveedor_nombre }}</span>
-              @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
-                <a [href]="enlaceWhatsApp(s.proveedor_telefono, s.proveedor_telefono_codigo_pais)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
-              }
+              <span class="flex items-center gap-6">
+                @if ((s.contactos || []).length > 0) {
+                  <button type="button" class="info-icon-btn" title="Ver contactos" aria-label="Ver contactos" (click)="abrirModalContactos(s)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </button>
+                }
+                <span>{{ s.proveedor_nombre }}</span>
+                @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
+                  <a [href]="enlaceWhatsApp(s.proveedor_telefono, s.proveedor_telefono_codigo_pais)" target="_blank" title="WhatsApp" style="text-decoration: none;">💬</a>
+                }
+              </span>
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
             <td>
@@ -961,6 +968,56 @@
           </div>
         </div>
       }
+    </div>
+  </div>
+}
+
+<!-- MODAL: ver los Contactos de un servicio (icono junto a Proveedor) -->
+@if (modalContactosAbierta()) {
+  <div class="modal-overlay" (click)="cerrarModalContactos()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Contactos</h2>
+        <button type="button" class="close" (click)="cerrarModalContactos()">&times;</button>
+      </div>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioContactosActual()?.proveedor_nombre }}</p>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        @for (c of servicioContactosActual()?.contactos; track $index) {
+          <div [style.border-top]="$index > 0 ? '1px solid var(--border-subtle)' : 'none'" [style.padding-top.px]="$index > 0 ? 12 : 0">
+            <div style="font-weight: 600;">{{ c.nombre }}</div>
+            @if (c.cargo) {
+              <div class="text-muted text-sm" style="margin-top: 2px;">{{ c.cargo }}</div>
+            }
+            @if (c.telefono) {
+              <div class="flex items-center gap-6" style="margin-top: 6px;">
+                <span class="text-sm">{{ c.telefono_codigo_pais }} {{ c.telefono }}</span>
+                <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(c.telefono)">
+                  @if (textoCopiado() === c.telefono) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  }
+                </button>
+              </div>
+            }
+            @if (c.email) {
+              <div class="flex items-center gap-6" style="margin-top: 6px;">
+                <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.email }}</span>
+                <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(c.email)">
+                  @if (textoCopiado() === c.email) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="desc" style="font-style: italic;">Sin contactos registrados para este servicio.</div>
+        }
+      </div>
     </div>
   </div>
 }

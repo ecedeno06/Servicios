@@ -1124,6 +1124,22 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
+  // MODAL: ver los Contactos de un servicio (icono junto a Proveedor).
+  // -------------------------------------------------------------------
+  modalContactosAbierta = signal(false);
+  servicioContactosActual = signal<ServicioProveedor | null>(null);
+
+  abrirModalContactos(s: ServicioProveedor): void {
+    this.servicioContactosActual.set(s);
+    this.modalContactosAbierta.set(true);
+  }
+
+  cerrarModalContactos(): void {
+    this.modalContactosAbierta.set(false);
+    this.servicioContactosActual.set(null);
+  }
+
+  // -------------------------------------------------------------------
   // MODAL: ver Facturas y sus adjuntos de un servicio (icono junto a
   // Pagado) -- solo lectura, mismo patron de popup que Observacion.
   // -------------------------------------------------------------------
