@@ -440,6 +440,8 @@ export interface ServicioProveedor {
   ultimo_pago_monto?: number | null;
   penultimo_pago_monto?: number | null;
   facturas?: FacturaServicioProveedor[];
+  // Opcional: solo llega poblada cuando se pide obtenerPorId().
+  incidentes?: ServicioIncidente[];
 }
 
 export type EstadoFacturaServicio = 'pagada' | 'anulada' | 'pendiente';
@@ -453,6 +455,24 @@ export interface FacturaServicioProveedor {
   estado: EstadoFacturaServicio;
   forma_pago: FormaPagoFactura;
   observaciones?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type EstadoIncidente = 'abierto' | 'en pausa' | 'cerrado';
+
+export interface ServicioIncidente {
+  id: string;
+  servicio_proveedor_id: string;
+  fecha_incidente: string;
+  reportado_por: string;
+  descripcion: string;
+  no_ticket_fabricante?: string | null;
+  estado: EstadoIncidente;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;

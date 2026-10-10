@@ -95,8 +95,17 @@ async function obtenerPorId(req, res, next) {
        order by a.fecha desc, a.created_at desc`,
       [req.params.id]
     );
+    const { rows: incidentes } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       left join usuarios um on um.id = i.modificado_por
+       where i.servicio_proveedor_id = $1
+       order by i.fecha_incidente desc, i.created_at desc`,
+      [req.params.id]
+    );
 
-    res.json({ ...rows[0], facturas, imagenes });
+    res.json({ ...rows[0], facturas, imagenes, incidentes });
   } catch (err) { next(err); }
 }
 
@@ -357,6 +366,153 @@ async function eliminarFactura(req, res, next) {
 }
 
 // -------------------------------------------------------------
+// INCIDENTES
+// -------------------------------------------------------------
+
+const ESTADOS_INCIDENTE = ['abierto', 'en pausa', 'cerrado'];
+
+async function listarIncidentes(req, res, next) {
+  try {
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rows } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       left join usuarios um on um.id = i.modificado_por
+       where i.servicio_proveedor_id = $1
+       order by i.fecha_incidente desc, i.created_at desc`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearIncidente(req, res, next) {
+  try {
+    const { fecha_incidente, reportado_por, descripcion, no_ticket_fabricante, estado } = req.body;
+    if (!reportado_por || !reportado_por.trim()) {
+      return res.status(400).json({ mensaje: 'El campo "reportado por" es requerido' });
+    }
+    if (!descripcion || !descripcion.trim()) {
+      return res.status(400).json({ mensaje: 'La descripcion del incidente es requerida' });
+    }
+    if (estado && !ESTADOS_INCIDENTE.includes(estado)) {
+      return res.status(400).json({ mensaje: 'Estado de incidente invalido' });
+    }
+
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rows } = await pool.query(
+      `insert into servicio_incidentes
+         (servicio_proveedor_id, fecha_incidente, reportado_por, descripcion, no_ticket_fabricante, estado, creado_por)
+       values ($1, coalesce($2, current_date), $3, $4, $5, $6, $7)
+       returning id`,
+      [
+        req.params.id,
+        fecha_incidente || null,
+        reportado_por.trim(),
+        descripcion.trim(),
+        no_ticket_fabricante ? no_ticket_fabricante.trim() : null,
+        estado || 'abierto',
+        req.usuario.id,
+      ]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       where i.id = $1`,
+      [rows[0].id]
+    );
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarIncidente(req, res, next) {
+  try {
+    const { fecha_incidente, reportado_por, descripcion, no_ticket_fabricante, estado } = req.body;
+    if (estado && !ESTADOS_INCIDENTE.includes(estado)) {
+      return res.status(400).json({ mensaje: 'Estado de incidente invalido' });
+    }
+
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rows: inc } = await pool.query(
+      'select id from servicio_incidentes where id = $1 and servicio_proveedor_id = $2',
+      [req.params.incidenteId, req.params.id]
+    );
+    if (!inc[0]) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    // no_ticket_fabricante usa coalesce igual que el resto -- a diferencia
+    // de observaciones en Facturas, este endpoint recibe actualizaciones
+    // parciales reales (cambiarEstadoIncidente solo manda {estado}), asi
+    // que sobreescribirlo siempre borraria el ticket en cada cambio de
+    // estado.
+    await pool.query(
+      `update servicio_incidentes set
+         fecha_incidente = coalesce($1, fecha_incidente),
+         reportado_por = coalesce($2, reportado_por),
+         descripcion = coalesce($3, descripcion),
+         no_ticket_fabricante = coalesce($4, no_ticket_fabricante),
+         estado = coalesce($5, estado),
+         modificado_por = $6
+       where id = $7`,
+      [
+        fecha_incidente || null,
+        reportado_por ? reportado_por.trim() : null,
+        descripcion ? descripcion.trim() : null,
+        no_ticket_fabricante ? no_ticket_fabricante.trim() : null,
+        estado || null,
+        req.usuario.id,
+        req.params.incidenteId,
+      ]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       left join usuarios um on um.id = i.modificado_por
+       where i.id = $1`,
+      [req.params.incidenteId]
+    );
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarIncidente(req, res, next) {
+  try {
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rowCount } = await pool.query(
+      'delete from servicio_incidentes where id = $1 and servicio_proveedor_id = $2',
+      [req.params.incidenteId, req.params.id]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+    res.json({ ok: true, mensaje: 'Incidente eliminado correctamente' });
+  } catch (err) { next(err); }
+}
+
+// -------------------------------------------------------------
 // ADJUNTOS (imagenes/documentos -- PDF/PNG/JPG en base64)
 // -------------------------------------------------------------
 
@@ -604,4 +760,8 @@ module.exports = {
   crearAdjuntoFactura,
   actualizarAdjuntoFactura,
   eliminarAdjuntoFactura,
+  listarIncidentes,
+  crearIncidente,
+  actualizarIncidente,
+  eliminarIncidente,
 };

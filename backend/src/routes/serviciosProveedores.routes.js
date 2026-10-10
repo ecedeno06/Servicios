@@ -32,4 +32,10 @@ router.post('/:id/facturas/:facturaId/adjuntos', requirePermiso('servicios_prove
 router.put('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoFactura);
 router.delete('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoFactura);
 
+// Incidentes
+router.get('/:id/incidentes', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarIncidentes);
+router.post('/:id/incidentes', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearIncidente);
+router.put('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarIncidente);
+router.delete('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarIncidente);
+
 module.exports = router;

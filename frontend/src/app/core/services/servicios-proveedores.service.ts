@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos, ImagenServicioProveedor } from '../models/models';
+import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos, ImagenServicioProveedor, ServicioIncidente } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ServiciosProveedoresService {
@@ -87,5 +87,22 @@ export class ServiciosProveedoresService {
 
   eliminarAdjuntoFactura(servicioId: string, facturaId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`);
+  }
+
+  // INCIDENTES
+  listarIncidentes(servicioId: string): Observable<ServicioIncidente[]> {
+    return this.http.get<ServicioIncidente[]>(`${this.base}/${servicioId}/incidentes`);
+  }
+
+  crearIncidente(servicioId: string, data: Partial<ServicioIncidente>): Observable<ServicioIncidente> {
+    return this.http.post<ServicioIncidente>(`${this.base}/${servicioId}/incidentes`, data);
+  }
+
+  actualizarIncidente(servicioId: string, incidenteId: string, data: Partial<ServicioIncidente>): Observable<ServicioIncidente> {
+    return this.http.put<ServicioIncidente>(`${this.base}/${servicioId}/incidentes/${incidenteId}`, data);
+  }
+
+  eliminarIncidente(servicioId: string, incidenteId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}`);
   }
 }

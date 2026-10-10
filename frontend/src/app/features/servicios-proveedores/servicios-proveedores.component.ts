@@ -10,12 +10,14 @@ import { AuthService } from '../../core/services/auth.service';
 import {
   ContactoProveedor,
   EstadoFacturaServicio,
+  EstadoIncidente,
   EstadoServicioProveedor,
   FacturaServicioProveedor,
   FormaPagoFactura,
   ImagenServicioProveedor,
   Proveedor,
   SectorProveedorItem,
+  ServicioIncidente,
   ServicioProveedor
 } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
@@ -41,6 +43,12 @@ const FORMAS_PAGO: { valor: FormaPagoFactura; etiqueta: string }[] = [
   { valor: 'visa', etiqueta: 'Tarjeta Visa' },
   { valor: 'efectivo', etiqueta: 'Efectivo' },
   { valor: 'otro', etiqueta: 'Otro' },
+];
+
+const ESTADOS_INCIDENTE: { valor: EstadoIncidente; etiqueta: string }[] = [
+  { valor: 'abierto', etiqueta: 'Abierto' },
+  { valor: 'en pausa', etiqueta: 'En Pausa' },
+  { valor: 'cerrado', etiqueta: 'Cerrado' },
 ];
 
 // Codigo de pais del telefono, separado del numero -- sin esto, el
@@ -84,6 +92,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   estadosServicio = ESTADOS_SERVICIO;
   estadosFactura = ESTADOS_FACTURA;
   formasPago = FORMAS_PAGO;
+  estadosIncidente = ESTADOS_INCIDENTE;
   codigosPais = CODIGOS_PAIS;
 
   // Listas de datos
@@ -734,6 +743,78 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   // -------------------------------------------------------------------
+  // INCIDENTES (pestaña propia dentro del drawer de Servicio). Igual que
+  // Facturas/Adjuntos: tabla propia, se guarda/borra al instante contra
+  // su propio endpoint, no forma parte del payload de "Guardar" del
+  // servicio.
+  // -------------------------------------------------------------------
+  pestanaDrawerServicio = signal<'servicio' | 'incidentes'>('servicio');
+  incidentesServicioActual = signal<ServicioIncidente[]>([]);
+  guardandoIncidente = signal(false);
+
+  incidenteForm = this.fb.group({
+    fecha_incidente: [new Date().toISOString().substring(0, 10), [Validators.required]],
+    reportado_por: ['', [Validators.required]],
+    no_ticket_fabricante: [''],
+    estado: ['abierto' as EstadoIncidente, [Validators.required]],
+    descripcion: ['', [Validators.required]],
+  });
+
+  guardarIncidente(): void {
+    if (this.incidenteForm.invalid || this.guardandoIncidente()) return;
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+
+    const val = this.incidenteForm.getRawValue() as any;
+    this.guardandoIncidente.set(true);
+    this.serviciosSrv.crearIncidente(servicio.id, val).subscribe({
+      next: (nuevo) => {
+        this.guardandoIncidente.set(false);
+        this.incidentesServicioActual.update((arr) => [nuevo, ...arr]);
+        this.incidenteForm.reset({
+          fecha_incidente: new Date().toISOString().substring(0, 10),
+          reportado_por: '',
+          no_ticket_fabricante: '',
+          estado: 'abierto',
+          descripcion: '',
+        });
+      },
+      error: (err) => {
+        this.guardandoIncidente.set(false);
+        alert(err.error?.mensaje || 'Error al registrar el incidente');
+      },
+    });
+  }
+
+  cambiarEstadoIncidente(inc: ServicioIncidente, nuevoEstado: EstadoIncidente): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    this.serviciosSrv.actualizarIncidente(servicio.id, inc.id, { estado: nuevoEstado }).subscribe({
+      next: (actualizado) => this.incidentesServicioActual.update((arr) => arr.map((i) => (i.id === inc.id ? actualizado : i))),
+      error: (err) => alert(err.error?.mensaje || 'Error al actualizar el estado del incidente'),
+    });
+  }
+
+  eliminarIncidente(inc: ServicioIncidente): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    if (!confirm('¿Eliminar este incidente del registro?')) return;
+    this.serviciosSrv.eliminarIncidente(servicio.id, inc.id).subscribe({
+      next: () => this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id)),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el incidente'),
+    });
+  }
+
+  claseBadgeEstadoIncidente(e: EstadoIncidente): string {
+    switch (e) {
+      case 'abierto': return 'badge-red';
+      case 'en pausa': return 'badge-amber';
+      case 'cerrado': return 'badge-green';
+      default: return 'badge-slate';
+    }
+  }
+
+  // -------------------------------------------------------------------
   // PANEL FACTURAS Y TRANSACCIONES (DRAWER)
   // -------------------------------------------------------------------
   panelFacturasAbierto = signal(false);
@@ -1255,6 +1336,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.contactosArray.clear();
     this.imagenesServicioActual.set([]);
     this.errorArchivoImagen.set(null);
+    this.pestanaDrawerServicio.set('servicio');
+    this.incidentesServicioActual.set([]);
     this.servicioForm.reset({
       proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
       servicio: '',
@@ -1282,10 +1365,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.contactosArray.clear();
     this.imagenesServicioActual.set([]);
     this.errorArchivoImagen.set(null);
-    // La fila de la lista ya no trae "imagenes" (vive en su propia tabla
-    // ahora) -- se piden aparte, solo al abrir para editar.
+    this.pestanaDrawerServicio.set('servicio');
+    this.incidentesServicioActual.set([]);
+    // La fila de la lista ya no trae "imagenes"/"incidentes" (viven en su
+    // propia tabla ahora) -- se piden aparte, solo al abrir para editar.
     this.serviciosSrv.obtener(s.id).subscribe((completo) => {
       this.imagenesServicioActual.set(completo.imagenes || []);
+      this.incidentesServicioActual.set(completo.incidentes || []);
     });
 
     this.servicioForm.patchValue({
