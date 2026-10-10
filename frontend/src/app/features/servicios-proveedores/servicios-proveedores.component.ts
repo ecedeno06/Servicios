@@ -755,8 +755,18 @@ export class ServiciosProveedoresComponent implements OnInit {
   guardandoIncidente = signal(false);
   incidenteSeleccionado = signal<ServicioIncidente | null>(null);
 
+  // La hora del incidente es relevante para el seguimiento (pedido
+  // explicito), no solo el dia -- de ahi datetime-local en vez de date.
+  // Ese input no trae zona horaria (su valor se interpreta como hora
+  // LOCAL del navegador), asi que hay que convertir a mano en ambas
+  // direcciones contra el ISO/UTC que maneja el backend.
+  private aFechaHoraLocal(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
   private readonly INCIDENTE_FORM_VACIO = {
-    fecha_incidente: new Date().toISOString().substring(0, 10),
+    fecha_incidente: this.aFechaHoraLocal(new Date()),
     reportado_por: '',
     no_ticket_fabricante: '',
     estado: 'abierto' as EstadoIncidente,
@@ -776,7 +786,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     this.incidenteSeleccionado.set(inc);
     this.incidenteForm.patchValue({
-      fecha_incidente: inc.fecha_incidente.substring(0, 10),
+      fecha_incidente: this.aFechaHoraLocal(new Date(inc.fecha_incidente)),
       reportado_por: inc.reportado_por,
       no_ticket_fabricante: inc.no_ticket_fabricante || '',
       estado: inc.estado,
@@ -800,6 +810,11 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
 
     const val = this.incidenteForm.getRawValue() as any;
+    // datetime-local no trae zona horaria -- se interpreta como hora local
+    // del navegador al convertirlo a Date, y toISOString() lo pasa a UTC
+    // para que el backend lo guarde sin corrimiento sin importar su propia
+    // zona horaria.
+    if (val.fecha_incidente) val.fecha_incidente = new Date(val.fecha_incidente).toISOString();
     const seleccionado = this.incidenteSeleccionado();
     this.guardandoIncidente.set(true);
 

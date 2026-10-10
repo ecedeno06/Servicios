@@ -415,7 +415,7 @@ async function crearIncidente(req, res, next) {
     const { rows } = await pool.query(
       `insert into servicio_incidentes
          (servicio_proveedor_id, fecha_incidente, reportado_por, descripcion, no_ticket_fabricante, estado, creado_por)
-       values ($1, coalesce($2, current_date), $3, $4, $5, $6, $7)
+       values ($1, coalesce($2, now()), $3, $4, $5, $6, $7)
        returning id`,
       [
         req.params.id,
