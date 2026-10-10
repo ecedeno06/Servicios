@@ -586,9 +586,55 @@
 
       @if (pestanaDrawerServicio() === 'incidentes' && servicioEdicion()) {
         <div>
+          <h3 style="margin-bottom: 10px;">Incidentes Reportados</h3>
+          <div class="table-wrap" style="margin-bottom: 20px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Reportado por</th>
+                  <th>Ticket</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (inc of incidentesServicioActual(); track inc.id) {
+                  <tr class="row-clickable" [class.row-selected]="incidenteSeleccionado()?.id === inc.id" (click)="seleccionarIncidenteParaEditar(inc)">
+                    <td>{{ inc.fecha_incidente | date:'mediumDate' }}</td>
+                    <td>{{ inc.reportado_por }}</td>
+                    <td>{{ inc.no_ticket_fabricante || '-' }}</td>
+                    <td><span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)">{{ inc.estado }}</span></td>
+                    <td class="table-actions" (click)="$event.stopPropagation()">
+                      <div class="actions-inner">
+                        @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+                          <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="seleccionarIncidenteParaEditar(inc)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                          </button>
+                        }
+                        @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                          <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarIncidente(inc)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5"><div class="empty-state">No hay incidentes registrados para este servicio.</div></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
           @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
             <form [formGroup]="incidenteForm" (ngSubmit)="guardarIncidente()" class="card" style="margin-bottom: 20px;">
-              <h3>Registrar Incidente</h3>
+              <div class="flex items-center gap-8" style="justify-content: space-between;">
+                <h3>{{ incidenteSeleccionado() ? 'Editar Incidente' : 'Registrar Incidente' }}</h3>
+                @if (incidenteSeleccionado()) {
+                  <button type="button" class="btn btn-outline btn-sm" (click)="cancelarEdicionIncidente()">Cancelar edición</button>
+                }
+              </div>
 
               <div class="form-grid" style="margin-top: 10px;">
                 <div class="form-group">
@@ -623,48 +669,58 @@
 
               <div class="form-actions">
                 <button type="submit" class="btn btn-accent btn-sm" [disabled]="incidenteForm.invalid || guardandoIncidente()">
-                  {{ guardandoIncidente() ? 'Guardando...' : '+ Agregar Incidente' }}
+                  {{ guardandoIncidente() ? 'Guardando...' : (incidenteSeleccionado() ? 'Actualizar Incidente' : '+ Agregar Incidente') }}
                 </button>
               </div>
             </form>
           }
 
-          <div>
-            <h3>Historial de Incidentes</h3>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-              @for (inc of incidentesServicioActual(); track inc.id) {
-                <div class="card" style="padding: 12px 14px;">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                    <div>
-                      <div class="desc">
-                        {{ inc.fecha_incidente | date:'mediumDate' }} &middot; Reportado por {{ inc.reportado_por }}
-                        @if (inc.no_ticket_fabricante) { &middot; Ticket: {{ inc.no_ticket_fabricante }} }
-                      </div>
-                      <div style="margin-top: 4px; white-space: pre-wrap;">{{ inc.descripcion }}</div>
-                    </div>
-                    <span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)" style="flex-shrink: 0;">{{ inc.estado }}</span>
+          @if (incidenteSeleccionado()) {
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <label style="font-weight: 600; font-size: 13px;">Historial de Adjuntos</label>
+                <div class="flex items-center gap-8">
+                  <div class="paste-area" tabindex="0" title="Haz clic aqui y presiona Ctrl+V para pegar una imagen" (paste)="onPasteAdjuntoIncidente($event)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                    <span>Pegar (Ctrl+V)</span>
                   </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    #inputArchivoAdjuntoIncidente
+                    hidden
+                    (change)="onSeleccionArchivoAdjuntoIncidente($event)"
+                  />
+                  <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjuntoIncidente()" (click)="inputArchivoAdjuntoIncidente.click()">
+                    {{ guardandoAdjuntoIncidente() ? 'Subiendo...' : '+ Adjuntar archivo' }}
+                  </button>
+                </div>
+              </div>
 
-                  @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
-                    <div class="flex items-center gap-8" style="margin-top: 10px;">
-                      <select class="input" style="width: auto;" [ngModel]="inc.estado" [ngModelOptions]="{standalone: true}" (ngModelChange)="cambiarEstadoIncidente(inc, $event)">
-                        @for (est of estadosIncidente; track est.valor) {
-                          <option [value]="est.valor">{{ est.etiqueta }}</option>
-                        }
-                      </select>
-                      @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
-                        <button type="button" class="btn-icon btn-icon-danger" title="Eliminar incidente" aria-label="Eliminar incidente" (click)="eliminarIncidente(inc)">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                      }
-                    </div>
-                  }
+              @if (errorArchivoAdjuntoIncidente()) {
+                <div class="error-text" style="margin-bottom: 8px;">{{ errorArchivoAdjuntoIncidente() }}</div>
+              }
+
+              @for (img of adjuntosIncidenteActual(); track img.id) {
+                <div class="card" style="margin-bottom: 10px; padding: 12px;">
+                  <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                  <div class="text-muted text-sm" style="margin-top: 2px;">
+                    {{ img.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ img.creado_por_nombre }}
+                  </div>
+                  <div class="form-group" style="margin-top: 8px;">
+                    <label style="font-size: 11px;">Descripción</label>
+                    <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Captura de pantalla, evidencia..." (blur)="actualizarDescripcionAdjuntoIncidente(img.id, $any($event.target).value)" />
+                  </div>
+                  <div class="flex items-center gap-8" style="margin-top: 8px;">
+                    <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                    <button type="button" class="btn btn-danger btn-sm" (click)="eliminarAdjuntoIncidente(img.id)">Eliminar</button>
+                  </div>
                 </div>
               } @empty {
-                <div class="empty-state">No hay incidentes registrados para este servicio.</div>
+                <div class="desc" style="font-style: italic;">No se han adjuntado imágenes o documentos.</div>
               }
             </div>
-          </div>
+          }
         </div>
       }
 

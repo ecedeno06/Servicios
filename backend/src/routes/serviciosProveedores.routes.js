@@ -38,4 +38,10 @@ router.post('/:id/incidentes', requirePermiso('servicios_proveedores', 'crear'),
 router.put('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarIncidente);
 router.delete('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarIncidente);
 
+// Adjuntos de un incidente (imagenes/documentos)
+router.get('/:id/incidentes/:incidenteId/adjuntos', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarAdjuntosIncidente);
+router.post('/:id/incidentes/:incidenteId/adjuntos', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearAdjuntoIncidente);
+router.put('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoIncidente);
+router.delete('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoIncidente);
+
 module.exports = router;

@@ -513,6 +513,118 @@ async function eliminarIncidente(req, res, next) {
 }
 
 // -------------------------------------------------------------
+// ADJUNTOS DE INCIDENTE (imagenes/documentos -- PDF/PNG/JPG en base64)
+// -------------------------------------------------------------
+
+async function verificarIncidente(req) {
+  const { rows: inc } = await pool.query(
+    `select i.id
+     from servicio_incidentes i
+     join servicios_proveedores sp on sp.id = i.servicio_proveedor_id
+     where i.id = $1 and i.servicio_proveedor_id = $2 and sp.empresa_id = $3`,
+    [req.params.incidenteId, req.params.id, req.empresaId]
+  );
+  return !!inc[0];
+}
+
+async function listarAdjuntosIncidente(req, res, next) {
+  try {
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const { rows } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from incidente_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.incidente_id = $1
+       order by a.fecha desc, a.created_at desc`,
+      [req.params.incidenteId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearAdjuntoIncidente(req, res, next) {
+  try {
+    const { descripcion, imagen_base64 } = req.body;
+
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    }
+    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+    }
+
+    const { rows: cuenta } = await pool.query(
+      'select count(*)::int as n from incidente_adjuntos where incidente_id = $1',
+      [req.params.incidenteId]
+    );
+    if (cuenta[0].n >= MAX_ADJUNTOS) {
+      return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS} archivos adjuntos` });
+    }
+
+    const { rows } = await pool.query(
+      `insert into incidente_adjuntos (incidente_id, descripcion, imagen_base64, creado_por)
+       values ($1, $2, $3, $4)
+       returning id`,
+      [req.params.incidenteId, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from incidente_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [rows[0].id]
+    );
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarAdjuntoIncidente(req, res, next) {
+  try {
+    const { descripcion } = req.body;
+
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const { rows: adj } = await pool.query(
+      'select id from incidente_adjuntos where id = $1 and incidente_id = $2',
+      [req.params.adjuntoId, req.params.incidenteId]
+    );
+    if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+
+    await pool.query(
+      'update incidente_adjuntos set descripcion = $1 where id = $2',
+      [descripcion ? descripcion.trim() : null, req.params.adjuntoId]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from incidente_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [req.params.adjuntoId]
+    );
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarAdjuntoIncidente(req, res, next) {
+  try {
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const { rowCount } = await pool.query(
+      'delete from incidente_adjuntos where id = $1 and incidente_id = $2',
+      [req.params.adjuntoId, req.params.incidenteId]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
+  } catch (err) { next(err); }
+}
+
+// -------------------------------------------------------------
 // ADJUNTOS (imagenes/documentos -- PDF/PNG/JPG en base64)
 // -------------------------------------------------------------
 
@@ -764,4 +876,8 @@ module.exports = {
   crearIncidente,
   actualizarIncidente,
   eliminarIncidente,
+  listarAdjuntosIncidente,
+  crearAdjuntoIncidente,
+  actualizarAdjuntoIncidente,
+  eliminarAdjuntoIncidente,
 };

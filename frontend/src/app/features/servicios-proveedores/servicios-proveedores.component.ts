@@ -746,19 +746,52 @@ export class ServiciosProveedoresComponent implements OnInit {
   // INCIDENTES (pestaña propia dentro del drawer de Servicio). Igual que
   // Facturas/Adjuntos: tabla propia, se guarda/borra al instante contra
   // su propio endpoint, no forma parte del payload de "Guardar" del
-  // servicio.
+  // servicio. incidenteSeleccionado null = formulario en modo "Registrar";
+  // no null = modo "Editar" (y habilita la seccion de adjuntos de abajo).
   // -------------------------------------------------------------------
   pestanaDrawerServicio = signal<'servicio' | 'incidentes'>('servicio');
   incidentesServicioActual = signal<ServicioIncidente[]>([]);
   guardandoIncidente = signal(false);
+  incidenteSeleccionado = signal<ServicioIncidente | null>(null);
+
+  private readonly INCIDENTE_FORM_VACIO = {
+    fecha_incidente: new Date().toISOString().substring(0, 10),
+    reportado_por: '',
+    no_ticket_fabricante: '',
+    estado: 'abierto' as EstadoIncidente,
+    descripcion: '',
+  };
 
   incidenteForm = this.fb.group({
-    fecha_incidente: [new Date().toISOString().substring(0, 10), [Validators.required]],
+    fecha_incidente: [this.INCIDENTE_FORM_VACIO.fecha_incidente, [Validators.required]],
     reportado_por: ['', [Validators.required]],
     no_ticket_fabricante: [''],
     estado: ['abierto' as EstadoIncidente, [Validators.required]],
     descripcion: ['', [Validators.required]],
   });
+
+  seleccionarIncidenteParaEditar(inc: ServicioIncidente): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    this.incidenteSeleccionado.set(inc);
+    this.incidenteForm.patchValue({
+      fecha_incidente: inc.fecha_incidente.substring(0, 10),
+      reportado_por: inc.reportado_por,
+      no_ticket_fabricante: inc.no_ticket_fabricante || '',
+      estado: inc.estado,
+      descripcion: inc.descripcion,
+    });
+    this.adjuntosIncidenteActual.set([]);
+    this.errorArchivoAdjuntoIncidente.set(null);
+    this.serviciosSrv.listarAdjuntosIncidente(servicio.id, inc.id).subscribe((data) => this.adjuntosIncidenteActual.set(data));
+  }
+
+  cancelarEdicionIncidente(): void {
+    this.incidenteSeleccionado.set(null);
+    this.incidenteForm.reset(this.INCIDENTE_FORM_VACIO);
+    this.adjuntosIncidenteActual.set([]);
+    this.errorArchivoAdjuntoIncidente.set(null);
+  }
 
   guardarIncidente(): void {
     if (this.incidenteForm.invalid || this.guardandoIncidente()) return;
@@ -766,32 +799,28 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
 
     const val = this.incidenteForm.getRawValue() as any;
+    const seleccionado = this.incidenteSeleccionado();
     this.guardandoIncidente.set(true);
-    this.serviciosSrv.crearIncidente(servicio.id, val).subscribe({
-      next: (nuevo) => {
+
+    const peticion = seleccionado
+      ? this.serviciosSrv.actualizarIncidente(servicio.id, seleccionado.id, val)
+      : this.serviciosSrv.crearIncidente(servicio.id, val);
+
+    peticion.subscribe({
+      next: (res) => {
         this.guardandoIncidente.set(false);
-        this.incidentesServicioActual.update((arr) => [nuevo, ...arr]);
-        this.incidenteForm.reset({
-          fecha_incidente: new Date().toISOString().substring(0, 10),
-          reportado_por: '',
-          no_ticket_fabricante: '',
-          estado: 'abierto',
-          descripcion: '',
-        });
+        if (seleccionado) {
+          this.incidentesServicioActual.update((arr) => arr.map((i) => (i.id === res.id ? res : i)));
+          this.incidenteSeleccionado.set(res);
+        } else {
+          this.incidentesServicioActual.update((arr) => [res, ...arr]);
+          this.incidenteForm.reset(this.INCIDENTE_FORM_VACIO);
+        }
       },
       error: (err) => {
         this.guardandoIncidente.set(false);
-        alert(err.error?.mensaje || 'Error al registrar el incidente');
+        alert(err.error?.mensaje || 'Error al guardar el incidente');
       },
-    });
-  }
-
-  cambiarEstadoIncidente(inc: ServicioIncidente, nuevoEstado: EstadoIncidente): void {
-    const servicio = this.servicioEdicion();
-    if (!servicio) return;
-    this.serviciosSrv.actualizarIncidente(servicio.id, inc.id, { estado: nuevoEstado }).subscribe({
-      next: (actualizado) => this.incidentesServicioActual.update((arr) => arr.map((i) => (i.id === inc.id ? actualizado : i))),
-      error: (err) => alert(err.error?.mensaje || 'Error al actualizar el estado del incidente'),
     });
   }
 
@@ -800,7 +829,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     if (!confirm('¿Eliminar este incidente del registro?')) return;
     this.serviciosSrv.eliminarIncidente(servicio.id, inc.id).subscribe({
-      next: () => this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id)),
+      next: () => {
+        this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
+        if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
+      },
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar el incidente'),
     });
   }
@@ -811,6 +843,87 @@ export class ServiciosProveedoresComponent implements OnInit {
       case 'en pausa': return 'badge-amber';
       case 'cerrado': return 'badge-green';
       default: return 'badge-slate';
+    }
+  }
+
+  // Adjuntos del incidente seleccionado -- mismo patron que servicio/
+  // factura (guardado/borrado inmediato, reutiliza abrirAdjunto/
+  // tipoArchivoLabel/tamanoArchivo ya genericos). Solo visible una vez
+  // que se eligio un incidente existente para editar.
+  adjuntosIncidenteActual = signal<ImagenServicioProveedor[]>([]);
+  guardandoAdjuntoIncidente = signal(false);
+  errorArchivoAdjuntoIncidente = signal<string | null>(null);
+
+  eliminarAdjuntoIncidente(adjuntoId: string): void {
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteSeleccionado();
+    if (!servicio || !incidente) return;
+    if (!confirm('Eliminar este adjunto?')) return;
+    this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId).subscribe({
+      next: () => this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+    });
+  }
+
+  actualizarDescripcionAdjuntoIncidente(adjuntoId: string, descripcion: string): void {
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteSeleccionado();
+    if (!servicio || !incidente) return;
+    this.serviciosSrv.actualizarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.adjuntosIncidenteActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
+  }
+
+  onSeleccionArchivoAdjuntoIncidente(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoAdjuntoIncidente(archivo);
+    input.value = '';
+  }
+
+  onPasteAdjuntoIncidente(event: ClipboardEvent): void {
+    this.errorArchivoAdjuntoIncidente.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoAdjuntoIncidente(archivo);
+        return;
+      }
+    }
+    this.errorArchivoAdjuntoIncidente.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoAdjuntoIncidente(archivo: File): void {
+    this.errorArchivoAdjuntoIncidente.set(null);
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteSeleccionado();
+    if (!servicio || !incidente) return;
+    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorArchivoAdjuntoIncidente.set('Solo se permiten archivos PDF, PNG o JPG.');
+    } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorArchivoAdjuntoIncidente.set('El archivo supera el tamaño máximo permitido (3MB).');
+    } else if (this.adjuntosIncidenteActual().length >= this.MAX_IMAGENES) {
+      this.errorArchivoAdjuntoIncidente.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+    } else {
+      this.guardandoAdjuntoIncidente.set(true);
+      leerArchivoComoBase64(archivo).then((base64) => {
+        this.serviciosSrv.crearAdjuntoIncidente(servicio.id, incidente.id, { imagen_base64: base64 }).subscribe({
+          next: (nuevo) => {
+            this.guardandoAdjuntoIncidente.set(false);
+            this.adjuntosIncidenteActual.update((arr) => [nuevo, ...arr]);
+          },
+          error: (err) => {
+            this.guardandoAdjuntoIncidente.set(false);
+            this.errorArchivoAdjuntoIncidente.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+          },
+        });
+      }).catch(() => {
+        this.guardandoAdjuntoIncidente.set(false);
+        this.errorArchivoAdjuntoIncidente.set('No se pudo leer el archivo.');
+      });
     }
   }
 
@@ -1338,6 +1451,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.errorArchivoImagen.set(null);
     this.pestanaDrawerServicio.set('servicio');
     this.incidentesServicioActual.set([]);
+    this.cancelarEdicionIncidente();
     this.servicioForm.reset({
       proveedor_id: this.proveedores().length > 0 ? this.proveedores()[0].id : '',
       servicio: '',
@@ -1367,6 +1481,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.errorArchivoImagen.set(null);
     this.pestanaDrawerServicio.set('servicio');
     this.incidentesServicioActual.set([]);
+    this.cancelarEdicionIncidente();
     // La fila de la lista ya no trae "imagenes"/"incidentes" (viven en su
     // propia tabla ahora) -- se piden aparte, solo al abrir para editar.
     this.serviciosSrv.obtener(s.id).subscribe((completo) => {

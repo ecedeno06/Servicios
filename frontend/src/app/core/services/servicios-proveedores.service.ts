@@ -105,4 +105,21 @@ export class ServiciosProveedoresService {
   eliminarIncidente(servicioId: string, incidenteId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}`);
   }
+
+  // ADJUNTOS DE INCIDENTE (imagenes/documentos)
+  listarAdjuntosIncidente(servicioId: string, incidenteId: string): Observable<ImagenServicioProveedor[]> {
+    return this.http.get<ImagenServicioProveedor[]>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`);
+  }
+
+  crearAdjuntoIncidente(servicioId: string, incidenteId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
+    return this.http.post<ImagenServicioProveedor>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`, data);
+  }
+
+  actualizarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string, data: { descripcion?: string }): Observable<ImagenServicioProveedor> {
+    return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`, data);
+  }
+
+  eliminarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`);
+  }
 }
