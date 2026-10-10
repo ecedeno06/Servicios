@@ -595,7 +595,7 @@
               <tbody>
                 @for (inc of incidentesServicioActual(); track inc.id) {
                   <tr class="row-clickable" [class.row-selected]="incidenteSeleccionado()?.id === inc.id" (click)="seleccionarIncidenteParaEditar(inc)">
-                    <td>{{ inc.fecha_incidente | date:'mediumDate' }}</td>
+                    <td>{{ inc.fecha_incidente | date:'mediumDate':'UTC' }}</td>
                     <td>{{ inc.reportado_por }}</td>
                     <td>{{ inc.no_ticket_fabricante || '-' }}</td>
                     <td><span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)">{{ inc.estado }}</span></td>
@@ -1091,7 +1091,7 @@
                       {{ f.monto_factura | currency:'USD':'symbol':'1.2-2' }}
                     </div>
                     <div class="desc" style="margin-top: 2px;">
-                      Fecha: {{ f.fecha_factura | date:'mediumDate' }} | {{ f.forma_pago }}
+                      Fecha: {{ f.fecha_factura | date:'mediumDate':'UTC' }} | {{ f.forma_pago }}
                     </div>
                     @if (f.observaciones) {
                       <div class="desc" style="font-style: italic; margin-top: 2px;">{{ f.observaciones }}</div>
@@ -1326,7 +1326,7 @@
                     {{ f.monto_factura | currency:'USD':'symbol':'1.2-2' }}
                   </div>
                   <div class="desc" style="margin-top: 2px;">
-                    Fecha: {{ f.fecha_factura | date:'mediumDate' }} | {{ f.forma_pago }}
+                    Fecha: {{ f.fecha_factura | date:'mediumDate':'UTC' }} | {{ f.forma_pago }}
                   </div>
                   @if (f.observaciones) {
                     <div class="desc" style="font-style: italic; margin-top: 2px;">{{ f.observaciones }}</div>
