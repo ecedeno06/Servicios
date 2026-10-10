@@ -15,6 +15,7 @@ import {
   FacturaServicioProveedor,
   FormaPagoFactura,
   ImagenServicioProveedor,
+  IncidenteNota,
   Proveedor,
   SectorProveedorItem,
   ServicioIncidente,
@@ -925,6 +926,152 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.errorArchivoAdjuntoIncidente.set('No se pudo leer el archivo.');
       });
     }
+  }
+
+  // -------------------------------------------------------------------
+  // NOTAS / HISTORICO de un incidente (iconboton en la tabla de
+  // Incidentes). A diferencia de "Historial de Adjuntos" (lista plana de
+  // archivos), esto es una bitacora cronologica: cada entrada puede
+  // traer nota libre, cambio de estado y/o un documento, cualquier
+  // combinacion, para ir dejando constancia del seguimiento.
+  // -------------------------------------------------------------------
+  modalNotasIncidenteAbierta = signal(false);
+  incidenteNotasSeleccionado = signal<ServicioIncidente | null>(null);
+  notasIncidenteActual = signal<IncidenteNota[]>([]);
+  cargandoNotasIncidente = signal(false);
+  guardandoNota = signal(false);
+  errorNota = signal<string | null>(null);
+  archivoNotaBase64 = signal<string | null>(null);
+  archivoNotaNombre = signal<string | null>(null);
+
+  notaForm = this.fb.group({
+    nota: [''],
+    estado_nuevo: [''],
+  });
+
+  abrirNotasIncidente(inc: ServicioIncidente): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    this.incidenteNotasSeleccionado.set(inc);
+    this.notaForm.reset({ nota: '', estado_nuevo: '' });
+    this.archivoNotaBase64.set(null);
+    this.archivoNotaNombre.set(null);
+    this.errorNota.set(null);
+    this.notasIncidenteActual.set([]);
+    this.modalNotasIncidenteAbierta.set(true);
+    this.cargandoNotasIncidente.set(true);
+    this.serviciosSrv.listarNotasIncidente(servicio.id, inc.id).subscribe({
+      next: (data) => {
+        this.notasIncidenteActual.set(data);
+        this.cargandoNotasIncidente.set(false);
+      },
+      error: () => this.cargandoNotasIncidente.set(false),
+    });
+  }
+
+  cerrarModalNotasIncidente(): void {
+    this.modalNotasIncidenteAbierta.set(false);
+    this.incidenteNotasSeleccionado.set(null);
+    this.notasIncidenteActual.set([]);
+    this.archivoNotaBase64.set(null);
+    this.archivoNotaNombre.set(null);
+    this.errorNota.set(null);
+  }
+
+  onSeleccionArchivoNota(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoNota(archivo);
+    input.value = '';
+  }
+
+  onPasteNota(event: ClipboardEvent): void {
+    this.errorNota.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoNota(archivo);
+        return;
+      }
+    }
+    this.errorNota.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoNota(archivo: File): void {
+    this.errorNota.set(null);
+    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorNota.set('Solo se permiten archivos PDF, PNG o JPG.');
+      return;
+    }
+    if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorNota.set('El archivo supera el tamaño máximo permitido (3MB).');
+      return;
+    }
+    leerArchivoComoBase64(archivo).then((base64) => {
+      this.archivoNotaBase64.set(base64);
+      this.archivoNotaNombre.set(archivo.name);
+    }).catch(() => {
+      this.errorNota.set('No se pudo leer el archivo.');
+    });
+  }
+
+  quitarArchivoNota(): void {
+    this.archivoNotaBase64.set(null);
+    this.archivoNotaNombre.set(null);
+  }
+
+  guardarNotaIncidente(): void {
+    if (this.guardandoNota()) return;
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteNotasSeleccionado();
+    if (!servicio || !incidente) return;
+
+    const val = this.notaForm.getRawValue();
+    const nota = (val.nota || '').trim();
+    const estadoNuevo = val.estado_nuevo || undefined;
+    const archivo = this.archivoNotaBase64();
+
+    if (!nota && !estadoNuevo && !archivo) {
+      this.errorNota.set('Agrega una nota, un cambio de estado o un documento.');
+      return;
+    }
+
+    this.errorNota.set(null);
+    this.guardandoNota.set(true);
+    this.serviciosSrv.crearNotaIncidente(servicio.id, incidente.id, {
+      nota: nota || undefined,
+      estado_nuevo: estadoNuevo,
+      imagen_base64: archivo || undefined,
+    }).subscribe({
+      next: ({ nota: nuevaNota, incidente: incidenteActualizado }) => {
+        this.guardandoNota.set(false);
+        this.notasIncidenteActual.update((arr) => [nuevaNota, ...arr]);
+        this.incidenteNotasSeleccionado.set(incidenteActualizado);
+        this.incidentesServicioActual.update((arr) => arr.map((i) => (i.id === incidenteActualizado.id ? incidenteActualizado : i)));
+        if (this.incidenteSeleccionado()?.id === incidenteActualizado.id) this.incidenteSeleccionado.set(incidenteActualizado);
+        this.notaForm.reset({ nota: '', estado_nuevo: '' });
+        this.archivoNotaBase64.set(null);
+        this.archivoNotaNombre.set(null);
+        this.cargarDatos();
+      },
+      error: (err) => {
+        this.guardandoNota.set(false);
+        this.errorNota.set(err.error?.mensaje || 'No se pudo guardar la nota');
+      },
+    });
+  }
+
+  eliminarNotaIncidente(nota: IncidenteNota): void {
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteNotasSeleccionado();
+    if (!servicio || !incidente) return;
+    if (!confirm('¿Eliminar esta entrada del histórico?')) return;
+    this.serviciosSrv.eliminarNotaIncidente(servicio.id, incidente.id, nota.id).subscribe({
+      next: () => this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id)),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar la nota'),
+    });
   }
 
   // -------------------------------------------------------------------

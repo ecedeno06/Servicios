@@ -464,6 +464,21 @@ export interface FacturaServicioProveedor {
   updated_at?: string;
 }
 
+// Entrada de la bitacora de un incidente: nota libre, cambio de estado
+// y/o documento adjunto, cualquier combinacion, en un solo registro.
+export interface IncidenteNota {
+  id: string;
+  incidente_id: string;
+  nota?: string | null;
+  estado_anterior?: EstadoIncidente | null;
+  estado_nuevo?: EstadoIncidente | null;
+  imagen_base64?: string | null;
+  descripcion_adjunto?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  created_at: string;
+}
+
 export type EstadoIncidente = 'abierto' | 'en pausa' | 'cerrado';
 
 export interface ServicioIncidente {

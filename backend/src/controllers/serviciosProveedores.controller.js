@@ -626,6 +626,111 @@ async function eliminarAdjuntoIncidente(req, res, next) {
 }
 
 // -------------------------------------------------------------
+// NOTAS DE INCIDENTE (bitacora: nota libre + cambio de estado +
+// documento adjunto, cualquier combinacion, en una sola entrada)
+// -------------------------------------------------------------
+
+async function listarNotasIncidente(req, res, next) {
+  try {
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const { rows } = await pool.query(
+      `select n.*, u.nombre as creado_por_nombre
+       from incidente_notas n
+       join usuarios u on u.id = n.creado_por
+       where n.incidente_id = $1
+       order by n.created_at desc`,
+      [req.params.incidenteId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearNotaIncidente(req, res, next) {
+  try {
+    const { nota, estado_nuevo, imagen_base64, descripcion_adjunto } = req.body;
+
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const notaLimpia = nota && nota.trim() ? nota.trim() : null;
+    if (!notaLimpia && !estado_nuevo && !imagen_base64) {
+      return res.status(400).json({ mensaje: 'Agrega una nota, un cambio de estado o un documento' });
+    }
+    if (estado_nuevo && !ESTADOS_INCIDENTE.includes(estado_nuevo)) {
+      return res.status(400).json({ mensaje: 'Estado de incidente invalido' });
+    }
+    if (imagen_base64) {
+      if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+        return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+      }
+      if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+        return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+      }
+    }
+
+    const { rows: incActual } = await pool.query(
+      'select estado from servicio_incidentes where id = $1',
+      [req.params.incidenteId]
+    );
+    const estadoAnterior = incActual[0].estado;
+
+    if (estado_nuevo) {
+      await pool.query(
+        'update servicio_incidentes set estado = $1, modificado_por = $2 where id = $3',
+        [estado_nuevo, req.usuario.id, req.params.incidenteId]
+      );
+    }
+
+    const { rows } = await pool.query(
+      `insert into incidente_notas
+         (incidente_id, nota, estado_anterior, estado_nuevo, imagen_base64, descripcion_adjunto, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7)
+       returning id`,
+      [
+        req.params.incidenteId,
+        notaLimpia,
+        estado_nuevo ? estadoAnterior : null,
+        estado_nuevo || null,
+        imagen_base64 || null,
+        descripcion_adjunto ? descripcion_adjunto.trim() : null,
+        req.usuario.id,
+      ]
+    );
+
+    const { rows: notaCompleta } = await pool.query(
+      `select n.*, u.nombre as creado_por_nombre
+       from incidente_notas n
+       join usuarios u on u.id = n.creado_por
+       where n.id = $1`,
+      [rows[0].id]
+    );
+    const { rows: incidenteCompleto } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       left join usuarios um on um.id = i.modificado_por
+       where i.id = $1`,
+      [req.params.incidenteId]
+    );
+    res.status(201).json({ nota: notaCompleta[0], incidente: incidenteCompleto[0] });
+  } catch (err) { next(err); }
+}
+
+async function eliminarNotaIncidente(req, res, next) {
+  try {
+    if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
+
+    const { rowCount } = await pool.query(
+      'delete from incidente_notas where id = $1 and incidente_id = $2',
+      [req.params.notaId, req.params.incidenteId]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Nota no encontrada' });
+    res.json({ ok: true, mensaje: 'Nota eliminada correctamente' });
+  } catch (err) { next(err); }
+}
+
+// -------------------------------------------------------------
 // ADJUNTOS (imagenes/documentos -- PDF/PNG/JPG en base64)
 // -------------------------------------------------------------
 
@@ -881,4 +986,7 @@ module.exports = {
   crearAdjuntoIncidente,
   actualizarAdjuntoIncidente,
   eliminarAdjuntoIncidente,
+  listarNotasIncidente,
+  crearNotaIncidente,
+  eliminarNotaIncidente,
 };

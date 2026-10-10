@@ -601,6 +601,9 @@
                     <td><span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)">{{ inc.estado }}</span></td>
                     <td class="table-actions" (click)="$event.stopPropagation()">
                       <div class="actions-inner">
+                        <button type="button" class="btn-icon" title="Notas e Historial" aria-label="Notas e Historial" (click)="abrirNotasIncidente(inc)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </button>
                         @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
                           <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="seleccionarIncidenteParaEditar(inc)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -899,6 +902,114 @@
           <button type="button" class="btn btn-outline" (click)="cerrarPanelServicio()">Cancelar</button>
         </div>
       </form>
+      }
+    </div>
+  </div>
+}
+
+<!-- MODAL: Notas e Historico de un Incidente (iconboton en la tabla de Incidentes) -->
+@if (modalNotasIncidenteAbierta()) {
+  <div class="modal-overlay" (click)="cerrarModalNotasIncidente()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Notas e Historial</h2>
+        <button type="button" class="close" (click)="cerrarModalNotasIncidente()">&times;</button>
+      </div>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ incidenteNotasSeleccionado()?.descripcion }}</p>
+
+      @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
+        <form [formGroup]="notaForm" (ngSubmit)="guardarNotaIncidente()" class="card" style="margin-bottom: 16px;">
+          <div class="form-group">
+            <label>Nota</label>
+            <textarea class="input" rows="2" formControlName="nota" placeholder="Agrega una actualización..."></textarea>
+          </div>
+
+          <div class="form-grid" style="margin-top: 10px;">
+            <div class="form-group">
+              <label>Cambiar estado a</label>
+              <select class="input" formControlName="estado_nuevo">
+                <option value="">-- Sin cambio --</option>
+                @for (est of estadosIncidente; track est.valor) {
+                  <option [value]="est.valor">{{ est.etiqueta }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Documento</label>
+              @if (archivoNotaNombre()) {
+                <div class="flex items-center gap-8" style="height: 40px;">
+                  <span class="text-sm" style="overflow-wrap: anywhere;">{{ archivoNotaNombre() }}</span>
+                  <button type="button" class="btn-icon" title="Quitar archivo" aria-label="Quitar archivo" (click)="quitarArchivoNota()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+              } @else {
+                <div class="flex items-center gap-8">
+                  <div class="paste-area" tabindex="0" title="Haz clic aqui y presiona Ctrl+V para pegar una imagen" (paste)="onPasteNota($event)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                    <span>Pegar (Ctrl+V)</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    #inputArchivoNota
+                    hidden
+                    (change)="onSeleccionArchivoNota($event)"
+                  />
+                  <button type="button" class="btn btn-outline btn-sm" (click)="inputArchivoNota.click()">Adjuntar</button>
+                </div>
+              }
+            </div>
+          </div>
+
+          @if (errorNota()) {
+            <div class="error-text" style="margin-top: 8px;">{{ errorNota() }}</div>
+          }
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-accent btn-sm" [disabled]="guardandoNota()">
+              {{ guardandoNota() ? 'Guardando...' : '+ Agregar al Histórico' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (cargandoNotasIncidente()) {
+        <div class="desc" style="padding: 16px 0;">Cargando histórico...</div>
+      } @else {
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          @for (n of notasIncidenteActual(); track n.id) {
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+              <div class="flex items-center gap-8" style="justify-content: space-between;">
+                <div class="text-muted text-sm">{{ n.created_at | date:'dd/MM/yyyy HH:mm' }} &middot; {{ n.creado_por_nombre }}</div>
+                @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
+                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarNotaIncidente(n)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                }
+              </div>
+              @if (n.estado_nuevo) {
+                <div class="text-sm" style="margin-top: 4px;">
+                  Estado cambiado de <span class="badge" [class]="claseBadgeEstadoIncidente(n.estado_anterior!)">{{ n.estado_anterior }}</span>
+                  a <span class="badge" [class]="claseBadgeEstadoIncidente(n.estado_nuevo)">{{ n.estado_nuevo }}</span>
+                </div>
+              }
+              @if (n.nota) {
+                <div style="margin-top: 6px; white-space: pre-wrap;">{{ n.nota }}</div>
+              }
+              @if (n.imagen_base64) {
+                <div class="flex items-center gap-8" style="margin-top: 8px; justify-content: space-between;">
+                  <span class="text-sm">{{ tipoArchivoLabel(n.imagen_base64) }} &middot; {{ tamanoArchivo(n.imagen_base64) }}</span>
+                  <button type="button" class="btn-icon" (click)="abrirAdjunto(n.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                  </button>
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="desc" style="font-style: italic;">Sin entradas en el histórico todavía.</div>
+          }
+        </div>
       }
     </div>
   </div>

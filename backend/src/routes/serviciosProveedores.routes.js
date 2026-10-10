@@ -44,4 +44,9 @@ router.post('/:id/incidentes/:incidenteId/adjuntos', requirePermiso('servicios_p
 router.put('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoIncidente);
 router.delete('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoIncidente);
 
+// Notas/historico de un incidente (nota + cambio de estado + adjunto opcional)
+router.get('/:id/incidentes/:incidenteId/notas', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarNotasIncidente);
+router.post('/:id/incidentes/:incidenteId/notas', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearNotaIncidente);
+router.delete('/:id/incidentes/:incidenteId/notas/:notaId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarNotaIncidente);
+
 module.exports = router;
