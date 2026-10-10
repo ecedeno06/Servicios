@@ -1265,10 +1265,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     return (s.contactos || []).filter((c) => !!c.telefono);
   }
 
-  tieneContactoEmail(s: ServicioProveedor): boolean {
-    return this.contactosConEmail(s).length > 0;
-  }
-
   tieneContactoTelefono(s: ServicioProveedor): boolean {
     return this.contactosConTelefono(s).length > 0;
   }
@@ -1319,18 +1315,44 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   // -------------------------------------------------------------------
   // MODAL: ver los Contactos de un servicio (icono junto a Proveedor).
+  // Tambien sirve para elegir a cuales de esos contactos enviarles
+  // correo (antes era un modal aparte, disparado desde su propio icono
+  // en Acciones -- se unifico aca, pedido explicito).
   // -------------------------------------------------------------------
   modalContactosAbierta = signal(false);
   servicioContactosActual = signal<ServicioProveedor | null>(null);
+  contactosEmailSeleccionados = signal<Set<string>>(new Set());
 
   abrirModalContactos(s: ServicioProveedor): void {
     this.servicioContactosActual.set(s);
+    // Todos los contactos con correo marcados por defecto; el usuario
+    // desmarca los que no quiere incluir antes de enviar.
+    this.contactosEmailSeleccionados.set(new Set(this.contactosConEmail(s).map((c) => c.email!)));
     this.modalContactosAbierta.set(true);
   }
 
   cerrarModalContactos(): void {
     this.modalContactosAbierta.set(false);
     this.servicioContactosActual.set(null);
+    this.contactosEmailSeleccionados.set(new Set());
+  }
+
+  toggleContactoEmail(email: string): void {
+    const set = new Set(this.contactosEmailSeleccionados());
+    if (set.has(email)) set.delete(email);
+    else set.add(email);
+    this.contactosEmailSeleccionados.set(set);
+  }
+
+  // mailto solo admite abrir el cliente de correo local.
+  enviarCorreoSeleccionados(): void {
+    const s = this.servicioContactosActual();
+    const correos = Array.from(this.contactosEmailSeleccionados());
+    if (!s || !correos.length) return;
+
+    const asunto = this.construirAsuntoCorreo(s);
+    window.location.href = `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
+    this.cerrarModalContactos();
   }
 
   // -------------------------------------------------------------------
@@ -1366,52 +1388,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.facturasInfoModal.set([]);
   }
 
-  // -------------------------------------------------------------------
-  // MODAL: seleccionar a cuales contactos del servicio enviarles correo
-  // (antes se mandaba a todos de una, sin poder elegir).
-  // -------------------------------------------------------------------
-  modalEmailAbierto = signal(false);
-  servicioEmailActual = signal<ServicioProveedor | null>(null);
-  contactosEmailSeleccionados = signal<Set<string>>(new Set());
-
-  contactosEmailModal = computed(() => {
-    const s = this.servicioEmailActual();
-    return s ? this.contactosConEmail(s) : [];
-  });
-
-  abrirModalEmail(s: ServicioProveedor): void {
-    this.servicioEmailActual.set(s);
-    // Todos marcados por defecto (mismo comportamiento de antes), el
-    // usuario desmarca los que no quiere incluir.
-    this.contactosEmailSeleccionados.set(new Set(this.contactosConEmail(s).map((c) => c.email!)));
-    this.modalEmailAbierto.set(true);
-  }
-
-  cerrarModalEmail(): void {
-    this.modalEmailAbierto.set(false);
-    this.servicioEmailActual.set(null);
-  }
-
-  toggleContactoEmail(email: string): void {
-    const set = new Set(this.contactosEmailSeleccionados());
-    if (set.has(email)) set.delete(email);
-    else set.add(email);
-    this.contactosEmailSeleccionados.set(set);
-  }
-
-  // Muestra un check por un momento en el boton de copiar, para confirmar
-  // la accion sin interrumpir con un alert.
-  correoCopiado = signal<string | null>(null);
-
-  copiarCorreo(email: string): void {
-    navigator.clipboard?.writeText(email).then(() => {
-      this.correoCopiado.set(email);
-      setTimeout(() => {
-        if (this.correoCopiado() === email) this.correoCopiado.set(null);
-      }, 1500);
-    }).catch(() => {});
-  }
-
   // "EMPRESA - Servicio - No.Contrato" (cualquiera de las 3 partes se
   // omite si no esta disponible) -- para que el contacto del proveedor
   // identifique de inmediato de que empresa y contrato viene el correo.
@@ -1420,17 +1396,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     const contrato = s.no_contrato ? `Contrato No.: ${s.no_contrato}` : null;
     const partes = [empresa?.toUpperCase(), s.servicio, contrato].filter((p): p is string => !!p);
     return partes.join(' - ');
-  }
-
-  // mailto solo admite abrir el cliente de correo local.
-  enviarCorreoSeleccionados(): void {
-    const s = this.servicioEmailActual();
-    const correos = Array.from(this.contactosEmailSeleccionados());
-    if (!s || !correos.length) return;
-
-    const asunto = this.construirAsuntoCorreo(s);
-    window.location.href = `mailto:${correos.join(',')}?subject=${encodeURIComponent(asunto)}`;
-    this.cerrarModalEmail();
   }
 
   // wa.me solo admite un numero por enlace -- se usa el primer contacto

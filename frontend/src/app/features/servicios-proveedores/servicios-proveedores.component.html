@@ -253,16 +253,6 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
                 @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 99 ? '99+' : s.facturas_count }}</span> }
               </button>
-              <!-- Boton "Enviar correo" oculto hasta nueva orden (pedido
-                   explicito) -- el modal/logica (abrirModalEmail,
-                   tieneContactoEmail) sigue intacta, solo se oculta el
-                   icono. Para restaurarlo, descomentar este bloque.
-              @if (tieneContactoEmail(s)) {
-                <button type="button" class="btn-icon" (click)="abrirModalEmail(s)" title="Enviar correo a los contactos del servicio" aria-label="Enviar correo">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-                </button>
-              }
-              -->
               @if (tieneContactoTelefono(s)) {
                 <a class="btn-icon" [href]="enlaceWhatsAppServicio(s)" target="_blank" title="Enviar WhatsApp a un contacto del servicio" aria-label="Enviar WhatsApp">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
@@ -1163,7 +1153,10 @@
             }
             @if (c.email) {
               <div class="flex items-center gap-6" style="margin-top: 6px;">
-                <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.email }}</span>
+                <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
+                  <input type="checkbox" [checked]="contactosEmailSeleccionados().has(c.email)" (change)="toggleContactoEmail(c.email)" />
+                  <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.email }}</span>
+                </label>
                 <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(c.email)">
                   @if (textoCopiado() === c.email) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -1178,6 +1171,20 @@
           <div class="desc" style="font-style: italic;">Sin contactos registrados para este servicio.</div>
         }
       </div>
+
+      @if ((servicioContactosActual()?.contactos || []).length > 0) {
+        <div class="form-actions" style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="contactosEmailSeleccionados().size === 0"
+            (click)="enviarCorreoSeleccionados()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="margin-right: 4px; vertical-align: -2px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+            Enviar correo ({{ contactosEmailSeleccionados().size }})
+          </button>
+        </div>
+      }
     </div>
   </div>
 }
@@ -1245,51 +1252,3 @@
   </div>
 }
 
-<!-- MODAL: elegir a cuales contactos enviarles correo -->
-@if (modalEmailAbierto()) {
-  <div class="modal-overlay" (click)="cerrarModalEmail()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <h3 style="margin:0;">Enviar correo</h3>
-      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioEmailActual()?.servicio }}</p>
-
-      <div style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
-        @for (c of contactosEmailModal(); track c.email) {
-          <div class="flex items-center gap-8" style="justify-content: space-between;">
-            <label class="flex items-center gap-8" style="cursor: pointer; flex: 1; min-width: 0;">
-              <input
-                type="checkbox"
-                [checked]="contactosEmailSeleccionados().has(c.email!)"
-                (change)="toggleContactoEmail(c.email!)"
-              />
-              <span>
-                <strong>{{ c.nombre }}</strong>
-                <span class="text-muted text-sm"> &middot; {{ c.email }}</span>
-              </span>
-            </label>
-            <button type="button" class="btn-icon" [title]="correoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarCorreo(c.email!)">
-              @if (correoCopiado() === c.email) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              } @else {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              }
-            </button>
-          </div>
-        } @empty {
-          <p class="text-muted text-sm">Este servicio no tiene contactos con correo registrado.</p>
-        }
-      </div>
-
-      <div class="form-actions">
-        <button
-          type="button"
-          class="btn btn-primary"
-          [disabled]="contactosEmailSeleccionados().size === 0"
-          (click)="enviarCorreoSeleccionados()"
-        >
-          Enviar correo ({{ contactosEmailSeleccionados().size }})
-        </button>
-        <button type="button" class="btn btn-outline" (click)="cerrarModalEmail()">Cancelar</button>
-      </div>
-    </div>
-  </div>
-}
