@@ -755,6 +755,13 @@ table.data-table {
   color: var(--slate-900);
   border-color: var(--slate-300);
 }
+/* Sin esto, al pasar el mouse sobre un boton-icono dentro de una fila ya
+   resaltada, su propio :hover usa --bg-surface-hover (oscuro en modo
+   oscuro) y el icono (fijado a slate-900 arriba) queda invisible: oscuro
+   sobre oscuro. Mismo fix ya aplicado en .row-selected de mas abajo. */
+.data-table tbody tr:hover:not(.row-selected) .btn-icon:not(.btn-icon-danger):hover {
+  background: rgba(13, 148, 136, 0.18);
+}
 
 .table-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
