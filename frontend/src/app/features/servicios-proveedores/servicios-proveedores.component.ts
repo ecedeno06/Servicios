@@ -817,6 +817,9 @@ export class ServiciosProveedoresComponent implements OnInit {
           this.incidentesServicioActual.update((arr) => [res, ...arr]);
           this.incidenteForm.reset(this.INCIDENTE_FORM_VACIO);
         }
+        // Refresca la burbuja de incidentes abiertos en Acciones (la fila
+        // de la lista principal trae ese conteo, no se actualiza solo).
+        this.cargarDatos();
       },
       error: (err) => {
         this.guardandoIncidente.set(false);
@@ -833,6 +836,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       next: () => {
         this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
         if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
+        this.cargarDatos();
       },
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar el incidente'),
     });
