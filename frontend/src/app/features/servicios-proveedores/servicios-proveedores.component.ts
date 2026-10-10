@@ -1478,6 +1478,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.panelServicioAbierto.set(true);
   }
 
+  // Igual que abrirEditarServicio, pero directo a la pestana Incidentes
+  // (iconboton con burbuja de abiertos, en Acciones).
+  abrirIncidentes(s: ServicioProveedor): void {
+    this.abrirEditarServicio(s);
+    this.pestanaDrawerServicio.set('incidentes');
+  }
+
   cerrarPanelServicio(): void {
     this.panelServicioAbierto.set(false);
     this.servicioEdicion.set(null);

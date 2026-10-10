@@ -439,6 +439,7 @@ export interface ServicioProveedor {
   monto_total_pagado?: number;
   ultimo_pago_monto?: number | null;
   penultimo_pago_monto?: number | null;
+  incidentes_abiertos_count?: number;
   facturas?: FacturaServicioProveedor[];
   // Opcional: solo llega poblada cuando se pide obtenerPorId().
   incidentes?: ServicioIncidente[];
