@@ -986,7 +986,7 @@
           @for (n of notasIncidenteActual(); track n.id) {
             <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
               <div class="flex items-center gap-8" style="justify-content: space-between;">
-                <div class="text-muted text-sm">{{ n.created_at | date:'dd/MM/yyyy HH:mm' }} &middot; {{ n.creado_por_nombre }}</div>
+                <div class="text-muted text-sm">{{ (n.created_at | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ n.creado_por_nombre }}</div>
                 @if (menu.tienePermiso('servicios_proveedores', 'eliminar')) {
                   <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarNotaIncidente(n)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
