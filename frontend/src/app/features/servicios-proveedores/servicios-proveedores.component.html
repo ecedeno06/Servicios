@@ -185,9 +185,6 @@
                   </button>
                 }
                 <span>{{ s.proveedor_nombre }}</span>
-                @if (tieneContactoTelefono(s)) {
-                  <button type="button" class="info-icon-btn" title="Ver teléfonos de contacto" aria-label="Ver teléfonos de contacto" (click)="abrirModalContactos(s)">💬</button>
-                }
               </span>
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
