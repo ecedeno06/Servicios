@@ -101,7 +101,7 @@ html, body {
   background: var(--bg-page);
   color: var(--text-body);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 12px;
   -webkit-font-smoothing: antialiased;
 }
 
