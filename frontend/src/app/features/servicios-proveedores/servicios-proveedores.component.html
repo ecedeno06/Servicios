@@ -599,7 +599,7 @@
               <tbody>
                 @for (inc of incidentesServicioActual(); track inc.id) {
                   <tr class="row-clickable" [class.row-selected]="incidenteSeleccionado()?.id === inc.id" (click)="seleccionarIncidenteParaEditar(inc)">
-                    <td>{{ inc.fecha_incidente | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ (inc.fecha_incidente | date:'d-MMM-y h:mm a') | lowercase }}</td>
                     <td>{{ inc.reportado_por }}</td>
                     <td>{{ inc.no_ticket_fabricante || '-' }}</td>
                     <td><span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)">{{ inc.estado }}</span></td>
