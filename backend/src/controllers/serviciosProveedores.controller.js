@@ -98,7 +98,8 @@ async function obtenerPorId(req, res, next) {
       [req.params.id]
     );
     const { rows: incidentes } = await pool.query(
-      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre,
+         (select count(*)::int from incidente_notas n where n.incidente_id = i.id) as notas_count
        from servicio_incidentes i
        join usuarios uc on uc.id = i.creado_por
        left join usuarios um on um.id = i.modificado_por
@@ -430,7 +431,8 @@ async function crearIncidente(req, res, next) {
     );
 
     const { rows: completo } = await pool.query(
-      `select i.*, uc.nombre as creado_por_nombre
+      `select i.*, uc.nombre as creado_por_nombre,
+         (select count(*)::int from incidente_notas n where n.incidente_id = i.id) as notas_count
        from servicio_incidentes i
        join usuarios uc on uc.id = i.creado_por
        where i.id = $1`,
@@ -485,7 +487,8 @@ async function actualizarIncidente(req, res, next) {
     );
 
     const { rows: completo } = await pool.query(
-      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre,
+         (select count(*)::int from incidente_notas n where n.incidente_id = i.id) as notas_count
        from servicio_incidentes i
        join usuarios uc on uc.id = i.creado_por
        left join usuarios um on um.id = i.modificado_por
@@ -706,7 +709,8 @@ async function crearNotaIncidente(req, res, next) {
       [rows[0].id]
     );
     const { rows: incidenteCompleto } = await pool.query(
-      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre,
+         (select count(*)::int from incidente_notas n where n.incidente_id = i.id) as notas_count
        from servicio_incidentes i
        join usuarios uc on uc.id = i.creado_por
        left join usuarios um on um.id = i.modificado_por

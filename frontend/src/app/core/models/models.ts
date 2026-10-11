@@ -496,5 +496,6 @@ export interface ServicioIncidente {
   modificado_por_nombre?: string | null;
   created_at: string;
   updated_at?: string;
+  notas_count?: number;
 }
 

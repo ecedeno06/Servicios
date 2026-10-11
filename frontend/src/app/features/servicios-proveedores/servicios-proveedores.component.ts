@@ -1088,7 +1088,15 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio || !incidente) return;
     if (!confirm('¿Eliminar esta entrada del histórico?')) return;
     this.serviciosSrv.eliminarNotaIncidente(servicio.id, incidente.id, nota.id).subscribe({
-      next: () => this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id)),
+      next: () => {
+        this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id));
+        // El backend no devuelve el incidente actualizado en el delete --
+        // se descuenta a mano para que la burbuja de la tabla no quede
+        // desfasada hasta el proximo refresh.
+        this.incidentesServicioActual.update((arr) =>
+          arr.map((i) => (i.id === incidente.id ? { ...i, notas_count: Math.max(0, (i.notas_count || 0) - 1) } : i))
+        );
+      },
       error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar la nota'),
     });
   }
