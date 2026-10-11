@@ -17,6 +17,21 @@
   height: 100%;
 }
 
+/* Modal "Incidentes, Notas y Adjuntos": con varios incidentes (cada uno
+   con su propio historico de notas y adjuntos) el popup puede crecer
+   mucho -- se fija un alto maximo y el contenido scrollea, dejando el
+   titulo/subtitulo siempre visibles (pedido explicito). */
+.modal-card-scroll {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.modal-card-scroll .modal-scroll-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
 /* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
    demasiado espacio vacio en pantallas anchas -- se angosta solo aqui
    (encapsulado al componente, no afecta el Dashboard que comparte la

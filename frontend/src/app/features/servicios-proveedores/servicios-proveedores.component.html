@@ -1384,7 +1384,7 @@
 <!-- MODAL: ver Incidentes con sus Notas y Adjuntos de un servicio (icono junto a Servicio) -->
 @if (modalIncidentesInfoAbierta()) {
   <div class="modal-overlay" (click)="cerrarModalIncidentesInfo()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>Incidentes, Notas y Adjuntos</h2>
         <button type="button" class="close" (click)="cerrarModalIncidentesInfo()">&times;</button>
@@ -1394,7 +1394,7 @@
       @if (cargandoIncidentesInfoModal()) {
         <div class="desc" style="padding: 16px 0;">Cargando incidentes...</div>
       } @else {
-        <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="modal-scroll-body" style="display: flex; flex-direction: column; gap: 16px;">
           @for (inc of incidentesInfoModal(); track inc.id) {
             <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
               <div class="flex items-center gap-8" style="justify-content: space-between;">
