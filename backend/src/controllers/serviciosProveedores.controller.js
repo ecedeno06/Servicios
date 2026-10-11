@@ -20,7 +20,8 @@ const SELECT_BASE = `
     (select coalesce(sum(f.monto_factura), 0)::numeric from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada') as monto_total_pagado,
     (select f.monto_factura from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada' order by f.fecha_factura desc, f.created_at desc limit 1) as ultimo_pago_monto,
     (select f.monto_factura from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id and f.estado = 'pagada' order by f.fecha_factura desc, f.created_at desc limit 1 offset 1) as penultimo_pago_monto,
-    (select count(*)::int from servicio_incidentes i where i.servicio_proveedor_id = sp.id and i.estado = 'abierto') as incidentes_abiertos_count
+    (select count(*)::int from servicio_incidentes i where i.servicio_proveedor_id = sp.id and i.estado = 'abierto') as incidentes_abiertos_count,
+    (select count(*)::int from servicio_incidentes i where i.servicio_proveedor_id = sp.id) as incidentes_total_count
   from servicios_proveedores sp
   join proveedores p on p.id = sp.proveedor_id
   join usuarios uc on uc.id = sp.creado_por
