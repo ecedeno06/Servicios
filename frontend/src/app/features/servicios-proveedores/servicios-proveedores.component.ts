@@ -1562,6 +1562,48 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.facturasInfoModal.set([]);
   }
 
+  // -------------------------------------------------------------------
+  // MODAL: ver Incidentes con sus Notas y Adjuntos de un servicio (icono
+  // junto a Servicio) -- solo lectura, mismo patron que Facturas/
+  // Adjuntos y Observacion.
+  // -------------------------------------------------------------------
+  modalIncidentesInfoAbierta = signal(false);
+  servicioIncidentesInfoActual = signal<ServicioProveedor | null>(null);
+  incidentesInfoModal = signal<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]>([]);
+  cargandoIncidentesInfoModal = signal(false);
+
+  abrirModalIncidentesInfo(s: ServicioProveedor): void {
+    this.servicioIncidentesInfoActual.set(s);
+    this.incidentesInfoModal.set([]);
+    this.modalIncidentesInfoAbierta.set(true);
+    this.cargandoIncidentesInfoModal.set(true);
+    this.serviciosSrv.obtener(s.id).subscribe((completo) => {
+      const incidentes = completo.incidentes || [];
+      if (!incidentes.length) {
+        this.incidentesInfoModal.set([]);
+        this.cargandoIncidentesInfoModal.set(false);
+        return;
+      }
+      forkJoin(
+        incidentes.map((inc) =>
+          forkJoin({
+            notas: this.serviciosSrv.listarNotasIncidente(s.id, inc.id),
+            adjuntos: this.serviciosSrv.listarAdjuntosIncidente(s.id, inc.id),
+          })
+        )
+      ).subscribe((extras) => {
+        this.incidentesInfoModal.set(incidentes.map((inc, i) => ({ ...inc, ...extras[i] })));
+        this.cargandoIncidentesInfoModal.set(false);
+      });
+    });
+  }
+
+  cerrarModalIncidentesInfo(): void {
+    this.modalIncidentesInfoAbierta.set(false);
+    this.servicioIncidentesInfoActual.set(null);
+    this.incidentesInfoModal.set([]);
+  }
+
   // "EMPRESA - Servicio - No.Contrato" (cualquiera de las 3 partes se
   // omite si no esta disponible) -- para que el contacto del proveedor
   // identifique de inmediato de que empresa y contrato viene el correo.

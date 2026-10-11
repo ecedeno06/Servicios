@@ -167,7 +167,16 @@
       <tbody>
         @for (s of serviciosOrdenados(); track s.id) {
           <tr [class.row-selected]="servicioEdicion()?.id === s.id">
-            <td [title]="tooltipContactos(s)"><strong>{{ s.servicio }}</strong></td>
+            <td [title]="tooltipContactos(s)">
+              <span class="flex items-center gap-6">
+                @if (s.incidentes_total_count) {
+                  <button type="button" class="info-icon-btn" title="Ver incidentes, notas y adjuntos" aria-label="Ver incidentes, notas y adjuntos" (click)="abrirModalIncidentesInfo(s)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  </button>
+                }
+                <strong>{{ s.servicio }}</strong>
+              </span>
+            </td>
             <td>
               <span class="flex items-center gap-6">
                 @if ((s.contactos || []).length > 0) {
@@ -1365,6 +1374,97 @@
             </div>
           } @empty {
             <div class="empty-state">No hay facturas registradas para este servicio.</div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- MODAL: ver Incidentes con sus Notas y Adjuntos de un servicio (icono junto a Servicio) -->
+@if (modalIncidentesInfoAbierta()) {
+  <div class="modal-overlay" (click)="cerrarModalIncidentesInfo()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Incidentes, Notas y Adjuntos</h2>
+        <button type="button" class="close" (click)="cerrarModalIncidentesInfo()">&times;</button>
+      </div>
+      <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioIncidentesInfoActual()?.servicio }}</p>
+
+      @if (cargandoIncidentesInfoModal()) {
+        <div class="desc" style="padding: 16px 0;">Cargando incidentes...</div>
+      } @else {
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          @for (inc of incidentesInfoModal(); track inc.id) {
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+              <div class="flex items-center gap-8" style="justify-content: space-between;">
+                <div>
+                  <div style="font-size: 14px; font-weight: 700; color: var(--text-heading);">{{ inc.reportado_por }}</div>
+                  <div class="desc" style="margin-top: 2px;">
+                    {{ (inc.fecha_incidente | date:'d-MMM-y h:mm a') | lowercase }}
+                    @if (inc.no_ticket_fabricante) { &middot; Ticket: {{ inc.no_ticket_fabricante }} }
+                  </div>
+                  <div style="margin-top: 4px; white-space: pre-wrap;">{{ inc.descripcion }}</div>
+                </div>
+                <span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)" style="flex-shrink: 0;">{{ inc.estado }}</span>
+              </div>
+
+              @if (inc.notas.length > 0) {
+                <div style="margin-top: 10px;">
+                  <label style="font-weight: 600; font-size: 12px;">Notas e Historial</label>
+                  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                    @for (n of inc.notas; track n.id) {
+                      <div style="border-top: 1px solid var(--border-subtle); padding-top: 6px;">
+                        <div class="text-muted text-sm">{{ (n.created_at | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ n.creado_por_nombre }}</div>
+                        @if (n.estado_nuevo) {
+                          <div class="text-sm" style="margin-top: 2px;">
+                            Estado cambiado de <span class="badge" [class]="claseBadgeEstadoIncidente(n.estado_anterior!)">{{ n.estado_anterior }}</span>
+                            a <span class="badge" [class]="claseBadgeEstadoIncidente(n.estado_nuevo)">{{ n.estado_nuevo }}</span>
+                          </div>
+                        }
+                        @if (n.nota) {
+                          <div style="margin-top: 2px; white-space: pre-wrap;">{{ n.nota }}</div>
+                        }
+                        @if (n.imagen_base64) {
+                          <div class="flex items-center gap-8" style="margin-top: 4px; justify-content: space-between;">
+                            <span class="text-sm">{{ tipoArchivoLabel(n.imagen_base64) }} &middot; {{ tamanoArchivo(n.imagen_base64) }}</span>
+                            <button type="button" class="btn-icon" (click)="abrirAdjunto(n.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                            </button>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (inc.adjuntos.length > 0) {
+                <div style="margin-top: 10px;">
+                  <label style="font-weight: 600; font-size: 12px;">Adjuntos</label>
+                  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                    @for (img of inc.adjuntos; track img.id) {
+                      <div class="flex items-center gap-8" style="justify-content: space-between;">
+                        <div style="overflow-wrap: anywhere;">
+                          <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                          <div class="text-muted text-sm" style="margin-top: 2px;">
+                            {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
+                          </div>
+                          @if (img.descripcion) {
+                            <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                          }
+                        </div>
+                        <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="empty-state">No hay incidentes registrados para este servicio.</div>
           }
         </div>
       }
