@@ -1499,9 +1499,12 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   abrirModalContactos(s: ServicioProveedor): void {
     this.servicioContactosActual.set(s);
-    // Todos los contactos con correo marcados por defecto; el usuario
-    // desmarca los que no quiere incluir antes de enviar.
-    this.contactosEmailSeleccionados.set(new Set(this.contactosConEmail(s).map((c) => c.email!)));
+    // Todos los contactos con correo marcados por defecto (del servicio y
+    // tambien el del proveedor, si tiene) -- el usuario desmarca los que
+    // no quiere incluir antes de enviar.
+    const correos = this.contactosConEmail(s).map((c) => c.email!);
+    if (s.proveedor_correo) correos.push(s.proveedor_correo);
+    this.contactosEmailSeleccionados.set(new Set(correos));
     this.modalContactosAbierta.set(true);
   }
 

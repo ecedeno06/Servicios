@@ -1261,47 +1261,89 @@
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioContactosActual()?.proveedor_nombre }}</p>
 
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        @for (c of servicioContactosActual()?.contactos; track $index) {
-          <div [style.border-top]="$index > 0 ? '1px solid var(--border-subtle)' : 'none'" [style.padding-top.px]="$index > 0 ? 12 : 0">
-            <div style="font-weight: 600;">{{ c.nombre }}</div>
-            @if (c.cargo) {
-              <div class="text-muted text-sm" style="margin-top: 2px;">{{ c.cargo }}</div>
-            }
-            @if (c.telefono) {
-              <div class="flex items-center gap-6" style="margin-top: 6px;">
-                <span class="text-sm">{{ c.telefono_codigo_pais }} {{ c.telefono }}</span>
-                <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(c.telefono)">
-                  @if (textoCopiado() === c.telefono) {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  } @else {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  }
-                </button>
-              </div>
-            }
-            @if (c.email) {
-              <div class="flex items-center gap-6" style="margin-top: 6px;">
-                <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
-                  <input type="checkbox" [checked]="contactosEmailSeleccionados().has(c.email)" (change)="toggleContactoEmail(c.email)" />
-                  <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.email }}</span>
-                </label>
-                <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(c.email)">
-                  @if (textoCopiado() === c.email) {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  } @else {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  }
-                </button>
-              </div>
-            }
-          </div>
-        } @empty {
-          <div class="desc" style="font-style: italic;">Sin contactos registrados para este servicio.</div>
-        }
+      <div class="card" style="margin-bottom: 14px;">
+        <label style="font-weight: 600; font-size: 12px;">Información de Contacto del Proveedor</label>
+        <div style="margin-top: 8px;">
+          @if (servicioContactosActual()?.proveedor_contacto) {
+            <div style="font-weight: 600;">{{ servicioContactosActual()?.proveedor_contacto }}</div>
+          }
+          @if (servicioContactosActual()?.proveedor_telefono) {
+            <div class="flex items-center gap-6" style="margin-top: 6px;">
+              <span class="text-sm">{{ servicioContactosActual()?.proveedor_telefono_codigo_pais }} {{ servicioContactosActual()?.proveedor_telefono }}</span>
+              <button type="button" class="info-icon-btn" [title]="textoCopiado() === servicioContactosActual()?.proveedor_telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(servicioContactosActual()!.proveedor_telefono!)">
+                @if (textoCopiado() === servicioContactosActual()?.proveedor_telefono) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
+              </button>
+            </div>
+          }
+          @if (servicioContactosActual()?.proveedor_correo) {
+            <div class="flex items-center gap-6" style="margin-top: 6px;">
+              <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
+                <input type="checkbox" [checked]="contactosEmailSeleccionados().has(servicioContactosActual()!.proveedor_correo!)" (change)="toggleContactoEmail(servicioContactosActual()!.proveedor_correo!)" />
+                <span class="text-sm" style="overflow-wrap: anywhere;">{{ servicioContactosActual()?.proveedor_correo }}</span>
+              </label>
+              <button type="button" class="info-icon-btn" [title]="textoCopiado() === servicioContactosActual()?.proveedor_correo ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(servicioContactosActual()!.proveedor_correo!)">
+                @if (textoCopiado() === servicioContactosActual()?.proveedor_correo) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
+              </button>
+            </div>
+          }
+          @if (!servicioContactosActual()?.proveedor_contacto && !servicioContactosActual()?.proveedor_telefono && !servicioContactosActual()?.proveedor_correo) {
+            <div class="desc" style="font-style: italic;">Sin información de contacto registrada para este proveedor.</div>
+          }
+        </div>
       </div>
 
-      @if ((servicioContactosActual()?.contactos || []).length > 0) {
+      <div class="card">
+        <label style="font-weight: 600; font-size: 12px;">Información de Contacto del Servicio</label>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
+          @for (c of servicioContactosActual()?.contactos; track $index) {
+            <div [style.border-top]="$index > 0 ? '1px solid var(--border-subtle)' : 'none'" [style.padding-top.px]="$index > 0 ? 12 : 0">
+              <div style="font-weight: 600;">{{ c.nombre }}</div>
+              @if (c.cargo) {
+                <div class="text-muted text-sm" style="margin-top: 2px;">{{ c.cargo }}</div>
+              }
+              @if (c.telefono) {
+                <div class="flex items-center gap-6" style="margin-top: 6px;">
+                  <span class="text-sm">{{ c.telefono_codigo_pais }} {{ c.telefono }}</span>
+                  <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(c.telefono)">
+                    @if (textoCopiado() === c.telefono) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
+                </div>
+              }
+              @if (c.email) {
+                <div class="flex items-center gap-6" style="margin-top: 6px;">
+                  <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
+                    <input type="checkbox" [checked]="contactosEmailSeleccionados().has(c.email)" (change)="toggleContactoEmail(c.email)" />
+                    <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.email }}</span>
+                  </label>
+                  <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.email ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(c.email)">
+                    @if (textoCopiado() === c.email) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="desc" style="font-style: italic;">Sin contactos registrados para este servicio.</div>
+          }
+        </div>
+      </div>
+
+      @if ((servicioContactosActual()?.contactos || []).length > 0 || servicioContactosActual()?.proveedor_correo) {
         <div class="form-actions" style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
           <button
             type="button"

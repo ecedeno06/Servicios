@@ -10,6 +10,8 @@ const SELECT_BASE = `
     p.nombre as proveedor_nombre,
     p.sector as proveedor_sector,
     p.sector_id as proveedor_sector_id,
+    p.contacto as proveedor_contacto,
+    p.correo as proveedor_correo,
     p.telefono as proveedor_telefono,
     p.telefono_codigo_pais as proveedor_telefono_codigo_pais,
     p.acepta_whatsapp as proveedor_acepta_whatsapp,

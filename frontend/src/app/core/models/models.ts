@@ -408,6 +408,8 @@ export interface ServicioProveedor {
   proveedor_nombre?: string;
   proveedor_sector?: SectorProveedor;
   proveedor_sector_id?: string | null;
+  proveedor_contacto?: string | null;
+  proveedor_correo?: string | null;
   proveedor_telefono?: string;
   proveedor_telefono_codigo_pais?: string | null;
 
