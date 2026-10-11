@@ -1497,6 +1497,13 @@ export class ServiciosProveedoresComponent implements OnInit {
   servicioContactosActual = signal<ServicioProveedor | null>(null);
   contactosEmailSeleccionados = signal<Set<string>>(new Set());
 
+  // El icono se muestra si hay algo que ver en cualquiera de las 2
+  // tarjetas del popup: contactos propios del servicio, o informacion
+  // de contacto del proveedor (antes solo miraba los del servicio).
+  tieneInfoContacto(s: ServicioProveedor): boolean {
+    return (s.contactos || []).length > 0 || !!s.proveedor_contacto || !!s.proveedor_correo || !!s.proveedor_telefono;
+  }
+
   abrirModalContactos(s: ServicioProveedor): void {
     this.servicioContactosActual.set(s);
     // Todos los contactos con correo marcados por defecto (del servicio y
