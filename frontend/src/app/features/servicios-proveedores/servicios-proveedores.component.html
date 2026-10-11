@@ -185,8 +185,8 @@
                   </button>
                 }
                 <span>{{ s.proveedor_nombre }}</span>
-                @if (s.proveedor_acepta_whatsapp && s.proveedor_telefono) {
-                  <a [href]="enlaceWhatsApp(s.proveedor_telefono, s.proveedor_telefono_codigo_pais)" target="_blank" title="WhatsApp" style="text-decoration: none;">💬</a>
+                @if (tieneContactoTelefono(s)) {
+                  <button type="button" class="info-icon-btn" title="Ver teléfonos de contacto" aria-label="Ver teléfonos de contacto" (click)="abrirModalContactos(s)">💬</button>
                 }
               </span>
             </td>
@@ -271,9 +271,9 @@
                 }
               </button>
               @if (tieneContactoTelefono(s)) {
-                <a class="btn-icon" [href]="enlaceWhatsAppServicio(s)" target="_blank" title="Enviar WhatsApp a un contacto del servicio" aria-label="Enviar WhatsApp">
+                <button type="button" class="btn-icon" (click)="abrirModalContactos(s)" title="Ver teléfonos de contacto" aria-label="Ver teléfonos de contacto">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
-                </a>
+                </button>
               }
               @if (s.url) {
                 <a class="btn-icon" [href]="s.url" target="_blank" rel="noopener noreferrer" title="Abrir URL del servicio" aria-label="Abrir URL">
@@ -1277,6 +1277,11 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 }
               </button>
+              @if (servicioContactosActual()?.proveedor_acepta_whatsapp) {
+                <a class="info-icon-btn" [href]="enlaceWhatsApp(servicioContactosActual()?.proveedor_telefono, servicioContactosActual()?.proveedor_telefono_codigo_pais)" target="_blank" title="Enviar WhatsApp" aria-label="Enviar WhatsApp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
+                </a>
+              }
             </div>
           }
           @if (servicioContactosActual()?.proveedor_correo) {
@@ -1319,6 +1324,9 @@
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     }
                   </button>
+                  <a class="info-icon-btn" [href]="enlaceWhatsApp(c.telefono, c.telefono_codigo_pais)" target="_blank" title="Enviar WhatsApp" aria-label="Enviar WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
+                  </a>
                 </div>
               }
               @if (c.email) {

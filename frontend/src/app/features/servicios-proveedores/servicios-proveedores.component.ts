@@ -1439,8 +1439,11 @@ export class ServiciosProveedoresComponent implements OnInit {
     return (s.contactos || []).filter((c) => !!c.telefono);
   }
 
+  // Antes solo miraba los telefonos del servicio; ahora tambien cuenta el
+  // del proveedor (si acepta whatsapp) -- gatilla el iconboton que abre el
+  // popup de Contactos con un boton de WhatsApp por cada telefono.
   tieneContactoTelefono(s: ServicioProveedor): boolean {
-    return this.contactosConTelefono(s).length > 0;
+    return this.contactosConTelefono(s).length > 0 || !!(s.proveedor_acepta_whatsapp && s.proveedor_telefono);
   }
 
   // -------------------------------------------------------------------
@@ -1622,13 +1625,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     const contrato = s.no_contrato ? `Contrato No.: ${s.no_contrato}` : null;
     const partes = [empresa?.toUpperCase(), s.servicio, contrato].filter((p): p is string => !!p);
     return partes.join(' - ');
-  }
-
-  // wa.me solo admite un numero por enlace -- se usa el primer contacto
-  // que tenga telefono registrado.
-  enlaceWhatsAppServicio(s: ServicioProveedor): string {
-    const contacto = this.contactosConTelefono(s)[0];
-    return this.enlaceWhatsApp(contacto?.telefono, contacto?.telefono_codigo_pais);
   }
 
   // -------------------------------------------------------------------
