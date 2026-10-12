@@ -820,7 +820,7 @@
           </div>
 
           <div formArrayName="contactos">
-            @for (cGroup of contactosArray.controls; track $index) {
+            @for (cGroup of contactosArray.controls; track cGroup) {
               <div [formGroupName]="$index" class="card" style="margin-bottom: 10px; padding: 12px; position: relative;">
                 <div class="form-grid">
                   <div class="form-group">
