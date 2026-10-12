@@ -353,12 +353,19 @@
               }
             </td>
             <td><span class="badge badge-slate">{{ obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector) }}</span></td>
-            <td>{{ p.contacto || '-' }}</td>
-            <td>{{ p.correo || '-' }}</td>
             <td>
-              <span>{{ p.telefono ? (p.telefono_codigo_pais || '') + ' ' + p.telefono : '-' }}</span>
-              @if (p.acepta_whatsapp && p.telefono) {
-                <a [href]="enlaceWhatsApp(p.telefono, p.telefono_codigo_pais)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+              {{ p.contactos[0]?.nombre || '-' }}
+              @if (p.contactos.length > 1) {
+                <span class="text-muted text-sm"> +{{ p.contactos.length - 1 }}</span>
+              }
+            </td>
+            <td>{{ p.contactos[0]?.correo || '-' }}</td>
+            <td>
+              @if (p.contactos[0]?.telefono) {
+                <span>{{ p.contactos[0].codigo_pais }} {{ p.contactos[0].telefono }}</span>
+                <a [href]="enlaceWhatsApp(p.contactos[0].telefono, p.contactos[0].codigo_pais)" target="_blank" title="WhatsApp" style="margin-left: 6px; text-decoration: none;">💬</a>
+              } @else {
+                -
               }
             </td>
             <td style="text-align: center;">
@@ -525,42 +532,55 @@
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
-          <label>Contacto Principal</label>
-          <input class="input" formControlName="contacto" placeholder="Ej. Juan Pérez" />
-        </div>
-
-        <div class="form-group" style="margin-top: 14px;">
-          <label>Correo Electrónico</label>
-          <input class="input" type="email" formControlName="correo" placeholder="contacto@proveedor.com" />
-        </div>
-
-        <div class="form-group" style="margin-top: 14px;">
           <label>URL / Sitio web</label>
           <input class="input" type="url" formControlName="url" placeholder="https://proveedor.com" />
-        </div>
-
-        <div class="flex gap-12" style="margin-top: 14px; align-items: flex-end;">
-          <div class="form-group" style="flex: 0 0 auto; min-width: 160px;">
-            <label>Código de país</label>
-            <select class="input" formControlName="telefono_codigo_pais">
-              @for (cp of codigosPais; track cp.codigo + cp.nombre) { <option [value]="cp.codigo">{{ cp.nombre }}</option> }
-            </select>
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 0;">
-            <label>Teléfono</label>
-            <input class="input" formControlName="telefono" placeholder="300 000 0000" />
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-top: 14px;">
-          <label class="flex items-center gap-8">
-            <input type="checkbox" formControlName="acepta_whatsapp" /> Acepta WhatsApp
-          </label>
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
           <label>Descripción / Observaciones</label>
           <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalles de contacto corporativo..."></textarea>
+        </div>
+
+        <!-- Contactos JSON Dinamicos -->
+        <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 13px;">Contactos del Proveedor</label>
+            <button type="button" class="btn btn-outline btn-sm" (click)="agregarContactoProveedor()">+ Contacto</button>
+          </div>
+
+          <div formArrayName="contactos">
+            @for (cGroup of contactosProveedorArray.controls; track cGroup) {
+              <div [formGroupName]="$index" class="card" style="margin-bottom: 10px; padding: 12px; position: relative;">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Nombre</label>
+                    <input class="input" formControlName="nombre" placeholder="Nombre" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Código de país</label>
+                    <select class="input" formControlName="codigo_pais">
+                      @for (cp of codigosPais; track cp.codigo + cp.nombre) { <option [value]="cp.codigo">{{ cp.nombre }}</option> }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Teléfono</label>
+                    <input class="input" formControlName="telefono" placeholder="Teléfono" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Correo</label>
+                    <input class="input" type="email" formControlName="correo" placeholder="Correo" />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size: 11px;">Cargo</label>
+                    <input class="input" formControlName="cargo" placeholder="Cargo" />
+                  </div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm" style="margin-top: 8px;" (click)="eliminarContactoProveedor($index)">Eliminar contacto</button>
+              </div>
+            } @empty {
+              <div class="desc" style="font-style: italic;">No se han agregado contactos.</div>
+            }
+          </div>
         </div>
 
         <div class="form-actions">
@@ -1260,43 +1280,47 @@
 
       <div class="card" style="margin-bottom: 14px;">
         <label style="font-weight: 600; font-size: 12px;">Información de Contacto del Proveedor</label>
-        <div style="margin-top: 8px;">
-          @if (servicioContactosActual()?.proveedor_contacto) {
-            <div style="font-weight: 600;">{{ servicioContactosActual()?.proveedor_contacto }}</div>
-          }
-          @if (servicioContactosActual()?.proveedor_telefono) {
-            <div class="flex items-center gap-6" style="margin-top: 6px;">
-              <span class="text-sm">{{ servicioContactosActual()?.proveedor_telefono_codigo_pais }} {{ servicioContactosActual()?.proveedor_telefono }}</span>
-              <button type="button" class="info-icon-btn" [title]="textoCopiado() === servicioContactosActual()?.proveedor_telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(servicioContactosActual()!.proveedor_telefono!)">
-                @if (textoCopiado() === servicioContactosActual()?.proveedor_telefono) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                }
-              </button>
-              @if (servicioContactosActual()?.proveedor_acepta_whatsapp) {
-                <a class="info-icon-btn" [href]="enlaceWhatsApp(servicioContactosActual()?.proveedor_telefono, servicioContactosActual()?.proveedor_telefono_codigo_pais)" target="_blank" title="Enviar WhatsApp" aria-label="Enviar WhatsApp">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
-                </a>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
+          @for (c of servicioContactosActual()?.proveedor_contactos; track $index) {
+            <div [style.border-top]="$index > 0 ? '1px solid var(--border-subtle)' : 'none'" [style.padding-top.px]="$index > 0 ? 12 : 0">
+              @if (c.nombre) {
+                <div style="font-weight: 600;">{{ c.nombre }}</div>
+              }
+              @if (c.cargo) {
+                <div class="text-muted text-sm" style="margin-top: 2px;">{{ c.cargo }}</div>
+              }
+              @if (c.telefono) {
+                <div class="flex items-center gap-6" style="margin-top: 6px;">
+                  <span class="text-sm">{{ c.codigo_pais }} {{ c.telefono }}</span>
+                  <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.telefono ? 'Copiado' : 'Copiar teléfono'" aria-label="Copiar teléfono" (click)="copiarTexto(c.telefono)">
+                    @if (textoCopiado() === c.telefono) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
+                  <a class="info-icon-btn" [href]="enlaceWhatsApp(c.telefono, c.codigo_pais)" target="_blank" title="Enviar WhatsApp" aria-label="Enviar WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4z"/></svg>
+                  </a>
+                </div>
+              }
+              @if (c.correo) {
+                <div class="flex items-center gap-6" style="margin-top: 6px;">
+                  <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
+                    <input type="checkbox" [checked]="contactosEmailSeleccionados().has(c.correo)" (change)="toggleContactoEmail(c.correo)" />
+                    <span class="text-sm" style="overflow-wrap: anywhere;">{{ c.correo }}</span>
+                  </label>
+                  <button type="button" class="info-icon-btn" [title]="textoCopiado() === c.correo ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(c.correo)">
+                    @if (textoCopiado() === c.correo) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
+                </div>
               }
             </div>
-          }
-          @if (servicioContactosActual()?.proveedor_correo) {
-            <div class="flex items-center gap-6" style="margin-top: 6px;">
-              <label class="flex items-center gap-6" style="cursor: pointer;" title="Incluir en el envio de correo">
-                <input type="checkbox" [checked]="contactosEmailSeleccionados().has(servicioContactosActual()!.proveedor_correo!)" (change)="toggleContactoEmail(servicioContactosActual()!.proveedor_correo!)" />
-                <span class="text-sm" style="overflow-wrap: anywhere;">{{ servicioContactosActual()?.proveedor_correo }}</span>
-              </label>
-              <button type="button" class="info-icon-btn" [title]="textoCopiado() === servicioContactosActual()?.proveedor_correo ? 'Copiado' : 'Copiar correo'" aria-label="Copiar correo" (click)="copiarTexto(servicioContactosActual()!.proveedor_correo!)">
-                @if (textoCopiado() === servicioContactosActual()?.proveedor_correo) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                }
-              </button>
-            </div>
-          }
-          @if (!servicioContactosActual()?.proveedor_contacto && !servicioContactosActual()?.proveedor_telefono && !servicioContactosActual()?.proveedor_correo) {
+          } @empty {
             <div class="desc" style="font-style: italic;">Sin información de contacto registrada para este proveedor.</div>
           }
         </div>
@@ -1348,7 +1372,7 @@
         </div>
       </div>
 
-      @if ((servicioContactosActual()?.contactos || []).length > 0 || servicioContactosActual()?.proveedor_correo) {
+      @if ((servicioContactosActual()?.contactos || []).length > 0 || (servicioContactosActual()?.proveedor_contactos || []).length > 0) {
         <div class="form-actions" style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
           <button
             type="button"

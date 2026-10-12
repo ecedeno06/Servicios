@@ -36,7 +36,7 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url } = req.body;
+    const { nombre, descripcion, contactos, sector, sector_id, url } = req.body;
     if (!nombre) {
       return res.status(400).json({ mensaje: 'El nombre del proveedor es requerido' });
     }
@@ -52,20 +52,18 @@ async function crear(req, res, next) {
       if (sec[0]) sectorNombreFinal = sec[0].nombre;
     }
 
+    const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
+
     const { rows } = await pool.query(
       `insert into proveedores
-         (empresa_id, nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url, creado_por)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         (empresa_id, nombre, descripcion, contactos, sector, sector_id, url, creado_por)
+       values ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)
        returning id`,
       [
         req.empresaId,
         nombre.trim(),
         descripcion ? descripcion.trim() : null,
-        contacto ? contacto.trim() : null,
-        correo ? correo.trim() : null,
-        telefono ? telefono.trim() : null,
-        telefono_codigo_pais || null,
-        !!acepta_whatsapp,
+        contactosJson,
         sectorNombreFinal || 'Otro',
         sectorIdFinal,
         url ? url.trim() : null,
@@ -80,7 +78,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { nombre, descripcion, contacto, correo, telefono, telefono_codigo_pais, acepta_whatsapp, sector, sector_id, url } = req.body;
+    const { nombre, descripcion, contactos, sector, sector_id, url } = req.body;
     if (!nombre) {
       return res.status(400).json({ mensaje: 'El nombre del proveedor es requerido' });
     }
@@ -102,28 +100,22 @@ async function actualizar(req, res, next) {
       if (sec[0]) sectorNombreFinal = sec[0].nombre;
     }
 
+    const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
+
     await pool.query(
       `update proveedores set
          nombre = $1,
          descripcion = $2,
-         contacto = $3,
-         correo = $4,
-         telefono = $5,
-         telefono_codigo_pais = $6,
-         acepta_whatsapp = $7,
-         sector = $8,
-         sector_id = $9,
-         url = $10,
-         modificado_por = $11
-       where id = $12 and empresa_id = $13`,
+         contactos = $3::jsonb,
+         sector = $4,
+         sector_id = $5,
+         url = $6,
+         modificado_por = $7
+       where id = $8 and empresa_id = $9`,
       [
         nombre.trim(),
         descripcion ? descripcion.trim() : null,
-        contacto ? contacto.trim() : null,
-        correo ? correo.trim() : null,
-        telefono ? telefono.trim() : null,
-        telefono_codigo_pais || null,
-        !!acepta_whatsapp,
+        contactosJson,
         sectorNombreFinal || 'Otro',
         sectorIdFinal,
         url ? url.trim() : null,

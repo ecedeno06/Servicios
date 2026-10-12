@@ -9,6 +9,7 @@ import { MenuService } from '../../core/services/menu.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   ContactoProveedor,
+  ContactoProveedorPrincipal,
   EstadoFacturaServicio,
   EstadoIncidente,
   EstadoServicioProveedor,
@@ -193,9 +194,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.proveedores().filter((p) => {
       if (nom && !p.nombre.toLowerCase().includes(nom)) return false;
       if (sec && p.sector_id !== sec && p.sector !== sec) return false;
-      if (con && !(p.contacto || '').toLowerCase().includes(con)) return false;
-      if (em && !(p.correo || '').toLowerCase().includes(em)) return false;
-      if (tel && !(p.telefono || '').toLowerCase().includes(tel)) return false;
+      const contactos = p.contactos || [];
+      if (con && !contactos.some((c) => (c.nombre || '').toLowerCase().includes(con))) return false;
+      if (em && !contactos.some((c) => (c.correo || '').toLowerCase().includes(em))) return false;
+      if (tel && !contactos.some((c) => (c.telefono || '').toLowerCase().includes(tel))) return false;
       return true;
     });
   });
@@ -221,9 +223,9 @@ export class ServiciosProveedoresComponent implements OnInit {
     switch (columna) {
       case 'nombre': return p.nombre.toLowerCase();
       case 'sector': return this.obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector).toLowerCase();
-      case 'contacto': return (p.contacto ?? '').toLowerCase();
-      case 'correo': return (p.correo ?? '').toLowerCase();
-      case 'telefono': return (p.telefono ?? '').toLowerCase();
+      case 'contacto': return (p.contactos?.[0]?.nombre ?? '').toLowerCase();
+      case 'correo': return (p.contactos?.[0]?.correo ?? '').toLowerCase();
+      case 'telefono': return (p.contactos?.[0]?.telefono ?? '').toLowerCase();
       case 'servicios': return p.servicios_count ?? 0;
       default: return '';
     }
@@ -552,13 +554,31 @@ export class ServiciosProveedoresComponent implements OnInit {
     nombre: ['', [Validators.required]],
     sector_id: ['', [Validators.required]],
     descripcion: [''],
-    contacto: [''],
-    correo: ['', [Validators.email]],
-    telefono: [''],
-    telefono_codigo_pais: ['+507'],
-    acepta_whatsapp: [false],
     url: [''],
+    contactos: this.fb.array([]),
   });
+
+  get contactosProveedorArray(): FormArray {
+    return this.proveedorForm.get('contactos') as FormArray;
+  }
+
+  crearContactoProveedorGroup(c?: ContactoProveedorPrincipal): FormGroup {
+    return this.fb.group({
+      nombre: [c?.nombre || ''],
+      telefono: [c?.telefono || ''],
+      codigo_pais: [c?.codigo_pais || '+507'],
+      correo: [c?.correo || '', [Validators.email]],
+      cargo: [c?.cargo || ''],
+    });
+  }
+
+  agregarContactoProveedor(c?: ContactoProveedorPrincipal): void {
+    this.contactosProveedorArray.push(this.crearContactoProveedorGroup(c));
+  }
+
+  eliminarContactoProveedor(index: number): void {
+    this.contactosProveedorArray.removeAt(index);
+  }
 
   // -------------------------------------------------------------------
   // PANEL SERVICIO (Crear / Editar)
@@ -1325,16 +1345,12 @@ export class ServiciosProveedoresComponent implements OnInit {
   abrirNuevoProveedor(): void {
     this.proveedorEdicion.set(null);
     this.guardandoProveedor.set(false);
+    this.contactosProveedorArray.clear();
     const primerSectorId = this.sectores().length > 0 ? this.sectores()[0].id : '';
     this.proveedorForm.reset({
       nombre: '',
       sector_id: primerSectorId,
       descripcion: '',
-      contacto: '',
-      correo: '',
-      telefono: '',
-      telefono_codigo_pais: '+507',
-      acepta_whatsapp: false,
       url: '',
     });
     this.panelProveedorAbierto.set(true);
@@ -1343,17 +1359,16 @@ export class ServiciosProveedoresComponent implements OnInit {
   abrirEditarProveedor(p: Proveedor): void {
     this.proveedorEdicion.set(p);
     this.guardandoProveedor.set(false);
+    this.contactosProveedorArray.clear();
     this.proveedorForm.patchValue({
       nombre: p.nombre,
       sector_id: p.sector_id || (this.sectores().find((sec) => sec.nombre === p.sector)?.id || ''),
       descripcion: p.descripcion || '',
-      contacto: p.contacto || '',
-      correo: p.correo || '',
-      telefono: p.telefono || '',
-      telefono_codigo_pais: p.telefono_codigo_pais || '+507',
-      acepta_whatsapp: p.acepta_whatsapp,
       url: p.url || '',
     });
+    if (Array.isArray(p.contactos)) {
+      p.contactos.forEach((c) => this.agregarContactoProveedor(c));
+    }
     this.panelProveedorAbierto.set(true);
   }
 
@@ -1439,11 +1454,12 @@ export class ServiciosProveedoresComponent implements OnInit {
     return (s.contactos || []).filter((c) => !!c.telefono);
   }
 
-  // Antes solo miraba los telefonos del servicio; ahora tambien cuenta el
-  // del proveedor (si acepta whatsapp) -- gatilla el iconboton que abre el
-  // popup de Contactos con un boton de WhatsApp por cada telefono.
+  // Antes solo miraba los telefonos del servicio; ahora tambien cuenta los
+  // de cualquiera de los contactos del proveedor -- gatilla el iconboton
+  // que abre el popup de Contactos con un boton de WhatsApp por cada
+  // telefono.
   tieneContactoTelefono(s: ServicioProveedor): boolean {
-    return this.contactosConTelefono(s).length > 0 || !!(s.proveedor_acepta_whatsapp && s.proveedor_telefono);
+    return this.contactosConTelefono(s).length > 0 || (s.proveedor_contactos || []).some((c) => !!c.telefono);
   }
 
   // -------------------------------------------------------------------
@@ -1504,16 +1520,16 @@ export class ServiciosProveedoresComponent implements OnInit {
   // tarjetas del popup: contactos propios del servicio, o informacion
   // de contacto del proveedor (antes solo miraba los del servicio).
   tieneInfoContacto(s: ServicioProveedor): boolean {
-    return (s.contactos || []).length > 0 || !!s.proveedor_contacto || !!s.proveedor_correo || !!s.proveedor_telefono;
+    return (s.contactos || []).length > 0 || (s.proveedor_contactos || []).length > 0;
   }
 
   abrirModalContactos(s: ServicioProveedor): void {
     this.servicioContactosActual.set(s);
     // Todos los contactos con correo marcados por defecto (del servicio y
-    // tambien el del proveedor, si tiene) -- el usuario desmarca los que
-    // no quiere incluir antes de enviar.
+    // tambien los del proveedor) -- el usuario desmarca los que no quiere
+    // incluir antes de enviar.
     const correos = this.contactosConEmail(s).map((c) => c.email!);
-    if (s.proveedor_correo) correos.push(s.proveedor_correo);
+    (s.proveedor_contactos || []).forEach((c) => { if (c.correo) correos.push(c.correo); });
     this.contactosEmailSeleccionados.set(new Set(correos));
     this.modalContactosAbierta.set(true);
   }

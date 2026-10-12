@@ -348,11 +348,7 @@ export interface Proveedor {
   empresa_id: string;
   nombre: string;
   descripcion?: string | null;
-  contacto?: string | null;
-  correo?: string | null;
-  telefono?: string | null;
-  telefono_codigo_pais?: string | null;
-  acepta_whatsapp: boolean;
+  contactos: ContactoProveedorPrincipal[];
   sector: string;
   sector_id?: string | null;
   sector_nombre?: string | null;
@@ -366,6 +362,17 @@ export interface Proveedor {
   servicios_count?: number;
 }
 
+// Contacto del CATALOGO de proveedores (puede haber mas de uno) -- nombres
+// de campo pedidos explicitamente (correo/codigo_pais), distintos de
+// ContactoProveedor (email/telefono_codigo_pais) que es para los
+// contactos propios de un SERVICIO, no del proveedor.
+export interface ContactoProveedorPrincipal {
+  nombre?: string;
+  correo?: string;
+  codigo_pais?: string;
+  telefono?: string;
+  cargo?: string;
+}
 
 export interface ContactoProveedor {
   nombre: string;
@@ -408,12 +415,7 @@ export interface ServicioProveedor {
   proveedor_nombre?: string;
   proveedor_sector?: SectorProveedor;
   proveedor_sector_id?: string | null;
-  proveedor_contacto?: string | null;
-  proveedor_correo?: string | null;
-  proveedor_telefono?: string;
-  proveedor_telefono_codigo_pais?: string | null;
-
-  proveedor_acepta_whatsapp?: boolean;
+  proveedor_contactos?: ContactoProveedorPrincipal[];
   servicio: string;
   costo_mensual: number;
   costo_anual: number;
