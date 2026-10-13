@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
@@ -878,6 +879,24 @@ export class ServiciosProveedoresComponent implements OnInit {
     }
   }
 
+  // Convierte una nota de texto libre en HTML seguro, detectando URLs y
+  // volviendolas clicables. Escapa el texto primero (es contenido de
+  // usuario) y recien despues inserta los tags <a>, para no abrir paso a
+  // XSS via un "nota" que contenga HTML.
+  private readonly REGEX_URL = /(https?:\/\/[^\s<]+)/g;
+
+  textoConEnlaces(texto: string): SafeHtml {
+    const escapado = texto
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const conEnlaces = escapado.replace(
+      this.REGEX_URL,
+      (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+    );
+    return this.sanitizer.bypassSecurityTrustHtml(conEnlaces);
+  }
+
   // Adjuntos del incidente seleccionado -- mismo patron que servicio/
   // factura (guardado/borrado inmediato, reutiliza abrirAdjunto/
   // tipoArchivoLabel/tamanoArchivo ya genericos). Solo visible una vez
@@ -1231,6 +1250,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private estadosServicioSrv: EstadosServiciosProveedoresService,
     private datePipe: DatePipe,
     private auth: AuthService,
+    private sanitizer: DomSanitizer,
     public menu: MenuService
   ) {}
 
