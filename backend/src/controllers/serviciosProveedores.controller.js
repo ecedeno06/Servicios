@@ -11,6 +11,7 @@ const SELECT_BASE = `
     p.sector as proveedor_sector,
     p.sector_id as proveedor_sector_id,
     p.contactos as proveedor_contactos,
+    e.clase_badge as estado_clase_badge,
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre,
     (select count(*)::int from facturas_servicios_proveedores f where f.servicio_proveedor_id = sp.id) as facturas_count,
@@ -22,6 +23,7 @@ const SELECT_BASE = `
     (select count(*)::int from servicio_incidentes i where i.servicio_proveedor_id = sp.id) as incidentes_total_count
   from servicios_proveedores sp
   join proveedores p on p.id = sp.proveedor_id
+  left join estados_servicios_proveedores e on e.id = sp.estado_id
   join usuarios uc on uc.id = sp.creado_por
   left join usuarios um on um.id = sp.modificado_por
 `;
@@ -49,6 +51,7 @@ async function reportePagos(req, res, next) {
          sp.servicio,
          sp.costo_mensual,
          sp.estado,
+         e.clase_badge as estado_clase_badge,
          p.nombre as proveedor_nombre,
          coalesce(sec.nombre, p.sector) as sector_nombre,
          coalesce((
@@ -62,6 +65,7 @@ async function reportePagos(req, res, next) {
        from servicios_proveedores sp
        join proveedores p on p.id = sp.proveedor_id
        left join sectores_proveedores sec on sec.id = p.sector_id
+       left join estados_servicios_proveedores e on e.id = sp.estado_id
        where sp.empresa_id = $3
        order by sp.servicio asc`,
       [desde || null, hasta || null, req.empresaId]
@@ -110,9 +114,18 @@ async function obtenerPorId(req, res, next) {
   } catch (err) { next(err); }
 }
 
+async function resolverEstado(estadoId, empresaId) {
+  if (!estadoId) return null;
+  const { rows } = await pool.query(
+    'select id, nombre from estados_servicios_proveedores where id = $1 and empresa_id = $2',
+    [estadoId, empresaId]
+  );
+  return rows[0] || null;
+}
+
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -124,8 +137,10 @@ async function crear(req, res, next) {
     );
     if (!prov[0]) return res.status(400).json({ mensaje: 'El proveedor seleccionado no existe o no pertenece a la empresa' });
 
+    const estado = await resolverEstado(estado_id, req.empresaId);
+    if (!estado) return res.status(400).json({ mensaje: 'El estado seleccionado no existe o no pertenece a la empresa' });
+
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
-    const estadoFinal = estado || 'activo';
     // es_indefinido=true manda sobre cualquier fecha_fin/aviso que llegue:
     // un contrato indefinido no tiene fecha de vencimiento ni aviso previo.
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
@@ -134,8 +149,8 @@ async function crear(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url, responsable, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15, $16)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, estado_id, observacion, url, responsable, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15, $16, $17)
        returning id`,
       [
         req.empresaId,
@@ -149,7 +164,8 @@ async function crear(req, res, next) {
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
-        estadoFinal,
+        estado.nombre,
+        estado.id,
         observacion ? observacion.trim() : null,
         url ? url.trim() : null,
         responsable ? responsable.trim() : null,
@@ -164,7 +180,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -174,6 +190,9 @@ async function actualizar(req, res, next) {
       [req.params.id, req.empresaId]
     );
     if (!actual[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const estado = await resolverEstado(estado_id, req.empresaId);
+    if (!estado) return res.status(400).json({ mensaje: 'El estado seleccionado no existe o no pertenece a la empresa' });
 
     const contactosJson = JSON.stringify(Array.isArray(contactos) ? contactos : []);
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
@@ -193,11 +212,12 @@ async function actualizar(req, res, next) {
          no_contrato = $9,
          contactos = $10::jsonb,
          estado = $11,
-         observacion = $12,
-         url = $13,
-         responsable = $14,
-         modificado_por = $15
-       where id = $16 and empresa_id = $17`,
+         estado_id = $12,
+         observacion = $13,
+         url = $14,
+         responsable = $15,
+         modificado_por = $16
+       where id = $17 and empresa_id = $18`,
       [
         proveedor_id,
         servicio.trim(),
@@ -209,7 +229,8 @@ async function actualizar(req, res, next) {
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
         contactosJson,
-        estado || 'activo',
+        estado.nombre,
+        estado.id,
         observacion ? observacion.trim() : null,
         url ? url.trim() : null,
         responsable ? responsable.trim() : null,

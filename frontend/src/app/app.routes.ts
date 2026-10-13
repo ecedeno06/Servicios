@@ -21,6 +21,7 @@ import { EquiposComponent } from './features/equipos/equipos.component';
 import { EquiposAsignadosComponent } from './features/equipos-asignados/equipos-asignados.component';
 import { RolesPermisosComponent } from './features/roles-permisos/roles-permisos.component';
 import { ServiciosProveedoresComponent } from './features/servicios-proveedores/servicios-proveedores.component';
+import { EstadosServicioComponent } from './features/estados-servicio/estados-servicio.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -47,6 +48,7 @@ export const routes: Routes = [
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },
       { path: 'equipos', component: EquiposComponent, canActivate: [superAdminGuard] },
       { path: 'roles-permisos', component: RolesPermisosComponent, canActivate: [superAdminGuard] },
+      { path: 'estados-servicio', component: EstadosServicioComponent, canActivate: [superAdminGuard] },
     ],
   },
 

@@ -394,7 +394,24 @@ export interface ImagenServicioProveedor {
   created_at: string;
 }
 
-export type EstadoServicioProveedor = 'activo' | 'en pausa' | 'cancelado' | 'vencido' | 'inactivo' | 'no renovar';
+// Catalogo con CRUD (Configuracion > Estados de Servicio) -- reemplaza la
+// lista fija que antes vivia en el frontend. 'estado' en ServicioProveedor
+// sigue siendo texto (sincronizado con el nombre de este catalogo al
+// guardar/renombrar) para no romper filtros/ordenamiento existentes.
+export interface EstadoServicioProveedorItem {
+  id: string;
+  empresa_id: string;
+  nombre: string;
+  clase_badge: string;
+  activo: boolean;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+  servicios_count?: number;
+}
 
 // Una fila del Reporte de Servicios: servicio + proveedor + sector + costo
 // mensual + pagos totales ("pagada") dentro del rango de fechas pedido.
@@ -404,7 +421,8 @@ export interface ReporteServicioPagos {
   proveedor_nombre: string;
   sector_nombre: string | null;
   costo_mensual: number;
-  estado: EstadoServicioProveedor;
+  estado: string;
+  estado_clase_badge?: string;
   pagos_total_rango: number;
 }
 
@@ -431,7 +449,9 @@ export interface ServicioProveedor {
   // Opcional: listar() ya no la trae (vive en su propia tabla ahora), solo
   // llega poblada cuando se pide obtenerPorId().
   imagenes?: ImagenServicioProveedor[];
-  estado: EstadoServicioProveedor;
+  estado: string;
+  estado_id?: string | null;
+  estado_clase_badge?: string;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;

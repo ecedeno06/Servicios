@@ -1,0 +1,74 @@
+<div class="page-header">
+  <div>
+    <h1>Estados de Servicio</h1>
+    <div class="desc">Catalogo de estados disponibles para los Servicios Contratados (Activo, Cancelado, No Renovar, etc.) y su color de badge</div>
+  </div>
+</div>
+
+<div class="page-header mt-16">
+  <div class="desc">{{ estadosFiltrados().length }} de {{ estados().length }} estado(s). Haz clic en una fila para editarla.</div>
+</div>
+
+<div class="table-wrap table-wrap-compact">
+  <table class="data-table">
+    <thead>
+      <tr><th>Nombre</th><th>Activo</th><th>Servicios</th></tr>
+      <tr class="filter-row">
+        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroNombre()" (ngModelChange)="filtroNombre.set($event)" /></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of estadosFiltrados(); track e.id) {
+        <tr class="row-clickable" [class.row-selected]="estadoSeleccionado()?.id === e.id" (click)="seleccionarEstado(e)">
+          <td><span class="badge" [class]="e.clase_badge">{{ e.nombre }}</span></td>
+          <td>{{ e.activo ? 'Si' : 'No' }}</td>
+          <td>{{ e.servicios_count ?? 0 }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="3"><div class="empty-state">{{ filtroNombre() ? 'Ningun estado coincide con el filtro.' : 'No hay estados registrados.' }}</div></td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="card mt-16">
+  <h2>{{ estadoSeleccionado() ? 'Editar estado' : 'Nuevo estado' }}</h2>
+  <form [formGroup]="form" (ngSubmit)="guardarEstado()">
+    <div class="form-grid mt-16">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input class="input" formControlName="nombre" placeholder="Ej: Activo" />
+      </div>
+      <div class="form-group">
+        <label>Color del badge *</label>
+        <select class="input" formControlName="clase_badge">
+          @for (c of clasesBadge; track c.valor) {
+            <option [value]="c.valor">{{ c.etiqueta }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group mt-16">
+      <label class="flex items-center gap-6" style="cursor: pointer;">
+        <input type="checkbox" formControlName="activo" />
+        <span>Activo (disponible para seleccionar en Servicios Contratados)</span>
+      </label>
+    </div>
+
+    <div class="form-group mt-16">
+      <label>Vista previa</label>
+      <div><span class="badge" [class]="form.value.clase_badge">{{ form.value.nombre || 'Nombre del estado' }}</span></div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
+      @if (estadoSeleccionado()) {
+        <button type="button" class="btn btn-danger" (click)="eliminarEstado()">Eliminar</button>
+        <button type="button" class="btn btn-outline" (click)="nuevoEstado()">Nuevo estado</button>
+      }
+    </div>
+  </form>
+</div>

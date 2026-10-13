@@ -7,7 +7,7 @@ import { ServiciosProveedoresService } from '../../core/services/servicios-prove
 import { AuthService } from '../../core/services/auth.service';
 import { ReporteServiciosPdfService } from '../../core/services/reporte-servicios-pdf.service';
 import { ReporteServiciosExcelService } from '../../core/services/reporte-servicios-excel.service';
-import { EstadoServicioProveedor, Proveedor, ReporteServicioPagos, SectorProveedorItem } from '../../core/models/models';
+import { Proveedor, ReporteServicioPagos, SectorProveedorItem } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 
 @Component({
@@ -215,18 +215,6 @@ export class ReporteServiciosComponent implements OnInit {
       this.seleccionadas.set(new Set());
     } else {
       this.seleccionadas.set(new Set(this.filasFiltradas().map((f) => f.id)));
-    }
-  }
-
-  claseBadgeEstado(e: EstadoServicioProveedor): string {
-    switch (e) {
-      case 'activo': return 'badge-green';
-      case 'en pausa': return 'badge-amber';
-      case 'no renovar': return 'badge-red-solid';
-      case 'vencido': return 'badge-red';
-      case 'cancelado': return 'badge-red';
-      case 'inactivo': return 'badge-slate';
-      default: return 'badge-slate';
     }
   }
 

@@ -790,6 +790,7 @@ table.data-table {
 .badge-amber { background: var(--amber-100); color: var(--amber-500); }
 .badge-red { background: var(--red-100); color: var(--red-600); }
 .badge-slate { background: var(--bg-surface-muted); color: var(--text-muted); }
+.badge-red-solid { background: var(--red-600); color: white; text-align: center; }
 
 /* ---------- Medidor de horas (elemento distintivo) ---------- */
 .hour-gauge { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }

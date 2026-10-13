@@ -113,7 +113,7 @@
             <td>{{ f.servicio }}</td>
             <td>{{ f.proveedor_nombre }}</td>
             <td>{{ f.sector_nombre || '-' }}</td>
-            <td><span class="badge" [class]="claseBadgeEstado(f.estado)">{{ f.estado }}</span></td>
+            <td><span class="badge" [class]="f.estado_clase_badge || 'badge-slate'">{{ f.estado }}</span></td>
             <td>{{ f.costo_mensual | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ f.pagos_total_rango | currency:'USD':'symbol':'1.2-2' }}</td>
           </tr>

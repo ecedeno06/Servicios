@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
 import { SectoresProveedoresService } from '../../core/services/sectores-proveedores.service';
+import { EstadosServiciosProveedoresService } from '../../core/services/estados-servicios-proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -12,7 +13,7 @@ import {
   ContactoProveedorPrincipal,
   EstadoFacturaServicio,
   EstadoIncidente,
-  EstadoServicioProveedor,
+  EstadoServicioProveedorItem,
   FacturaServicioProveedor,
   FormaPagoFactura,
   ImagenServicioProveedor,
@@ -24,15 +25,6 @@ import {
 } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
-
-const ESTADOS_SERVICIO: { valor: EstadoServicioProveedor; etiqueta: string }[] = [
-  { valor: 'activo', etiqueta: 'Activo' },
-  { valor: 'en pausa', etiqueta: 'En Pausa' },
-  { valor: 'no renovar', etiqueta: 'No Renovar' },
-  { valor: 'vencido', etiqueta: 'Vencido' },
-  { valor: 'inactivo', etiqueta: 'Inactivo' },
-  { valor: 'cancelado', etiqueta: 'Cancelado' },
-];
 
 const ESTADOS_FACTURA: { valor: EstadoFacturaServicio; etiqueta: string }[] = [
   { valor: 'pagada', etiqueta: 'Pagada' },
@@ -91,7 +83,7 @@ const CODIGOS_PAIS: { codigo: string; nombre: string }[] = [
 export class ServiciosProveedoresComponent implements OnInit {
   pestanaActiva = signal<'servicios' | 'proveedores' | 'sectores'>('servicios');
 
-  estadosServicio = ESTADOS_SERVICIO;
+  estadosServicio = signal<EstadoServicioProveedorItem[]>([]);
   estadosFactura = ESTADOS_FACTURA;
   formasPago = FORMAS_PAGO;
   estadosIncidente = ESTADOS_INCIDENTE;
@@ -368,7 +360,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     return isNaN(n) ? v : n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   };
 
-  formatoEstadoServ = (v: string): string => ESTADOS_SERVICIO.find((e) => e.valor === v)?.etiqueta ?? v;
+  formatoEstadoServ = (v: string): string => v;
 
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
@@ -596,7 +588,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     es_indefinido: [true],
     dias_aviso_vencimiento: [{ value: null as number | null, disabled: true }],
     no_contrato: [''],
-    estado: ['activo' as EstadoServicioProveedor, [Validators.required]],
+    estado_id: ['', [Validators.required]],
     observacion: [''],
     url: [''],
     responsable: [''],
@@ -1236,6 +1228,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private sectoresSrv: SectoresProveedoresService,
     private proveedoresSrv: ProveedoresService,
     private serviciosSrv: ServiciosProveedoresService,
+    private estadosServicioSrv: EstadosServiciosProveedoresService,
     private datePipe: DatePipe,
     private auth: AuthService,
     public menu: MenuService
@@ -1243,6 +1236,11 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarDatos();
+    this.cargarEstadosServicio();
+  }
+
+  cargarEstadosServicio(): void {
+    this.estadosServicioSrv.listar().subscribe((data) => this.estadosServicio.set(data));
   }
 
   cargarDatos(): void {
@@ -1665,7 +1663,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       es_indefinido: true,
       dias_aviso_vencimiento: null,
       no_contrato: '',
-      estado: 'activo',
+      estado_id: this.estadoActivoPorDefecto(),
       observacion: '',
       url: '',
       // Sugerido, no forzado: suele ser quien esta creando el servicio, pero
@@ -1702,7 +1700,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       es_indefinido: s.es_indefinido ?? true,
       dias_aviso_vencimiento: s.dias_aviso_vencimiento ?? null,
       no_contrato: s.no_contrato || '',
-      estado: s.estado,
+      estado_id: s.estado_id || this.estadoActivoPorDefecto(),
       observacion: s.observacion || '',
       url: s.url || '',
       responsable: s.responsable || '',
@@ -1895,16 +1893,11 @@ export class ServiciosProveedoresComponent implements OnInit {
     return secNombreLegacy || '-';
   }
 
-  claseBadgeEstadoServicio(e: EstadoServicioProveedor): string {
-    switch (e) {
-      case 'activo': return 'badge-green';
-      case 'en pausa': return 'badge-amber';
-      case 'no renovar': return 'badge-red-solid';
-      case 'vencido': return 'badge-red';
-      case 'cancelado': return 'badge-red';
-      case 'inactivo': return 'badge-slate';
-      default: return 'badge-slate';
-    }
+  // El color del badge viene del catalogo (join en el backend), no de un
+  // switch fijo -- se gestiona en Configuracion > Estados de Servicio.
+  estadoActivoPorDefecto(): string {
+    const catalogo = this.estadosServicio();
+    return catalogo.find((e) => e.nombre.toLowerCase() === 'activo')?.id || catalogo[0]?.id || '';
   }
 
   // Un servicio con fecha de fin (no indefinido) tiene un costo anual

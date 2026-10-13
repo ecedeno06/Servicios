@@ -232,7 +232,7 @@
               </span>
             </td>
             <td>
-              <span class="badge" [class]="claseBadgeEstadoServicio(s.estado)">{{ s.estado }}</span>
+              <span class="badge" [class]="s.estado_clase_badge || 'badge-slate'">{{ s.estado }}</span>
             </td>
             <!-- Columna "Facturas" oculta hasta nueva orden, ver thead -- el
                  boton se movio a la celda de Acciones de abajo.
@@ -815,9 +815,9 @@
         <div class="form-grid" style="margin-top: 14px;">
           <div class="form-group">
             <label>Estado *</label>
-            <select class="input" formControlName="estado">
-              @for (est of estadosServicio; track est.valor) {
-                <option [value]="est.valor">{{ est.etiqueta }}</option>
+            <select class="input" formControlName="estado_id">
+              @for (est of estadosServicio(); track est.id) {
+                <option [value]="est.id">{{ est.nombre }}</option>
               }
             </select>
           </div>
