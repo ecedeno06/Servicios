@@ -6,8 +6,9 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
-import { Categoria, EquipoAsignado, EstadoEquipo, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
+import { Categoria, EquipoAsignado, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
+import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -443,16 +444,140 @@ export class EquiposAsignadosComponent implements OnInit {
       no_factura: e.no_factura ?? '',
     });
     this.cargarHistorial(e.id);
+    this.errorArchivoImagen.set(null);
+    this.cargarAdjuntos(e.id);
   }
 
   cargarHistorial(id: string): void {
     this.srv.historial(id).subscribe((data) => this.historial.set(data));
   }
 
+  // ---------- Adjuntos (imagenes/documentos) ----------
+  // Tabla propia (equipo_adjuntos), no un campo del formulario: cada
+  // adjunto se guarda/borra al instante contra su propio endpoint (mismo
+  // patron que servicio_adjuntos/incidente_adjuntos).
+  imagenesEquipoActual = signal<ImagenServicioProveedor[]>([]);
+  guardandoAdjunto = signal(false);
+  errorArchivoImagen = signal<string | null>(null);
+  private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
+  private readonly MAX_ARCHIVO_BYTES = 3 * 1024 * 1024; // 3MB, antes de inflarse a base64
+  private readonly MAX_IMAGENES = 20;
+
+  cargarAdjuntos(id: string): void {
+    this.srv.listarAdjuntos(id).subscribe((data) => this.imagenesEquipoActual.set(data));
+  }
+
+  agregarImagenEntry(img: ImagenServicioProveedor): void {
+    this.imagenesEquipoActual.update((arr) => [img, ...arr]);
+  }
+
+  eliminarImagen(adjuntoId: string): void {
+    const equipo = this.seleccionado();
+    if (!equipo) return;
+    if (!confirm('Eliminar este adjunto?')) return;
+    this.srv.eliminarAdjunto(equipo.id, adjuntoId).subscribe({
+      next: () => this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+    });
+  }
+
+  actualizarDescripcionAdjunto(adjuntoId: string, descripcion: string): void {
+    const equipo = this.seleccionado();
+    if (!equipo) return;
+    this.srv.actualizarAdjunto(equipo.id, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.imagenesEquipoActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
+  }
+
+  // Un <a href="data:..."> no alcanza (ver nota identica en
+  // servicios-proveedores.component.ts): Chrome/Edge bloquean la
+  // navegacion a un data: URI, asi que se convierte a Blob primero.
+  abrirAdjunto(base64: string): void {
+    const [meta, datos] = base64.split(',');
+    const tipo = meta.match(/data:(.*);base64/)?.[1] || 'application/octet-stream';
+    const binario = atob(datos);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  tipoArchivoLabel(base64: string): string {
+    if (base64.startsWith('data:application/pdf')) return 'Documento PDF';
+    if (base64.startsWith('data:image/png')) return 'Imagen PNG';
+    if (base64.startsWith('data:image/jpeg')) return 'Imagen JPG';
+    return 'Archivo';
+  }
+
+  tamanoArchivo(base64: string): string {
+    const datos = base64.split(',')[1] || '';
+    const padding = (datos.match(/=+$/) || [''])[0].length;
+    const bytes = Math.max(0, (datos.length * 3) / 4 - padding);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  onSeleccionArchivoImagen(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoImagen(archivo);
+    input.value = '';
+  }
+
+  onPasteImagen(event: ClipboardEvent): void {
+    this.errorArchivoImagen.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoImagen(archivo);
+        return;
+      }
+    }
+    this.errorArchivoImagen.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoImagen(archivo: File): void {
+    this.errorArchivoImagen.set(null);
+    const equipo = this.seleccionado();
+    if (!equipo) {
+      this.errorArchivoImagen.set('Guarda el equipo antes de adjuntar archivos.');
+    } else if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorArchivoImagen.set('Solo se permiten archivos PDF, PNG o JPG.');
+    } else if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorArchivoImagen.set('El archivo supera el tamaño máximo permitido (3MB).');
+    } else if (this.imagenesEquipoActual().length >= this.MAX_IMAGENES) {
+      this.errorArchivoImagen.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+    } else {
+      this.guardandoAdjunto.set(true);
+      leerArchivoComoBase64(archivo).then((base64) => {
+        this.srv.crearAdjunto(equipo.id, { imagen_base64: base64 }).subscribe({
+          next: (nuevo) => {
+            this.guardandoAdjunto.set(false);
+            this.agregarImagenEntry(nuevo);
+          },
+          error: (err) => {
+            this.guardandoAdjunto.set(false);
+            this.errorArchivoImagen.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+          },
+        });
+      }).catch(() => {
+        this.guardandoAdjunto.set(false);
+        this.errorArchivoImagen.set('No se pudo leer el archivo.');
+      });
+    }
+  }
+
   nuevo(): void {
     this.seleccionado.set(null);
     this.categoriaIdForm.set(null);
     this.historial.set([]);
+    this.imagenesEquipoActual.set([]);
+    this.errorArchivoImagen.set(null);
     this.form.reset({
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',

@@ -11,4 +11,9 @@ router.delete('/:id', requirePermiso('equipos_asignados', 'eliminar'), ctrl.elim
 router.get('/:id/historial', requirePermiso('equipos_asignados', 'ver'), ctrl.historial);
 router.post('/:id/movimiento', requirePermiso('equipos_asignados', 'editar'), ctrl.cambiarEstado);
 
+router.get('/:id/adjuntos', requirePermiso('equipos_asignados', 'ver'), ctrl.listarAdjuntos);
+router.post('/:id/adjuntos', requirePermiso('equipos_asignados', 'crear'), ctrl.crearAdjunto);
+router.put('/:id/adjuntos/:adjuntoId', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizarAdjunto);
+router.delete('/:id/adjuntos/:adjuntoId', requirePermiso('equipos_asignados', 'eliminar'), ctrl.eliminarAdjunto);
+
 module.exports = router;

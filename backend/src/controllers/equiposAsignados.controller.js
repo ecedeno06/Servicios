@@ -1,5 +1,9 @@
 const { pool } = require('../config/db');
 
+const MAX_ADJUNTOS = 20;
+const MAX_IMAGEN_BASE64_CHARS = 4 * 1024 * 1024; // ~4MB de texto base64 (~3MB de archivo real)
+const IMAGEN_BASE64_PREFIJO = /^data:(image\/png|image\/jpeg|application\/pdf);base64,/;
+
 const SELECT_BASE = `
   select
     ea.*,
@@ -218,4 +222,116 @@ async function historial(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listar, crear, actualizar, eliminar, historial, cambiarEstado };
+// -------------------------------------------------------------
+// ADJUNTOS (imagenes/documentos) -- mismo patron que servicio_adjuntos/
+// incidente_adjuntos: tabla propia, guardado/borrado inmediato.
+// -------------------------------------------------------------
+async function verificarEquipo(req) {
+  const { rows } = await pool.query(
+    'select id from equipos_asignados where id = $1 and empresa_id = $2',
+    [req.params.id, req.empresaId]
+  );
+  return !!rows[0];
+}
+
+async function listarAdjuntos(req, res, next) {
+  try {
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rows } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from equipo_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.equipo_asignado_id = $1
+       order by a.fecha desc, a.created_at desc`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearAdjunto(req, res, next) {
+  try {
+    const { descripcion, imagen_base64 } = req.body;
+
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    }
+    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+    }
+
+    const { rows: cuenta } = await pool.query(
+      'select count(*)::int as n from equipo_adjuntos where equipo_asignado_id = $1',
+      [req.params.id]
+    );
+    if (cuenta[0].n >= MAX_ADJUNTOS) {
+      return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS} archivos adjuntos` });
+    }
+
+    const { rows } = await pool.query(
+      `insert into equipo_adjuntos (equipo_asignado_id, descripcion, imagen_base64, creado_por)
+       values ($1, $2, $3, $4)
+       returning id`,
+      [req.params.id, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from equipo_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [rows[0].id]
+    );
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarAdjunto(req, res, next) {
+  try {
+    const { descripcion } = req.body;
+
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rows: adj } = await pool.query(
+      'select id from equipo_adjuntos where id = $1 and equipo_asignado_id = $2',
+      [req.params.adjuntoId, req.params.id]
+    );
+    if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+
+    await pool.query(
+      'update equipo_adjuntos set descripcion = $1 where id = $2',
+      [descripcion ? descripcion.trim() : null, req.params.adjuntoId]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from equipo_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [req.params.adjuntoId]
+    );
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarAdjunto(req, res, next) {
+  try {
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rowCount } = await pool.query(
+      'delete from equipo_adjuntos where id = $1 and equipo_asignado_id = $2',
+      [req.params.adjuntoId, req.params.id]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
+  } catch (err) { next(err); }
+}
+
+module.exports = {
+  listar, crear, actualizar, eliminar, historial, cambiarEstado,
+  listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
+};
