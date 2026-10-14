@@ -416,6 +416,9 @@
       <h3 style="font-size:13px;">Observación</h3>
       <p class="text-sm" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ equipoInfo.observacion || 'Sin observación.' }}</p>
 
+      <h3 class="mt-16" style="font-size:13px;">Ubicación</h3>
+      <p class="text-sm">{{ equipoInfo.locacion_pais || 'Sin ubicación registrada.' }}</p>
+
       <h3 class="mt-16" style="font-size:13px;">Imágenes y Documentos</h3>
       @if (cargandoAdjuntosInfo()) {
         <p class="text-muted text-sm">Cargando...</p>
