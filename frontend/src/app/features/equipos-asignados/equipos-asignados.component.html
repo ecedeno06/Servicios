@@ -431,7 +431,7 @@
                   {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                 </div>
                 @if (img.descripcion) {
-                  <div class="text-sm" style="margin-top: 4px;">{{ img.descripcion }}</div>
+                  <div class="text-sm" style="margin-top: 4px; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(img.descripcion)"></div>
                 }
               </div>
               <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>

@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EquiposAsignadosService } from '../../core/services/equipos-asignados.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
@@ -349,7 +350,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private procesadoresSrv: ProcesadoresService,
     private proveedoresSrv: ProveedoresService,
     private datePipe: DatePipe,
-    private elRef: ElementRef<HTMLElement>
+    private elRef: ElementRef<HTMLElement>,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -513,6 +515,24 @@ export class EquiposAsignadosComponent implements OnInit {
     const url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  // Convierte la descripcion de un adjunto en HTML seguro, detectando URLs
+  // y volviendolas clicables -- mismo patron que las notas de incidente
+  // (servicios-proveedores.component.ts#textoConEnlaces). Escapa el texto
+  // primero (es contenido de usuario) y recien despues inserta los <a>.
+  private readonly REGEX_URL = /(https?:\/\/[^\s<]+)/g;
+
+  textoConEnlaces(texto: string): SafeHtml {
+    const escapado = texto
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const conEnlaces = escapado.replace(
+      this.REGEX_URL,
+      (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+    );
+    return this.sanitizer.bypassSecurityTrustHtml(conEnlaces);
   }
 
   tipoArchivoLabel(base64: string): string {
