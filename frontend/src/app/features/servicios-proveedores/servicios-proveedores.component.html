@@ -741,7 +741,7 @@
                   </div>
                   <div class="form-group" style="margin-top: 8px;">
                     <label style="font-size: 11px;">Descripción</label>
-                    <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Captura de pantalla, evidencia..." (blur)="actualizarDescripcionAdjuntoIncidente(img.id, $any($event.target).value)" />
+                    <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Captura de pantalla, evidencia..." (blur)="actualizarDescripcionAdjuntoIncidente(img.id, $any($event.target).value)"></textarea>
                   </div>
                   <div class="flex items-center gap-8" style="margin-top: 8px;">
                     <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
@@ -919,7 +919,7 @@
                 </div>
                 <div class="form-group" style="margin-top: 8px;">
                   <label style="font-size: 11px;">Descripción</label>
-                  <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, contrato firmado..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)" />
+                  <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, contrato firmado..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)"></textarea>
                 </div>
                 <div class="flex items-center gap-8" style="margin-top: 8px;">
                   <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
@@ -1194,7 +1194,7 @@
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                           <label style="font-size: 11px;">Descripción</label>
-                          <input class="input" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, comprobante..." (blur)="actualizarDescripcionAdjuntoFactura(img.id, $any($event.target).value, f)" />
+                          <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, comprobante..." (blur)="actualizarDescripcionAdjuntoFactura(img.id, $any($event.target).value, f)"></textarea>
                         </div>
                         <div class="flex items-center gap-8" style="margin-top: 8px;">
                           <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
