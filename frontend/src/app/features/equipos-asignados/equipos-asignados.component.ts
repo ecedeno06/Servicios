@@ -60,6 +60,8 @@ export class EquiposAsignadosComponent implements OnInit {
   equipoInfoActual = signal<EquipoAsignado | null>(null);
   historialInfoEquipo = signal<MovimientoEquipo[]>([]);
   cargandoHistorialInfo = signal(false);
+  adjuntosInfoEquipo = signal<ImagenServicioProveedor[]>([]);
+  cargandoAdjuntosInfo = signal(false);
 
   abrirModalInfoEquipo(event: MouseEvent, e: EquipoAsignado): void {
     event.stopPropagation();
@@ -72,10 +74,19 @@ export class EquiposAsignadosComponent implements OnInit {
       },
       error: () => this.cargandoHistorialInfo.set(false),
     });
+    this.cargandoAdjuntosInfo.set(true);
+    this.srv.listarAdjuntos(e.id).subscribe({
+      next: (data) => {
+        this.adjuntosInfoEquipo.set(data);
+        this.cargandoAdjuntosInfo.set(false);
+      },
+      error: () => this.cargandoAdjuntosInfo.set(false),
+    });
   }
 
   cerrarModalInfoEquipo(): void {
     this.equipoInfoActual.set(null);
+    this.adjuntosInfoEquipo.set([]);
     this.historialInfoEquipo.set([]);
   }
 

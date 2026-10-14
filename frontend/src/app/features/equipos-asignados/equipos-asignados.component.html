@@ -416,6 +416,30 @@
       <h3 style="font-size:13px;">Observación</h3>
       <p class="text-sm" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ equipoInfo.observacion || 'Sin observación.' }}</p>
 
+      <h3 class="mt-16" style="font-size:13px;">Imágenes y Documentos</h3>
+      @if (cargandoAdjuntosInfo()) {
+        <p class="text-muted text-sm">Cargando...</p>
+      } @else if (adjuntosInfoEquipo().length === 0) {
+        <p class="text-muted text-sm">No hay adjuntos registrados.</p>
+      } @else {
+        @for (img of adjuntosInfoEquipo(); track img.id) {
+          <div class="card-adjunto-info" style="margin-bottom: 8px; padding: 10px;">
+            <div class="flex items-center gap-8" style="justify-content: space-between; flex-wrap: wrap;">
+              <div>
+                <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                <div class="text-muted text-sm" style="margin-top: 2px;">
+                  {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
+                </div>
+                @if (img.descripcion) {
+                  <div class="text-sm" style="margin-top: 4px;">{{ img.descripcion }}</div>
+                }
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+            </div>
+          </div>
+        }
+      }
+
       <h3 class="mt-16" style="font-size:13px;">Histórico de movimientos</h3>
       @if (cargandoHistorialInfo()) {
         <p class="text-muted text-sm">Cargando...</p>

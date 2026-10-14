@@ -58,6 +58,15 @@
   --radius: 10px;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.10);
+
+  /* Fondo suave para tarjetas de "adjuntos" dentro de popups de info
+     (ej. Equipos Asignados) -- pedido explicito, con su propia variante
+     oscura para que no choque contra bg-surface en modo oscuro. El
+     --text-muted global no tiene suficiente contraste contra este fondo
+     (ni en claro ni en oscuro), asi que se redefine aparte solo para
+     esta tarjeta. */
+  --bg-card-adjunto-info: #b5adad;
+  --text-muted-card-adjunto-info: #4b4545;
 }
 
 /* Modo oscuro: activado a mano (data-theme="dark", ver ThemeService) o
@@ -75,6 +84,8 @@
   --border-subtle: #232d40;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --bg-card-adjunto-info: #4a4444;
+  --text-muted-card-adjunto-info: #94a3b8;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -89,6 +100,8 @@
     --border-subtle: #232d40;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.45);
+    --bg-card-adjunto-info: #4a4444;
+    --text-muted-card-adjunto-info: #94a3b8;
   }
 }
 

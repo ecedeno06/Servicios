@@ -55,3 +55,14 @@
 }
 .info-icon-btn svg { width: 14px; height: 14px; }
 .info-icon-btn:hover { color: var(--teal-600); }
+
+/* Tarjeta de adjunto dentro del popup de Observacion/Historico -- fondo
+   suave propio (pedido explicito), con variante oscura en styles.css
+   para que no choque contra el fondo del modal en modo oscuro. */
+.card-adjunto-info {
+  background: var(--bg-card-adjunto-info);
+  border-radius: var(--radius);
+}
+.card-adjunto-info .text-muted {
+  color: var(--text-muted-card-adjunto-info);
+}
