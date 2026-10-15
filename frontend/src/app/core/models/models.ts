@@ -171,6 +171,7 @@ export interface MovimientoEquipo {
   asignada_a_anterior: string | null;
   asignada_a: string | null;
   observacion: string | null;
+  checklist?: { id: string; descripcion: string }[] | null;
   registrado_por: string;
   registrado_por_nombre: string;
   fecha_cambio: string;

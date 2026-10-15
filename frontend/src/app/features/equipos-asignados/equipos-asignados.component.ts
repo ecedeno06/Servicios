@@ -7,7 +7,8 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
-import { Categoria, EquipoAsignado, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
+import { ChecklistsService } from '../../core/services/checklists.service';
+import { Categoria, ChecklistItem, EquipoAsignado, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -119,6 +120,21 @@ export class EquiposAsignadosComponent implements OnInit {
     asignada_a: [''],
     observacion: [''],
   });
+
+  // Checklist (catalogo de Configuracion) que se puede ir marcando al
+  // confirmar un cambio de estado -- se guarda como snapshot en el
+  // historico de este movimiento, no modifica el catalogo.
+  checklistItems = signal<ChecklistItem[]>([]);
+  checklistActivos = computed(() => this.checklistItems().filter((c) => c.activo));
+  checklistSeleccionado = signal<Set<string>>(new Set());
+
+  toggleChecklistItem(id: string): void {
+    this.checklistSeleccionado.update((set) => {
+      const copia = new Set(set);
+      if (copia.has(id)) copia.delete(id); else copia.add(id);
+      return copia;
+    });
+  }
 
   // Buscador general: busca el texto en cualquier dato del registro (no
   // solo en las columnas visibles -- incluye numero de serie, puertos,
@@ -351,7 +367,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private proveedoresSrv: ProveedoresService,
     private datePipe: DatePipe,
     private elRef: ElementRef<HTMLElement>,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private checklistsSrv: ChecklistsService
   ) {}
 
   ngOnInit(): void {
@@ -360,6 +377,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.productosSrv.listar().subscribe((data) => this.productos.set(data));
     this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data));
     this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
+    this.checklistsSrv.listar().subscribe((data) => this.checklistItems.set(data));
   }
 
   // Disparado solo por la interaccion real del usuario con el <select>
@@ -666,6 +684,7 @@ export class EquiposAsignadosComponent implements OnInit {
     // cosa), se precarga el nombre actual para editarlo en vez de partir
     // de cero.
     this.formMovimiento.reset({ asignada_a: estado === 'en_uso' ? (e.asignada_a ?? '') : '', observacion: '' });
+    this.checklistSeleccionado.set(new Set());
   }
 
   cerrarAccion(): void {
@@ -682,11 +701,13 @@ export class EquiposAsignadosComponent implements OnInit {
       return;
     }
 
+    const checklistIds = Array.from(this.checklistSeleccionado());
     this.guardandoAccion.set(true);
     this.srv.cambiarEstado(pendiente.equipo.id, {
       estado: pendiente.estado,
       asignada_a: asignada_a?.trim() || undefined,
       observacion: observacion?.trim() || undefined,
+      checklist_ids: checklistIds.length ? checklistIds : undefined,
     }).subscribe({
       next: (actualizado) => {
         this.guardandoAccion.set(false);

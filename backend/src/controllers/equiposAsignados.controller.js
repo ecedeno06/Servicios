@@ -154,14 +154,17 @@ async function eliminar(req, res, next) {
 
 const ESTADOS_VALIDOS = ['en_uso', 'stock', 'reparacion', 'dano', 'descarte', 'vendida'];
 
-// POST /api/equipos-asignados/:id/movimiento  { estado, asignada_a?, observacion? }
+// POST /api/equipos-asignados/:id/movimiento  { estado, asignada_a?, observacion?, checklist_ids? }
 // Cambio rapido de estado desde el boton-icono de la fila (sin pasar por
 // el formulario completo). asignada_a solo tiene sentido para 'en_uso' --
 // para el resto de los estados se limpia. observacion es la nota de ESE
-// movimiento puntual (queda en el historico, no en el equipo).
+// movimiento puntual (queda en el historico, no en el equipo). checklist_ids
+// son los items del catalogo "Checklist" marcados en este movimiento -- se
+// guarda un snapshot (id+descripcion) en el historico, para que siga
+// siendo legible aunque el catalogo cambie despues.
 async function cambiarEstado(req, res, next) {
   try {
-    const { estado, asignada_a, observacion } = req.body;
+    const { estado, asignada_a, observacion, checklist_ids } = req.body;
     if (!ESTADOS_VALIDOS.includes(estado)) {
       return res.status(400).json({ mensaje: 'Estado invalido' });
     }
@@ -186,13 +189,23 @@ async function cambiarEstado(req, res, next) {
       [estado, asignadaFinal, req.usuario.id, req.params.id, req.empresaId]
     );
 
+    let checklistSnapshot = [];
+    if (Array.isArray(checklist_ids) && checklist_ids.length > 0) {
+      const { rows: items } = await pool.query(
+        'select id, descripcion from checklists where empresa_id = $1 and id = any($2::uuid[])',
+        [req.empresaId, checklist_ids]
+      );
+      checklistSnapshot = items;
+    }
+
     // Tambien registra el movimiento si solo cambio a quien esta asignado
-    // (reasignar de una persona a otra sin cambiar de "en_uso").
-    if (estado !== estadoAnterior || asignadaFinal !== asignadaAnterior) {
+    // (reasignar de una persona a otra sin cambiar de "en_uso"), o si se
+    // marco algun item del checklist sin cambiar nada mas.
+    if (estado !== estadoAnterior || asignadaFinal !== asignadaAnterior || checklistSnapshot.length > 0) {
       await pool.query(
-        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, observacion, registrado_por)
-         values ($1, $2, $3, $4, $5, $6, $7)`,
-        [req.params.id, estadoAnterior, estado, asignadaAnterior, asignadaFinal, observacion?.trim() || null, req.usuario.id]
+        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, observacion, checklist, registrado_por)
+         values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)`,
+        [req.params.id, estadoAnterior, estado, asignadaAnterior, asignadaFinal, observacion?.trim() || null, JSON.stringify(checklistSnapshot), req.usuario.id]
       );
     }
 

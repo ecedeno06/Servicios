@@ -369,6 +369,14 @@
             @if (m.observacion) {
               <div class="text-sm mt-8">{{ m.observacion }}</div>
             }
+            @if (m.checklist && m.checklist.length > 0) {
+              <div class="text-sm mt-8">
+                <span class="text-muted text-sm">Checklist:</span>
+                <ul style="margin: 2px 0 0 18px; padding: 0;">
+                  @for (c of m.checklist; track c.id) { <li>{{ c.descripcion }}</li> }
+                </ul>
+              </div>
+            }
           </li>
         }
       </ul>
@@ -395,6 +403,19 @@
           <label>Observacion</label>
           <textarea class="input" rows="2" formControlName="observacion" placeholder="Opcional"></textarea>
         </div>
+        @if (checklistActivos().length > 0) {
+          <div class="form-group mt-16">
+            <label>Checklist</label>
+            <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border-default); border-radius: 8px; padding: 8px;">
+              @for (c of checklistActivos(); track c.id) {
+                <label class="flex items-center gap-6" style="cursor: pointer; padding: 4px 0;">
+                  <input type="checkbox" [checked]="checklistSeleccionado().has(c.id)" (change)="toggleChecklistItem(c.id)" />
+                  <span class="text-sm">{{ c.descripcion }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="guardandoAccion()">{{ guardandoAccion() ? 'Guardando...' : 'Confirmar' }}</button>
           <button type="button" class="btn btn-outline" (click)="cerrarAccion()">Cancelar</button>
@@ -473,6 +494,14 @@
               </div>
               @if (m.observacion) {
                 <div class="text-sm mt-8">{{ m.observacion }}</div>
+              }
+              @if (m.checklist && m.checklist.length > 0) {
+                <div class="text-sm mt-8">
+                  <span class="text-muted text-sm">Checklist:</span>
+                  <ul style="margin: 2px 0 0 18px; padding: 0;">
+                    @for (c of m.checklist; track c.id) { <li>{{ c.descripcion }}</li> }
+                  </ul>
+                </div>
               }
             </li>
           }

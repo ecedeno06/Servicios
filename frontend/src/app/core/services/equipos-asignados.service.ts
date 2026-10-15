@@ -17,7 +17,7 @@ export class EquiposAsignadosService {
 
   // Cambio rapido de estado desde el boton-icono de la fila (sin abrir el
   // formulario completo de mantenimiento).
-  cambiarEstado(id: string, data: { estado: EstadoEquipo; asignada_a?: string; observacion?: string }): Observable<EquipoAsignado> {
+  cambiarEstado(id: string, data: { estado: EstadoEquipo; asignada_a?: string; observacion?: string; checklist_ids?: string[] }): Observable<EquipoAsignado> {
     return this.http.post<EquipoAsignado>(`${this.base}/${id}/movimiento`, data);
   }
 
