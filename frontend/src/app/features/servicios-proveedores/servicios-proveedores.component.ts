@@ -851,7 +851,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoIncidente.set(false);
-        alert(err.error?.mensaje || 'Error al guardar el incidente');
+        alert(err.error?.mensaje || 'Error al guardar el evento');
       },
     });
   }
@@ -859,14 +859,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   eliminarIncidente(inc: ServicioIncidente): void {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
-    if (!confirm('¿Eliminar este incidente del registro?')) return;
+    if (!confirm('¿Eliminar este evento del registro?')) return;
     this.serviciosSrv.eliminarIncidente(servicio.id, inc.id).subscribe({
       next: () => {
         this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
         if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el incidente'),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el evento'),
     });
   }
 

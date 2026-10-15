@@ -170,7 +170,7 @@
             <td [title]="tooltipContactos(s)">
               <span class="flex items-center gap-6">
                 @if (s.incidentes_total_count) {
-                  <button type="button" class="info-icon-btn" title="Ver incidentes, notas y adjuntos" aria-label="Ver incidentes, notas y adjuntos" (click)="abrirModalIncidentesInfo(s)">
+                  <button type="button" class="info-icon-btn" title="Ver eventos, notas y adjuntos" aria-label="Ver eventos, notas y adjuntos" (click)="abrirModalIncidentesInfo(s)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                   </button>
                 }
@@ -259,7 +259,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>
                 @if (s.facturas_count) { <span class="btn-icon-badge">{{ s.facturas_count > 99 ? '99+' : s.facturas_count }}</span> }
               </button>
-              <button type="button" class="btn-icon" title="Incidentes" aria-label="Incidentes" (click)="abrirIncidentes(s)">
+              <button type="button" class="btn-icon" title="Eventos" aria-label="Eventos" (click)="abrirIncidentes(s)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
                 @if (s.incidentes_abiertos_count) {
                   <span class="btn-icon-badge btn-icon-badge-green">{{ s.incidentes_abiertos_count > 99 ? '99+' : s.incidentes_abiertos_count }}</span>
@@ -608,13 +608,13 @@
       @if (servicioEdicion()) {
         <div class="tabs">
           <button type="button" class="tab-btn" [class.active]="pestanaDrawerServicio() === 'servicio'" (click)="pestanaDrawerServicio.set('servicio')">Servicio</button>
-          <button type="button" class="tab-btn" [class.active]="pestanaDrawerServicio() === 'incidentes'" (click)="pestanaDrawerServicio.set('incidentes')">Incidentes ({{ incidentesServicioActual().length }})</button>
+          <button type="button" class="tab-btn" [class.active]="pestanaDrawerServicio() === 'incidentes'" (click)="pestanaDrawerServicio.set('incidentes')">Eventos ({{ incidentesServicioActual().length }})</button>
         </div>
       }
 
       @if (pestanaDrawerServicio() === 'incidentes' && servicioEdicion()) {
         <div>
-          <h3 style="margin-bottom: 10px;">Incidentes Reportados</h3>
+          <h3 style="margin-bottom: 10px;">Eventos Reportados</h3>
           <div class="table-wrap" style="margin-bottom: 20px;">
             <table class="data-table">
               <thead>
@@ -653,7 +653,7 @@
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5"><div class="empty-state">No hay incidentes registrados para este servicio.</div></td></tr>
+                  <tr><td colspan="5"><div class="empty-state">No hay eventos registrados para este servicio.</div></td></tr>
                 }
               </tbody>
             </table>
@@ -662,7 +662,7 @@
           @if (menu.tienePermiso('servicios_proveedores', 'editar')) {
             <form [formGroup]="incidenteForm" (ngSubmit)="guardarIncidente()" class="card" style="margin-bottom: 20px;">
               <div class="flex items-center gap-8" style="justify-content: space-between;">
-                <h3>{{ incidenteSeleccionado() ? 'Editar Incidente' : 'Registrar Incidente' }}</h3>
+                <h3>{{ incidenteSeleccionado() ? 'Editar Evento' : 'Registrar Evento' }}</h3>
                 @if (incidenteSeleccionado()) {
                   <button type="button" class="btn btn-outline btn-sm" (click)="cancelarEdicionIncidente()">Cancelar edición</button>
                 }
@@ -670,7 +670,7 @@
 
               <div class="form-grid" style="margin-top: 10px;">
                 <div class="form-group">
-                  <label>Fecha y Hora del Incidente</label>
+                  <label>Fecha y Hora del Evento</label>
                   <input class="input" type="datetime-local" formControlName="fecha_incidente" />
                 </div>
                 <div class="form-group">
@@ -696,12 +696,12 @@
 
               <div class="form-group" style="margin-top: 10px;">
                 <label>Descripción *</label>
-                <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalle del incidente..."></textarea>
+                <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalle del evento..."></textarea>
               </div>
 
               <div class="form-actions">
                 <button type="submit" class="btn btn-accent btn-sm" [disabled]="incidenteForm.invalid || guardandoIncidente()">
-                  {{ guardandoIncidente() ? 'Guardando...' : (incidenteSeleccionado() ? 'Actualizar Incidente' : '+ Agregar Incidente') }}
+                  {{ guardandoIncidente() ? 'Guardando...' : (incidenteSeleccionado() ? 'Actualizar Evento' : '+ Agregar Evento') }}
                 </button>
               </div>
             </form>
@@ -1461,13 +1461,13 @@
   <div class="modal-overlay" (click)="cerrarModalIncidentesInfo()">
     <div class="modal-card modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
-        <h2>Incidentes, Notas y Adjuntos</h2>
+        <h2>Eventos, Notas y Adjuntos</h2>
         <button type="button" class="close" (click)="cerrarModalIncidentesInfo()">&times;</button>
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioIncidentesInfoActual()?.servicio }}</p>
 
       @if (cargandoIncidentesInfoModal()) {
-        <div class="desc" style="padding: 16px 0;">Cargando incidentes...</div>
+        <div class="desc" style="padding: 16px 0;">Cargando eventos...</div>
       } @else {
         <div class="modal-scroll-body" style="display: flex; flex-direction: column; gap: 16px;">
           @for (inc of incidentesInfoModal(); track inc.id) {
@@ -1539,7 +1539,7 @@
               }
             </div>
           } @empty {
-            <div class="empty-state">No hay incidentes registrados para este servicio.</div>
+            <div class="empty-state">No hay eventos registrados para este servicio.</div>
           }
         </div>
       }
