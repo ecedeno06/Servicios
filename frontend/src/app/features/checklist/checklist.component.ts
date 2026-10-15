@@ -15,18 +15,24 @@ export class ChecklistComponent implements OnInit {
   items = signal<ChecklistItem[]>([]);
   itemSeleccionado = signal<ChecklistItem | null>(null);
   filtroDescripcion = signal('');
+  filtroResponsable = signal('');
   guardando = signal(false);
 
   form = this.fb.group({
     descripcion: ['', [Validators.required]],
     observacion: [''],
+    responsable: [''],
     activo: [true],
   });
 
   itemsFiltrados = computed(() => {
-    const f = this.filtroDescripcion().trim().toLowerCase();
-    if (!f) return this.items();
-    return this.items().filter((i) => i.descripcion.toLowerCase().includes(f));
+    const fDesc = this.filtroDescripcion().trim().toLowerCase();
+    const fResp = this.filtroResponsable().trim().toLowerCase();
+    return this.items().filter((i) => {
+      if (fDesc && !i.descripcion.toLowerCase().includes(fDesc)) return false;
+      if (fResp && !(i.responsable || '').toLowerCase().includes(fResp)) return false;
+      return true;
+    });
   });
 
   constructor(
@@ -46,17 +52,17 @@ export class ChecklistComponent implements OnInit {
     const yaSeleccionado = this.itemSeleccionado()?.id === i.id;
     if (yaSeleccionado) { this.nuevoItem(); return; }
     this.itemSeleccionado.set(i);
-    this.form.reset({ descripcion: i.descripcion, observacion: i.observacion || '', activo: i.activo });
+    this.form.reset({ descripcion: i.descripcion, observacion: i.observacion || '', responsable: i.responsable || '', activo: i.activo });
   }
 
   nuevoItem(): void {
     this.itemSeleccionado.set(null);
-    this.form.reset({ descripcion: '', observacion: '', activo: true });
+    this.form.reset({ descripcion: '', observacion: '', responsable: '', activo: true });
   }
 
   guardarItem(): void {
     if (this.form.invalid || this.guardando()) return;
-    const data = this.form.getRawValue() as { descripcion: string; observacion: string; activo: boolean };
+    const data = this.form.getRawValue() as { descripcion: string; observacion: string; responsable: string; activo: boolean };
     const actual = this.itemSeleccionado();
     const req = actual ? this.checklistsSrv.actualizar(actual.id, data) : this.checklistsSrv.crear(data);
     this.guardando.set(true);

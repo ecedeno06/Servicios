@@ -33,19 +33,20 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { descripcion, observacion, activo } = req.body;
+    const { descripcion, observacion, responsable, activo } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
 
     const { rows } = await pool.query(
-      `insert into checklists (empresa_id, descripcion, observacion, activo, creado_por)
-       values ($1, $2, $3, $4, $5)
+      `insert into checklists (empresa_id, descripcion, observacion, responsable, activo, creado_por)
+       values ($1, $2, $3, $4, $5, $6)
        returning id`,
       [
         req.empresaId,
         descripcion.trim(),
         observacion ? observacion.trim() : null,
+        responsable ? responsable.trim() : null,
         activo ?? true,
         req.usuario.id,
       ]
@@ -58,7 +59,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { descripcion, observacion, activo } = req.body;
+    const { descripcion, observacion, responsable, activo } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
@@ -73,12 +74,14 @@ async function actualizar(req, res, next) {
       `update checklists set
          descripcion = $1,
          observacion = $2,
-         activo = $3,
-         modificado_por = $4
-       where id = $5 and empresa_id = $6`,
+         responsable = $3,
+         activo = $4,
+         modificado_por = $5
+       where id = $6 and empresa_id = $7`,
       [
         descripcion.trim(),
         observacion ? observacion.trim() : null,
+        responsable ? responsable.trim() : null,
         activo ?? true,
         req.usuario.id,
         req.params.id,

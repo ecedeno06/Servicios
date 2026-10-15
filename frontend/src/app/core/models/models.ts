@@ -421,6 +421,7 @@ export interface ChecklistItem {
   empresa_id: string;
   descripcion: string;
   observacion?: string | null;
+  responsable?: string | null;
   activo: boolean;
   creado_por: string;
   creado_por_nombre?: string;
