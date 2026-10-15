@@ -35,6 +35,7 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
+  verPassword = signal(false);
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
 
