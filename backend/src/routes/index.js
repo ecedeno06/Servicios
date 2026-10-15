@@ -21,6 +21,7 @@ router.use('/proveedores', require('./proveedores.routes'));
 router.use('/sectores-proveedores', require('./sectoresProveedores.routes'));
 router.use('/estados-servicios-proveedores', require('./estadosServiciosProveedores.routes'));
 router.use('/servicios-proveedores', require('./serviciosProveedores.routes'));
+router.use('/checklists', require('./checklists.routes'));
 router.use('/', require('./navegacion.routes'));
 
 

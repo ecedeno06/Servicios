@@ -14,6 +14,7 @@ function itemsConfiguracion() {
       { id: 'equipos', codigo: 'equipos', nombre: 'Equipos', ruta: '/equipos', icono: 'equipos', hijos: [] },
       { id: 'roles_permisos', codigo: 'roles_permisos', nombre: 'Roles y permisos', ruta: '/roles-permisos', icono: 'roles_permisos', hijos: [] },
       { id: 'estados_servicio', codigo: 'estados_servicio', nombre: 'Estados de Servicio', ruta: '/estados-servicio', icono: 'estados_servicio', hijos: [] },
+      { id: 'checklist', codigo: 'checklist', nombre: 'Checklist', ruta: '/checklist', icono: 'checklist', hijos: [] },
     ],
   };
 }

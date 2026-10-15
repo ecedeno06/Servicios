@@ -413,6 +413,23 @@ export interface EstadoServicioProveedorItem {
   servicios_count?: number;
 }
 
+// Catalogo con CRUD (Configuracion > Checklist) -- tabla de parametros
+// generica (descripcion + observacion) sin uso todavia en otra pantalla,
+// pensada para uso futuro.
+export interface ChecklistItem {
+  id: string;
+  empresa_id: string;
+  descripcion: string;
+  observacion?: string | null;
+  activo: boolean;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Una fila del Reporte de Servicios: servicio + proveedor + sector + costo
 // mensual + pagos totales ("pagada") dentro del rango de fechas pedido.
 export interface ReporteServicioPagos {
