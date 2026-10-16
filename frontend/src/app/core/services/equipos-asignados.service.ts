@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoAsignado, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
+import { EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class EquiposAsignadosService {
@@ -38,12 +38,29 @@ export class EquiposAsignadosService {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/adjuntos/${adjuntoId}`);
   }
 
-  // CHECKLIST (seguimiento persistente de pendientes/asignacion por equipo)
-  listarChecklistEquipo(equipoId: string): Observable<EquipoChecklistItem[]> {
-    return this.http.get<EquipoChecklistItem[]>(`${this.base}/${equipoId}/checklist`);
+  // CHECKLIST (ejecuciones -- se puede repetir mas de una vez por equipo,
+  // cada una asociada al usuario al que se le asigno el equipo + fecha)
+  listarChecklistEjecuciones(equipoId: string): Observable<EquipoChecklistEjecucion[]> {
+    return this.http.get<EquipoChecklistEjecucion[]>(`${this.base}/${equipoId}/checklist`);
   }
 
-  actualizarChecklistEquipoItem(equipoId: string, checklistId: string, data: { asignado_a?: string | null; completado: boolean }): Observable<EquipoChecklistItem> {
-    return this.http.put<EquipoChecklistItem>(`${this.base}/${equipoId}/checklist/${checklistId}`, data);
+  crearChecklistEjecucion(equipoId: string, data: { asignado_a?: string; fecha?: string }): Observable<EquipoChecklistEjecucion> {
+    return this.http.post<EquipoChecklistEjecucion>(`${this.base}/${equipoId}/checklist`, data);
+  }
+
+  obtenerChecklistEjecucion(equipoId: string, ejecucionId: string): Observable<EquipoChecklistEjecucionDetalle> {
+    return this.http.get<EquipoChecklistEjecucionDetalle>(`${this.base}/${equipoId}/checklist/${ejecucionId}`);
+  }
+
+  actualizarChecklistEjecucion(equipoId: string, ejecucionId: string, data: { asignado_a?: string; fecha?: string }): Observable<EquipoChecklistEjecucion> {
+    return this.http.put<EquipoChecklistEjecucion>(`${this.base}/${equipoId}/checklist/${ejecucionId}`, data);
+  }
+
+  eliminarChecklistEjecucion(equipoId: string, ejecucionId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}`);
+  }
+
+  actualizarChecklistEjecucionItem(equipoId: string, ejecucionId: string, checklistId: string, data: { completado: boolean }): Observable<EquipoChecklistItem> {
+    return this.http.put<EquipoChecklistItem>(`${this.base}/${equipoId}/checklist/${ejecucionId}/items/${checklistId}`, data);
   }
 }

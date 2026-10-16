@@ -153,47 +153,99 @@
 @if (checklistEquipoActual(); as equipoChk) {
   <div class="modal-overlay" (click)="cerrarChecklistEquipo()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="drawer-header">
-        <h2>Checklist</h2>
-        <button class="close" (click)="cerrarChecklistEquipo()">&times;</button>
-      </div>
-      <p class="text-muted text-sm">{{ equipoChk.marca }} {{ equipoChk.modelo }}</p>
+      @if (checklistEjecucionActual(); as ejecucion) {
+        <div class="drawer-header">
+          <h2>Checklist</h2>
+          <button class="close" (click)="cerrarChecklistEquipo()">&times;</button>
+        </div>
+        <button type="button" class="btn-link text-sm" (click)="volverListaChecklist()">&larr; Volver a la lista</button>
+        <p class="text-muted text-sm mt-8">
+          {{ equipoChk.marca }} {{ equipoChk.modelo }}
+          &middot; Asignado a {{ ejecucion.asignado_a || 'Sin asignar' }}
+          &middot; {{ (ejecucion.fecha | date:'d-MMM-y h:mm a') | lowercase }}
+        </p>
 
-      @if (cargandoChecklistEquipo()) {
-        <p class="text-muted text-sm">Cargando...</p>
-      } @else if (checklistEquipoItems().length === 0) {
-        <p class="text-muted text-sm">No hay items de checklist activos en el catalogo.</p>
-      } @else {
-        <div style="max-height: 400px; overflow-y: auto;">
-          @for (item of checklistEquipoItems(); track item.checklist_id) {
-            <div class="card" style="margin-bottom: 8px; padding: 10px;" [style.opacity]="guardandoChecklistItem() === item.checklist_id ? 0.6 : 1">
-              <label class="flex items-center gap-6" style="cursor: pointer;">
-                <input type="checkbox" [checked]="item.completado" (change)="toggleCompletadoChecklistEquipo(item)" />
-                <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
-              </label>
-              <div class="form-group" style="margin-top: 6px;">
-                <label style="font-size: 11px;">Asignado a</label>
-                <input
-                  class="input"
-                  [value]="item.asignado_a || ''"
-                  [placeholder]="item.responsable_sugerido || 'Nombre de la persona'"
-                  (blur)="actualizarAsignadoChecklistEquipo(item, $any($event.target).value)"
-                />
+        @if (cargandoChecklist()) {
+          <p class="text-muted text-sm">Cargando...</p>
+        } @else if (ejecucion.items.length === 0) {
+          <p class="text-muted text-sm">No hay items de checklist activos en el catalogo.</p>
+        } @else {
+          <div style="max-height: 360px; overflow-y: auto; margin-top: 8px;">
+            @for (item of ejecucion.items; track item.checklist_id) {
+              <div class="card" style="margin-bottom: 8px; padding: 10px;" [style.opacity]="guardandoChecklistItem() === item.checklist_id ? 0.6 : 1">
+                <label class="flex items-center gap-6" style="cursor: pointer;">
+                  <input type="checkbox" [checked]="item.completado" (change)="toggleCompletadoChecklistItem(item)" />
+                  <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
+                </label>
+                @if (item.completado && item.fecha_completado) {
+                  <div class="text-muted text-sm" style="margin-top: 4px;">
+                    Completado el {{ (item.fecha_completado | date:'d-MMM-y h:mm a') | lowercase }}
+                    @if (item.modificado_por_nombre) { &middot; {{ item.modificado_por_nombre }} }
+                  </div>
+                }
               </div>
-              @if (item.completado && item.fecha_completado) {
-                <div class="text-muted text-sm" style="margin-top: 4px;">
-                  Completado el {{ (item.fecha_completado | date:'d-MMM-y h:mm a') | lowercase }}
-                  @if (item.modificado_por_nombre) { &middot; {{ item.modificado_por_nombre }} }
-                </div>
-              }
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" (click)="cerrarChecklistEquipo()">Cerrar</button>
+        </div>
+      } @else {
+        <div class="drawer-header">
+          <h2>Checklist</h2>
+          <button class="close" (click)="cerrarChecklistEquipo()">&times;</button>
+        </div>
+        <p class="text-muted text-sm">{{ equipoChk.marca }} {{ equipoChk.modelo }}</p>
+
+        @if (mostrandoNuevoChecklist()) {
+          <form [formGroup]="nuevoChecklistForm" (ngSubmit)="crearChecklistEjecucion()" class="card mt-16" style="padding: 12px;">
+            <div class="form-group">
+              <label>Asignado a</label>
+              <input class="input" formControlName="asignado_a" placeholder="Nombre de la persona" />
             </div>
-          }
+            <div class="form-group mt-8">
+              <label>Fecha</label>
+              <input class="input" type="datetime-local" formControlName="fecha" />
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="guardandoNuevoChecklist()">{{ guardandoNuevoChecklist() ? 'Creando...' : 'Crear checklist' }}</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="cancelarNuevoChecklist()">Cancelar</button>
+            </div>
+          </form>
+        } @else {
+          <button type="button" class="btn btn-primary btn-sm mt-16" (click)="mostrarNuevoChecklistForm()">+ Nuevo checklist</button>
+        }
+
+        @if (cargandoChecklist()) {
+          <p class="text-muted text-sm mt-16">Cargando...</p>
+        } @else if (checklistEjecuciones().length === 0) {
+          <p class="text-muted text-sm mt-16">Todavia no se ha hecho ningun checklist para este equipo.</p>
+        } @else {
+          <div style="max-height: 320px; overflow-y: auto; margin-top: 12px;">
+            @for (ej of checklistEjecuciones(); track ej.id) {
+              <div class="card row-clickable" style="margin-bottom: 8px; padding: 10px;" (click)="abrirChecklistEjecucion(ej.id)">
+                <div class="flex items-center gap-8" style="justify-content: space-between;">
+                  <div>
+                    <strong class="text-sm">{{ ej.asignado_a || 'Sin asignar' }}</strong>
+                    <div class="text-muted text-sm" style="margin-top: 2px;">
+                      {{ (ej.fecha | date:'d-MMM-y h:mm a') | lowercase }}
+                      &middot; {{ ej.completados_count ?? 0 }} de {{ ej.total_items ?? 0 }} completados
+                    </div>
+                  </div>
+                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" aria-label="Eliminar" (click)="eliminarChecklistEjecucion(ej, $event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" (click)="cerrarChecklistEquipo()">Cerrar</button>
         </div>
       }
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-outline" (click)="cerrarChecklistEquipo()">Cerrar</button>
-      </div>
     </div>
   </div>
 }

@@ -432,17 +432,30 @@ export interface ChecklistItem {
   updated_at: string;
 }
 
-// Un item del catalogo Checklist aplicado a un equipo puntual -- el join
-// siempre trae TODOS los items activos del catalogo; equipo_checklist_id
-// es null mientras no se haya tocado ese item para este equipo (pendiente
-// por defecto, sin asignar).
+// Una "ejecucion" del checklist para un equipo -- se puede repetir mas de
+// una vez (ej. cada vez que el equipo cambia de responsable), cada una
+// asociada al usuario al que se le asigno el equipo en ese momento
+// (asignado_a) y con su propia fecha.
+export interface EquipoChecklistEjecucion {
+  id: string;
+  asignado_a?: string | null;
+  fecha: string;
+  creado_por_nombre?: string;
+  total_items?: number;
+  completados_count?: number;
+}
+
+export interface EquipoChecklistEjecucionDetalle extends EquipoChecklistEjecucion {
+  items: EquipoChecklistItem[];
+}
+
+// Un item del catalogo Checklist dentro de una ejecucion puntual -- el
+// join siempre trae TODOS los items activos del catalogo; completado es
+// false por defecto mientras no se haya marcado para esa ejecucion.
 export interface EquipoChecklistItem {
   checklist_id: string;
   descripcion: string;
-  responsable_sugerido?: string | null;
-  equipo_checklist_id?: string | null;
   completado: boolean;
-  asignado_a?: string | null;
   fecha_completado?: string | null;
   modificado_por_nombre?: string | null;
 }

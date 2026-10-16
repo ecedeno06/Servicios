@@ -8,7 +8,7 @@ import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ChecklistsService } from '../../core/services/checklists.service';
-import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
+import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -404,6 +404,14 @@ export class EquiposAsignadosComponent implements OnInit {
 
   private hoyISO(): string { return new Date().toISOString().slice(0, 10); }
 
+  // Mismo patron que fecha_incidente (servicios-proveedores.component.ts):
+  // el input datetime-local no trae zona horaria (su valor se interpreta
+  // como hora LOCAL del navegador), asi que hay que convertir a mano.
+  private aFechaHoraLocal(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
   cargar(): void { this.srv.listar().subscribe((data) => this.equipos.set(data)); }
 
   limpiarFiltros(): void {
@@ -724,51 +732,127 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  // ---------- Checklist del equipo (ver/asignar pendientes) ----------
-  // Seguimiento persistente por equipo (independiente de un cambio de
-  // estado puntual): cada item del catalogo activo se puede marcar
-  // completado y asignar a alguien, en cualquier momento, desde el menu
-  // de Acciones de la fila.
+  // ---------- Checklist del equipo (ejecuciones) ----------
+  // Se puede repetir el checklist mas de una vez por equipo (ej. cada vez
+  // que cambia de responsable): cada "ejecucion" queda asociada al
+  // usuario al que se le asigno el equipo en ese momento (por defecto el
+  // "Asignado a" actual del equipo) + su propia fecha. Accesible desde el
+  // menu de Acciones de la fila.
   checklistEquipoActual = signal<EquipoAsignado | null>(null);
-  checklistEquipoItems = signal<EquipoChecklistItem[]>([]);
-  cargandoChecklistEquipo = signal(false);
+  checklistEjecuciones = signal<EquipoChecklistEjecucion[]>([]);
+  checklistEjecucionActual = signal<EquipoChecklistEjecucionDetalle | null>(null);
+  cargandoChecklist = signal(false);
   guardandoChecklistItem = signal<string | null>(null);
+  mostrandoNuevoChecklist = signal(false);
+  guardandoNuevoChecklist = signal(false);
+
+  nuevoChecklistForm = this.fb.group({
+    asignado_a: [''],
+    fecha: [''],
+  });
 
   abrirChecklistEquipo(e: EquipoAsignado): void {
     this.cerrarMenuAccion();
     this.checklistEquipoActual.set(e);
-    this.checklistEquipoItems.set([]);
-    this.cargandoChecklistEquipo.set(true);
-    this.srv.listarChecklistEquipo(e.id).subscribe({
+    this.checklistEjecucionActual.set(null);
+    this.mostrandoNuevoChecklist.set(false);
+    this.cargarChecklistEjecuciones();
+  }
+
+  cargarChecklistEjecuciones(): void {
+    const equipo = this.checklistEquipoActual();
+    if (!equipo) return;
+    this.cargandoChecklist.set(true);
+    this.srv.listarChecklistEjecuciones(equipo.id).subscribe({
       next: (data) => {
-        this.checklistEquipoItems.set(data);
-        this.cargandoChecklistEquipo.set(false);
+        this.checklistEjecuciones.set(data);
+        this.cargandoChecklist.set(false);
       },
-      error: () => this.cargandoChecklistEquipo.set(false),
+      error: () => this.cargandoChecklist.set(false),
     });
   }
 
   cerrarChecklistEquipo(): void {
     this.checklistEquipoActual.set(null);
-    this.checklistEquipoItems.set([]);
+    this.checklistEjecuciones.set([]);
+    this.checklistEjecucionActual.set(null);
+    this.mostrandoNuevoChecklist.set(false);
   }
 
-  toggleCompletadoChecklistEquipo(item: EquipoChecklistItem): void {
-    this.guardarChecklistEquipoItem(item, { completado: !item.completado, asignado_a: item.asignado_a ?? undefined });
+  mostrarNuevoChecklistForm(): void {
+    const equipo = this.checklistEquipoActual();
+    this.nuevoChecklistForm.reset({ asignado_a: equipo?.asignada_a || '', fecha: this.aFechaHoraLocal(new Date()) });
+    this.mostrandoNuevoChecklist.set(true);
   }
 
-  actualizarAsignadoChecklistEquipo(item: EquipoChecklistItem, asignadoA: string): void {
-    this.guardarChecklistEquipoItem(item, { completado: item.completado, asignado_a: asignadoA });
+  cancelarNuevoChecklist(): void {
+    this.mostrandoNuevoChecklist.set(false);
   }
 
-  private guardarChecklistEquipoItem(item: EquipoChecklistItem, data: { completado: boolean; asignado_a?: string }): void {
+  crearChecklistEjecucion(): void {
+    const equipo = this.checklistEquipoActual();
+    if (!equipo || this.guardandoNuevoChecklist()) return;
+    const { asignado_a, fecha } = this.nuevoChecklistForm.getRawValue();
+
+    this.guardandoNuevoChecklist.set(true);
+    this.srv.crearChecklistEjecucion(equipo.id, {
+      asignado_a: asignado_a?.trim() || undefined,
+      fecha: fecha ? new Date(fecha).toISOString() : undefined,
+    }).subscribe({
+      next: (nueva) => {
+        this.guardandoNuevoChecklist.set(false);
+        this.mostrandoNuevoChecklist.set(false);
+        this.cargarChecklistEjecuciones();
+        this.abrirChecklistEjecucion(nueva.id);
+      },
+      error: (err) => {
+        this.guardandoNuevoChecklist.set(false);
+        alert(err?.error?.mensaje || 'No se pudo crear el checklist');
+      },
+    });
+  }
+
+  abrirChecklistEjecucion(ejecucionId: string): void {
     const equipo = this.checklistEquipoActual();
     if (!equipo) return;
+    this.cargandoChecklist.set(true);
+    this.srv.obtenerChecklistEjecucion(equipo.id, ejecucionId).subscribe({
+      next: (detalle) => {
+        this.checklistEjecucionActual.set(detalle);
+        this.cargandoChecklist.set(false);
+      },
+      error: () => this.cargandoChecklist.set(false),
+    });
+  }
+
+  volverListaChecklist(): void {
+    this.checklistEjecucionActual.set(null);
+    this.cargarChecklistEjecuciones();
+  }
+
+  eliminarChecklistEjecucion(ejecucion: EquipoChecklistEjecucion, event: MouseEvent): void {
+    event.stopPropagation();
+    const equipo = this.checklistEquipoActual();
+    if (!equipo) return;
+    if (!confirm('¿Eliminar este checklist?')) return;
+    this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id).subscribe({
+      next: () => this.cargarChecklistEjecuciones(),
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
+    });
+  }
+
+  toggleCompletadoChecklistItem(item: EquipoChecklistItem): void {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    if (!equipo || !ejecucion) return;
     this.guardandoChecklistItem.set(item.checklist_id);
-    this.srv.actualizarChecklistEquipoItem(equipo.id, item.checklist_id, data).subscribe({
+    this.srv.actualizarChecklistEjecucionItem(equipo.id, ejecucion.id, item.checklist_id, { completado: !item.completado }).subscribe({
       next: (actualizado) => {
         this.guardandoChecklistItem.set(null);
-        this.checklistEquipoItems.update((arr) => arr.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)));
+        this.checklistEjecucionActual.update((det) => det && {
+          ...det,
+          items: det.items.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)),
+        });
       },
       error: (err) => {
         this.guardandoChecklistItem.set(null);
