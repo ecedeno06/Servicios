@@ -141,10 +141,15 @@
             <span class="th-sortable" (click)="ordenarPorServ('pagado')">Pagado <span class="orden-icono">{{ iconoOrdenServ('pagado') }}</span></span>
             <app-multi-select-filter [valores]="valoresServPagado()" [seleccionados]="filtroServPagado()" [formatoValor]="formatoMonedaServ" (seleccionadosChange)="filtroServPagado.set($event)" />
           </th>
+          <!-- Columna "F. Pago" oculta hasta nueva orden (pedido explicito)
+               -- no se borra, solo se oculta. Para restaurarla,
+               descomentar este th y el td de abajo y subir colspan="12"
+               de vuelta a 13.
           <th class="col-fecha-pago">
             <span class="th-sortable" (click)="ordenarPorServ('fechaPago')">F. Pago <span class="orden-icono">{{ iconoOrdenServ('fechaPago') }}</span></span>
             <app-multi-select-filter [valores]="valoresServFechaPago()" [seleccionados]="filtroServFechaPago()" (seleccionadosChange)="filtroServFechaPago.set($event)" />
           </th>
+          -->
           <th class="th-narrow">
             <span class="th-sortable" (click)="ordenarPorServ('estado')">Estado <span class="orden-icono">{{ iconoOrdenServ('estado') }}</span></span>
             <app-multi-select-filter [valores]="valoresServEstado()" [seleccionados]="filtroServEstado()" [formatoValor]="formatoEstadoServ" (seleccionadosChange)="filtroServEstado.set($event)" />
@@ -240,7 +245,7 @@
                 }
               </span>
             </td>
-            <td class="col-fecha-pago">{{ textoFechaPago(s) }}</td>
+            <!-- <td class="col-fecha-pago">{{ textoFechaPago(s) }}</td> -->
             <td>
               <span class="badge" [class]="s.estado_clase_badge || 'badge-slate'">{{ s.estado }}</span>
             </td>
@@ -306,7 +311,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="13">
+            <td colspan="12">
               <div class="empty-state">
                 {{ hayFiltrosServ() ? 'Ningún servicio coincide con los filtros aplicados.' : 'No hay servicios registrados todavía.' }}
               </div>
