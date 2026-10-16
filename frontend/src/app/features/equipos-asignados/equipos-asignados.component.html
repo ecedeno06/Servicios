@@ -93,7 +93,14 @@
           </td>
           <td [title]="e.numero_serie ? 'N/S: ' + e.numero_serie : 'Sin numero de serie'">{{ e.marca }} {{ e.modelo }}</td>
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
-          <td>{{ e.asignada_a || '-' }}</td>
+          <td>
+            <span class="flex items-center gap-6">
+              <button type="button" class="info-icon-btn" title="Ver checklist" aria-label="Ver checklist" (click)="$event.stopPropagation(); abrirChecklistEquipo(e)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </button>
+              <span>{{ e.asignada_a || '-' }}</span>
+            </span>
+          </td>
           <!-- fecha_entrada es "date" (sin hora); forzar UTC evita que el
                pipe la corra un dia hacia atras en timezones negativos. -->
           <td>{{ e.fecha_entrada | date:'dd/MM/yyyy':'UTC' }}</td>
