@@ -12,24 +12,33 @@
 <div class="table-wrap table-wrap-compact">
   <table class="data-table">
     <thead>
-      <tr><th>Descripcion</th><th>Observacion</th><th>Responsable</th><th>Activo</th></tr>
-      <tr class="filter-row">
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroDescripcion()" (ngModelChange)="filtroDescripcion.set($event)" /></th>
-        <th></th>
-        <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroResponsable()" (ngModelChange)="filtroResponsable.set($event)" /></th>
-        <th></th>
+      <tr>
+        <th>
+          <span style="display: block; margin-bottom: 6px;">Descripcion</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroDescripcion()" (ngModelChange)="filtroDescripcion.set($event)" />
+        </th>
+        <!-- Columna Observacion oculta hasta nueva orden (pedido explicito) -- no se borra, solo se oculta.
+        <th>Observacion</th>
+        -->
+        <th>
+          <span style="display: block; margin-bottom: 6px;">Responsable</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroResponsable()" (ngModelChange)="filtroResponsable.set($event)" />
+        </th>
+        <th>Activo</th>
       </tr>
     </thead>
     <tbody>
       @for (i of itemsFiltrados(); track i.id) {
         <tr class="row-clickable" [class.row-selected]="itemSeleccionado()?.id === i.id" (click)="seleccionarItem(i)">
           <td>{{ i.descripcion }}</td>
+          <!--
           <td>{{ i.observacion || '-' }}</td>
+          -->
           <td>{{ i.responsable || '-' }}</td>
           <td>{{ i.activo ? 'Si' : 'No' }}</td>
         </tr>
       } @empty {
-        <tr><td colspan="4"><div class="empty-state">{{ filtroDescripcion() || filtroResponsable() ? 'Ningun registro coincide con el filtro.' : 'No hay registros de checklist.' }}</div></td></tr>
+        <tr><td colspan="3"><div class="empty-state">{{ filtroDescripcion() || filtroResponsable() ? 'Ningun registro coincide con el filtro.' : 'No hay registros de checklist.' }}</div></td></tr>
       }
     </tbody>
   </table>

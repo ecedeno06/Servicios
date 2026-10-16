@@ -1,0 +1,11 @@
+/* Filtro dentro del encabezado de columna, apilado bajo el nombre --
+   mismo patron que Auditoria de sesiones / Equipos asignados / Servicios
+   y Proveedores (siempre encabezado+filtro en el mismo th). */
+.data-table thead th input.input-th-filtro {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 5px 8px;
+  color: var(--text-heading);
+}
