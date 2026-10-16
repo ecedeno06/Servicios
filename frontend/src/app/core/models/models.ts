@@ -486,7 +486,8 @@ export interface ServicioProveedor {
   costo_anual: number;
   fecha_inicio: string;
   fecha_fin?: string | null;
-  fecha_corte?: string | null;
+  fecha_corte_dia?: number | null;
+  fecha_corte_mes?: number | null;
   es_indefinido: boolean;
   dias_aviso_vencimiento?: number | null;
   no_contrato?: string | null;

@@ -263,13 +263,19 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.datePipe.transform(s.ultimo_pago_fecha, 'dd/MM/yyyy', 'UTC') || '-';
   }
 
-  // Fecha de Corte: dia de corte de facturacion, se repite todos los
-  // meses -- por eso se muestra solo dia-mes (sin año), pedido explicito.
-  // Locale 'es' explicito (ver registerLocaleData en main.ts) para que el
-  // mes salga abreviado en español ("ago"), no en ingles ("aug").
+  private static readonly MESES_ABREV = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+  // Fecha de Corte: dia (siempre) + mes (solo si el gasto es anual, ver
+  // actualizarEstadoFechaCorteMes). Si hay costo mensual, el cobro se
+  // repite cada mes y solo el dia tiene sentido ("06"); si es anual,
+  // se muestra dia-mes ("06-ago").
   textoFechaCorte(s: ServicioProveedor): string {
-    if (!s.fecha_corte) return '-';
-    return (this.datePipe.transform(s.fecha_corte, 'dd-MMM', 'UTC', 'es') || '-').toLowerCase();
+    if (!s.fecha_corte_dia) return '-';
+    const dia = String(s.fecha_corte_dia).padStart(2, '0');
+    if (s.fecha_corte_mes) {
+      return `${dia}-${ServiciosProveedoresComponent.MESES_ABREV[s.fecha_corte_mes - 1]}`;
+    }
+    return dia;
   }
 
   // Dias de hoy a fecha_fin (negativo si ya vencio). No aplica a
@@ -606,7 +612,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     servicio: ['', [Validators.required]],
     costo_mensual: [0, [Validators.required, Validators.min(0)]],
     costo_anual: [0, [Validators.required, Validators.min(0)]],
-    fecha_corte: [null as string | null],
+    fecha_corte_dia: [null as number | null, [Validators.min(1), Validators.max(31)]],
+    fecha_corte_mes: [null as number | null, [Validators.min(1), Validators.max(12)]],
     fecha_inicio: [new Date().toISOString().substring(0, 10), [Validators.required]],
     fecha_fin: [{ value: null as string | null, disabled: true }],
     es_indefinido: [true],
@@ -1701,7 +1708,8 @@ export class ServiciosProveedoresComponent implements OnInit {
       servicio: '',
       costo_mensual: 0,
       costo_anual: 0,
-      fecha_corte: null,
+      fecha_corte_dia: null,
+      fecha_corte_mes: null,
       fecha_inicio: new Date().toISOString().substring(0, 10),
       fecha_fin: null,
       es_indefinido: true,
@@ -1715,6 +1723,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       responsable: this.auth.usuario()?.nombre || '',
     });
     this.onToggleIndefinido();
+    this.actualizarEstadoFechaCorteMes(0);
     this.panelServicioAbierto.set(true);
   }
 
@@ -1739,7 +1748,8 @@ export class ServiciosProveedoresComponent implements OnInit {
       servicio: s.servicio,
       costo_mensual: s.costo_mensual,
       costo_anual: s.costo_anual,
-      fecha_corte: s.fecha_corte ? s.fecha_corte.substring(0, 10) : null,
+      fecha_corte_dia: s.fecha_corte_dia ?? null,
+      fecha_corte_mes: s.fecha_corte_mes ?? null,
       fecha_inicio: s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : new Date().toISOString().substring(0, 10),
       fecha_fin: s.fecha_fin ? s.fecha_fin.substring(0, 10) : null,
       es_indefinido: s.es_indefinido ?? true,
@@ -1751,6 +1761,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       responsable: s.responsable || '',
     });
     this.onToggleIndefinido();
+    this.actualizarEstadoFechaCorteMes(Number(s.costo_mensual) || 0);
 
     if (Array.isArray(s.contactos)) {
       s.contactos.forEach((c) => this.agregarContacto(c));
@@ -1792,6 +1803,20 @@ export class ServiciosProveedoresComponent implements OnInit {
   calcularCostoAnualDesdeMensual(): void {
     const mensual = Number(this.servicioForm.get('costo_mensual')?.value) || 0;
     this.servicioForm.patchValue({ costo_anual: +(mensual * 12).toFixed(2) });
+    this.actualizarEstadoFechaCorteMes(mensual);
+  }
+
+  // El mes de Fecha de Corte solo tiene sentido para un gasto anual
+  // (costo_mensual = 0): si hay costo mensual, el cobro se repite cada
+  // mes y el campo "mes" se deshabilita y se limpia.
+  private actualizarEstadoFechaCorteMes(costoMensual: number): void {
+    const mesCtrl = this.servicioForm.get('fecha_corte_mes');
+    if (costoMensual > 0) {
+      mesCtrl?.reset(null);
+      mesCtrl?.disable();
+    } else {
+      mesCtrl?.enable();
+    }
   }
 
   guardandoServicio = signal(false);

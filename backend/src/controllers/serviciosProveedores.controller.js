@@ -126,7 +126,7 @@ async function resolverEstado(estadoId, empresaId) {
 
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte_dia, fecha_corte_mes, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -147,21 +147,27 @@ async function crear(req, res, next) {
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
     const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
     const diasAvisoFinal = indefinidoFinal ? null : (dias_aviso_vencimiento ?? null);
+    const costoMensualFinal = costo_mensual ?? 0.00;
+    // Mes de corte solo aplica a gastos anuales (costo_mensual = 0): si hay
+    // costo mensual, el cobro se repite cada mes y el mes no tiene sentido.
+    const fechaCorteDiaFinal = fecha_corte_dia || null;
+    const fechaCorteMesFinal = Number(costoMensualFinal) > 0 ? null : (fecha_corte_mes || null);
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, estado_id, observacion, url, responsable, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11, $12::jsonb, $13, $14, $15, $16, $17, $18)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte_dia, fecha_corte_mes, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, estado_id, observacion, url, responsable, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16, $17, $18, $19)
        returning id`,
       [
         req.empresaId,
         proveedor_id,
         servicio.trim(),
-        costo_mensual ?? 0.00,
+        costoMensualFinal,
         costo_anual ?? 0.00,
         fecha_inicio || null,
         fechaFinFinal,
-        fecha_corte || null,
+        fechaCorteDiaFinal,
+        fechaCorteMesFinal,
         indefinidoFinal,
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
@@ -182,7 +188,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte_dia, fecha_corte_mes, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -200,6 +206,9 @@ async function actualizar(req, res, next) {
     const indefinidoFinal = es_indefinido === undefined ? true : !!es_indefinido;
     const fechaFinFinal = indefinidoFinal ? null : (fecha_fin || null);
     const diasAvisoFinal = indefinidoFinal ? null : (dias_aviso_vencimiento ?? null);
+    const costoMensualFinal = costo_mensual ?? 0.00;
+    const fechaCorteDiaFinal = fecha_corte_dia || null;
+    const fechaCorteMesFinal = Number(costoMensualFinal) > 0 ? null : (fecha_corte_mes || null);
 
     await pool.query(
       `update servicios_proveedores set
@@ -209,26 +218,28 @@ async function actualizar(req, res, next) {
          costo_anual = $4,
          fecha_inicio = coalesce($5, fecha_inicio),
          fecha_fin = $6,
-         fecha_corte = $7,
-         es_indefinido = $8,
-         dias_aviso_vencimiento = $9,
-         no_contrato = $10,
-         contactos = $11::jsonb,
-         estado = $12,
-         estado_id = $13,
-         observacion = $14,
-         url = $15,
-         responsable = $16,
-         modificado_por = $17
-       where id = $18 and empresa_id = $19`,
+         fecha_corte_dia = $7,
+         fecha_corte_mes = $8,
+         es_indefinido = $9,
+         dias_aviso_vencimiento = $10,
+         no_contrato = $11,
+         contactos = $12::jsonb,
+         estado = $13,
+         estado_id = $14,
+         observacion = $15,
+         url = $16,
+         responsable = $17,
+         modificado_por = $18
+       where id = $19 and empresa_id = $20`,
       [
         proveedor_id,
         servicio.trim(),
-        costo_mensual ?? 0.00,
+        costoMensualFinal,
         costo_anual ?? 0.00,
         fecha_inicio || null,
         fechaFinFinal,
-        fecha_corte || null,
+        fechaCorteDiaFinal,
+        fechaCorteMesFinal,
         indefinidoFinal,
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,

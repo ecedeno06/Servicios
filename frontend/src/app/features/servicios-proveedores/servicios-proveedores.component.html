@@ -794,7 +794,10 @@
           </div>
           <div class="form-group">
             <label>Fecha de Corte</label>
-            <input class="input" type="date" formControlName="fecha_corte" />
+            <div class="flex gap-6">
+              <input class="input" type="number" min="1" max="31" placeholder="Día" formControlName="fecha_corte_dia" style="width: 70px;" />
+              <input class="input" type="number" min="1" max="12" placeholder="Mes" formControlName="fecha_corte_mes" style="width: 70px;" title="Solo aplica si es un gasto anual (Costo Mensual = 0)" />
+            </div>
           </div>
         </div>
 
