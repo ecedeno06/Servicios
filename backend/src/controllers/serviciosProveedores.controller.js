@@ -125,7 +125,7 @@ async function resolverEstado(estadoId, empresaId) {
 
 async function crear(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -149,8 +149,8 @@ async function crear(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into servicios_proveedores
-         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, estado_id, observacion, url, responsable, creado_por)
-       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15, $16, $17)
+         (empresa_id, proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado, estado_id, observacion, url, responsable, creado_por)
+       values ($1, $2, $3, $4, $5, coalesce($6, current_date), $7, $8, $9, $10, $11, $12::jsonb, $13, $14, $15, $16, $17, $18)
        returning id`,
       [
         req.empresaId,
@@ -160,6 +160,7 @@ async function crear(req, res, next) {
         costo_anual ?? 0.00,
         fecha_inicio || null,
         fechaFinFinal,
+        fecha_corte || null,
         indefinidoFinal,
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
@@ -180,7 +181,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
+    const { proveedor_id, servicio, costo_mensual, costo_anual, fecha_inicio, fecha_fin, fecha_corte, es_indefinido, dias_aviso_vencimiento, no_contrato, contactos, estado_id, observacion, url, responsable } = req.body;
     if (!proveedor_id || !servicio) {
       return res.status(400).json({ mensaje: 'proveedor_id y servicio son requeridos' });
     }
@@ -207,17 +208,18 @@ async function actualizar(req, res, next) {
          costo_anual = $4,
          fecha_inicio = coalesce($5, fecha_inicio),
          fecha_fin = $6,
-         es_indefinido = $7,
-         dias_aviso_vencimiento = $8,
-         no_contrato = $9,
-         contactos = $10::jsonb,
-         estado = $11,
-         estado_id = $12,
-         observacion = $13,
-         url = $14,
-         responsable = $15,
-         modificado_por = $16
-       where id = $17 and empresa_id = $18`,
+         fecha_corte = $7,
+         es_indefinido = $8,
+         dias_aviso_vencimiento = $9,
+         no_contrato = $10,
+         contactos = $11::jsonb,
+         estado = $12,
+         estado_id = $13,
+         observacion = $14,
+         url = $15,
+         responsable = $16,
+         modificado_por = $17
+       where id = $18 and empresa_id = $19`,
       [
         proveedor_id,
         servicio.trim(),
@@ -225,6 +227,7 @@ async function actualizar(req, res, next) {
         costo_anual ?? 0.00,
         fecha_inicio || null,
         fechaFinFinal,
+        fecha_corte || null,
         indefinidoFinal,
         diasAvisoFinal,
         no_contrato ? no_contrato.trim() : null,
