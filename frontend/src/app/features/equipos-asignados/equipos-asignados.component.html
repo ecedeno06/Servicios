@@ -473,14 +473,6 @@
             @if (m.observacion) {
               <div class="text-sm mt-8">{{ m.observacion }}</div>
             }
-            @if (m.checklist && m.checklist.length > 0) {
-              <div class="text-sm mt-8">
-                <span class="text-muted text-sm">Checklist:</span>
-                <ul style="margin: 2px 0 0 18px; padding: 0;">
-                  @for (c of m.checklist; track c.id) { <li>{{ c.descripcion }}</li> }
-                </ul>
-              </div>
-            }
           </li>
         }
       </ul>
@@ -598,14 +590,6 @@
               </div>
               @if (m.observacion) {
                 <div class="text-sm mt-8">{{ m.observacion }}</div>
-              }
-              @if (m.checklist && m.checklist.length > 0) {
-                <div class="text-sm mt-8">
-                  <span class="text-muted text-sm">Checklist:</span>
-                  <ul style="margin: 2px 0 0 18px; padding: 0;">
-                    @for (c of m.checklist; track c.id) { <li>{{ c.descripcion }}</li> }
-                  </ul>
-                </div>
               }
             </li>
           }
