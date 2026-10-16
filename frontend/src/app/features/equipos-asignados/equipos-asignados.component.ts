@@ -8,7 +8,7 @@ import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ChecklistsService } from '../../core/services/checklists.service';
-import { Categoria, ChecklistItem, EquipoAsignado, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
+import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -720,6 +720,59 @@ export class EquiposAsignadosComponent implements OnInit {
       error: (err) => {
         this.guardandoAccion.set(false);
         alert(err?.error?.mensaje || 'No se pudo cambiar el estado');
+      },
+    });
+  }
+
+  // ---------- Checklist del equipo (ver/asignar pendientes) ----------
+  // Seguimiento persistente por equipo (independiente de un cambio de
+  // estado puntual): cada item del catalogo activo se puede marcar
+  // completado y asignar a alguien, en cualquier momento, desde el menu
+  // de Acciones de la fila.
+  checklistEquipoActual = signal<EquipoAsignado | null>(null);
+  checklistEquipoItems = signal<EquipoChecklistItem[]>([]);
+  cargandoChecklistEquipo = signal(false);
+  guardandoChecklistItem = signal<string | null>(null);
+
+  abrirChecklistEquipo(e: EquipoAsignado): void {
+    this.cerrarMenuAccion();
+    this.checklistEquipoActual.set(e);
+    this.checklistEquipoItems.set([]);
+    this.cargandoChecklistEquipo.set(true);
+    this.srv.listarChecklistEquipo(e.id).subscribe({
+      next: (data) => {
+        this.checklistEquipoItems.set(data);
+        this.cargandoChecklistEquipo.set(false);
+      },
+      error: () => this.cargandoChecklistEquipo.set(false),
+    });
+  }
+
+  cerrarChecklistEquipo(): void {
+    this.checklistEquipoActual.set(null);
+    this.checklistEquipoItems.set([]);
+  }
+
+  toggleCompletadoChecklistEquipo(item: EquipoChecklistItem): void {
+    this.guardarChecklistEquipoItem(item, { completado: !item.completado, asignado_a: item.asignado_a ?? undefined });
+  }
+
+  actualizarAsignadoChecklistEquipo(item: EquipoChecklistItem, asignadoA: string): void {
+    this.guardarChecklistEquipoItem(item, { completado: item.completado, asignado_a: asignadoA });
+  }
+
+  private guardarChecklistEquipoItem(item: EquipoChecklistItem, data: { completado: boolean; asignado_a?: string }): void {
+    const equipo = this.checklistEquipoActual();
+    if (!equipo) return;
+    this.guardandoChecklistItem.set(item.checklist_id);
+    this.srv.actualizarChecklistEquipoItem(equipo.id, item.checklist_id, data).subscribe({
+      next: (actualizado) => {
+        this.guardandoChecklistItem.set(null);
+        this.checklistEquipoItems.update((arr) => arr.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)));
+      },
+      error: (err) => {
+        this.guardandoChecklistItem.set(null);
+        alert(err?.error?.mensaje || 'No se pudo guardar el checklist');
       },
     });
   }

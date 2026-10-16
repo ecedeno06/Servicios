@@ -16,4 +16,7 @@ router.post('/:id/adjuntos', requirePermiso('equipos_asignados', 'crear'), ctrl.
 router.put('/:id/adjuntos/:adjuntoId', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizarAdjunto);
 router.delete('/:id/adjuntos/:adjuntoId', requirePermiso('equipos_asignados', 'eliminar'), ctrl.eliminarAdjunto);
 
+router.get('/:id/checklist', requirePermiso('equipos_asignados', 'ver'), ctrl.listarChecklist);
+router.put('/:id/checklist/:checklistId', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizarChecklistItem);
+
 module.exports = router;

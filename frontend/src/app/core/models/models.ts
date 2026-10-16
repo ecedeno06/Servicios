@@ -415,8 +415,8 @@ export interface EstadoServicioProveedorItem {
 }
 
 // Catalogo con CRUD (Configuracion > Checklist) -- tabla de parametros
-// generica (descripcion + observacion) sin uso todavia en otra pantalla,
-// pensada para uso futuro.
+// generica (descripcion + observacion), consumida por Equipos Asignados
+// (ver EquipoChecklistItem) para el seguimiento de pendientes por equipo.
 export interface ChecklistItem {
   id: string;
   empresa_id: string;
@@ -430,6 +430,21 @@ export interface ChecklistItem {
   modificado_por_nombre?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Un item del catalogo Checklist aplicado a un equipo puntual -- el join
+// siempre trae TODOS los items activos del catalogo; equipo_checklist_id
+// es null mientras no se haya tocado ese item para este equipo (pendiente
+// por defecto, sin asignar).
+export interface EquipoChecklistItem {
+  checklist_id: string;
+  descripcion: string;
+  responsable_sugerido?: string | null;
+  equipo_checklist_id?: string | null;
+  completado: boolean;
+  asignado_a?: string | null;
+  fecha_completado?: string | null;
+  modificado_por_nombre?: string | null;
 }
 
 // Una fila del Reporte de Servicios: servicio + proveedor + sector + costo

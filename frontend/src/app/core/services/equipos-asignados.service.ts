@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoAsignado, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
+import { EquipoAsignado, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class EquiposAsignadosService {
@@ -36,5 +36,14 @@ export class EquiposAsignadosService {
 
   eliminarAdjunto(equipoId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/adjuntos/${adjuntoId}`);
+  }
+
+  // CHECKLIST (seguimiento persistente de pendientes/asignacion por equipo)
+  listarChecklistEquipo(equipoId: string): Observable<EquipoChecklistItem[]> {
+    return this.http.get<EquipoChecklistItem[]>(`${this.base}/${equipoId}/checklist`);
+  }
+
+  actualizarChecklistEquipoItem(equipoId: string, checklistId: string, data: { asignado_a?: string | null; completado: boolean }): Observable<EquipoChecklistItem> {
+    return this.http.put<EquipoChecklistItem>(`${this.base}/${equipoId}/checklist/${checklistId}`, data);
   }
 }

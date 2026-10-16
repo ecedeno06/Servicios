@@ -344,7 +344,83 @@ async function eliminarAdjunto(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// -------------------------------------------------------------
+// CHECKLIST del equipo -- seguimiento persistente (pendiente/completado +
+// asignado_a por item), distinto del snapshot puntual que queda en
+// equipos_historial.checklist al cambiar de estado. Se puede ver/editar
+// en cualquier momento desde el menu de Acciones de la fila.
+// -------------------------------------------------------------
+async function listarChecklist(req, res, next) {
+  try {
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rows } = await pool.query(
+      `select
+         c.id as checklist_id,
+         c.descripcion,
+         c.responsable as responsable_sugerido,
+         ec.id as equipo_checklist_id,
+         coalesce(ec.completado, false) as completado,
+         ec.asignado_a,
+         ec.fecha_completado,
+         um.nombre as modificado_por_nombre
+       from checklists c
+       left join equipo_checklist ec on ec.checklist_id = c.id and ec.equipo_asignado_id = $1
+       left join usuarios um on um.id = ec.modificado_por
+       where c.empresa_id = $2 and c.activo = true
+       order by c.descripcion asc`,
+      [req.params.id, req.empresaId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function actualizarChecklistItem(req, res, next) {
+  try {
+    if (!(await verificarEquipo(req))) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
+
+    const { rows: item } = await pool.query(
+      'select id from checklists where id = $1 and empresa_id = $2',
+      [req.params.checklistId, req.empresaId]
+    );
+    if (!item[0]) return res.status(404).json({ mensaje: 'Item de checklist no encontrado' });
+
+    const { asignado_a, completado } = req.body;
+
+    const { rows } = await pool.query(
+      `insert into equipo_checklist (equipo_asignado_id, checklist_id, asignado_a, completado, fecha_completado, creado_por, modificado_por)
+       values ($1, $2, $3, $4, case when $4 then now() else null end, $5, $5)
+       on conflict (equipo_asignado_id, checklist_id) do update set
+         asignado_a = excluded.asignado_a,
+         completado = excluded.completado,
+         fecha_completado = case when excluded.completado then coalesce(equipo_checklist.fecha_completado, now()) else null end,
+         modificado_por = excluded.modificado_por
+       returning id`,
+      [req.params.id, req.params.checklistId, asignado_a ? asignado_a.trim() : null, !!completado, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select
+         c.id as checklist_id,
+         c.descripcion,
+         c.responsable as responsable_sugerido,
+         ec.id as equipo_checklist_id,
+         coalesce(ec.completado, false) as completado,
+         ec.asignado_a,
+         ec.fecha_completado,
+         um.nombre as modificado_por_nombre
+       from equipo_checklist ec
+       join checklists c on c.id = ec.checklist_id
+       left join usuarios um on um.id = ec.modificado_por
+       where ec.id = $1`,
+      [rows[0].id]
+    );
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar, crear, actualizar, eliminar, historial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
+  listarChecklist, actualizarChecklistItem,
 };
