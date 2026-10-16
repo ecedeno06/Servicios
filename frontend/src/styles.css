@@ -486,6 +486,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 .user-pill-btn {
   background: none;
   border: none;
+  color: inherit;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 8px;
