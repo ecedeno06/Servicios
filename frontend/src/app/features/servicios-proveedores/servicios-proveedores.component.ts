@@ -344,7 +344,6 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServCostoAnual = signal<Set<string>>(new Set());
   filtroServPagado = signal<Set<string>>(new Set());
   filtroServFechaPago = signal<Set<string>>(new Set());
-  filtroServFechaCorte = signal<Set<string>>(new Set());
   filtroServFechaFin = signal<Set<string>>(new Set());
   filtroServAviso = signal<Set<string>>(new Set());
   filtroServEstado = signal<Set<string>>(new Set());
@@ -372,7 +371,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.valoresUnicosServ(this.servicios().map((s) => String(s.monto_total_pagado ?? 0))).sort((a, b) => Number(a) - Number(b))
   );
   valoresServFechaPago = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.textoFechaPago(s))));
-  valoresServFechaCorte = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.textoFechaCorte(s))));
   valoresServEstado = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.estado)));
   valoresServResponsable = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.responsable)));
 
@@ -386,7 +384,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
     this.filtroServNombre().size || this.filtroServProveedor().size || this.filtroServSector().size || this.filtroServContrato() ||
-    this.filtroServCostoMensual().size || this.filtroServCostoAnual().size || this.filtroServFechaCorte().size || this.filtroServPagado().size || this.filtroServFechaPago().size || this.filtroServFechaFin().size ||
+    this.filtroServCostoMensual().size || this.filtroServCostoAnual().size || this.filtroServPagado().size || this.filtroServFechaPago().size || this.filtroServFechaFin().size ||
     this.filtroServAviso().size || this.filtroServEstado().size || this.filtroServFacturas() || this.filtroServObservacion() ||
     this.filtroServResponsable().size || this.filtroSoloPendientes()
   ));
@@ -402,7 +400,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServCostoAnual.set(new Set());
     this.filtroServPagado.set(new Set());
     this.filtroServFechaPago.set(new Set());
-    this.filtroServFechaCorte.set(new Set());
     this.filtroServFechaFin.set(new Set());
     this.filtroServAviso.set(new Set());
     this.filtroServEstado.set(new Set());
@@ -422,7 +419,6 @@ export class ServiciosProveedoresComponent implements OnInit {
     const costoA = this.filtroServCostoAnual();
     const pagado = this.filtroServPagado();
     const fechaPago = this.filtroServFechaPago();
-    const fechaCorte = this.filtroServFechaCorte();
     const fechaFin = this.filtroServFechaFin();
     const aviso = this.filtroServAviso();
     const est = this.filtroServEstado();
@@ -440,7 +436,6 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (costoA.size && !costoA.has(String(s.costo_anual))) return false;
       if (pagado.size && !pagado.has(String(s.monto_total_pagado ?? 0))) return false;
       if (fechaPago.size && !fechaPago.has(this.textoFechaPago(s))) return false;
-      if (fechaCorte.size && !fechaCorte.has(this.textoFechaCorte(s))) return false;
       if (fechaFin.size && !fechaFin.has(this.textoFechaFin(s))) return false;
       if (aviso.size && !aviso.has(this.textoAvisoVencimiento(s))) return false;
       if (obs && !(s.observacion || '').toLowerCase().includes(obs)) return false;
@@ -479,7 +474,6 @@ export class ServiciosProveedoresComponent implements OnInit {
       case 'aviso': return this.diasRestantes(s) ?? Number.POSITIVE_INFINITY;
       case 'costoMensual': return Number(s.costo_mensual) || 0;
       case 'costoAnual': return Number(s.costo_anual) || 0;
-      case 'fechaCorte': return s.fecha_corte ? new Date(s.fecha_corte).getTime() : Number.POSITIVE_INFINITY;
       case 'pagado': return Number(s.monto_total_pagado) || 0;
       case 'fechaPago': return s.ultimo_pago_fecha ? new Date(s.ultimo_pago_fecha).getTime() : Number.NEGATIVE_INFINITY;
       case 'estado': return s.estado.toLowerCase();
