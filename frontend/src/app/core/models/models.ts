@@ -55,6 +55,7 @@ export interface Usuario {
   cliente_id?: string | null;
   cliente_nombre?: string | null;
   debe_cambiar_password?: boolean;
+  two_factor_enabled?: boolean;
   created_at?: string;
 }
 

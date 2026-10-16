@@ -17,6 +17,23 @@ export class LoginComponent {
   error = signal<string | null>(null);
   empresasParaElegir = signal<EmpresaSeleccionable[] | null>(null);
 
+  // Login detenido esperando el codigo de la app autenticadora.
+  usuarioId2FA = signal<string | null>(null);
+  codeForm = this.fb.group({ code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]] });
+
+  // "Perdi acceso a mi 2FA" -- desde la pantalla que pide el codigo de la
+  // app autenticadora. usuarioId ya viene validado por contrasena (lo puso
+  // el login al detectar 2FA activo), asi que no hace falta pedir el email.
+  // mensajeRecuperacion2FA siempre es el mensaje generico del backend en
+  // exito; en error (frase-reto incorrecta) se ofrece notificar a un
+  // administrador en vez de reintentar (un solo intento, sin retry).
+  mostrarRecuperacion2FA = signal(false);
+  cargandoRecuperacion2FA = signal(false);
+  mensajeRecuperacion2FA = signal<string | null>(null);
+  fallaRecuperacion2FA = signal(false);
+  cargandoNotificarAdmin = signal(false);
+  fraseRetoRecuperacionForm = this.fb.group({ frase_reto: [''] });
+
   // "Olvidaste tu pista" -- consulta publica antes de autenticarse.
   cargandoPista = signal(false);
   pista = signal<string | null>(null);
@@ -48,7 +65,10 @@ export class LoginComponent {
     this.auth.login(email!, password!).subscribe({
       next: (res) => {
         this.cargando.set(false);
-        if ('requiereSeleccionEmpresa' in res) {
+        if ('requiere2FA' in res) {
+          this.usuarioId2FA.set(res.usuarioId);
+          this.codeForm.reset();
+        } else if ('requiereSeleccionEmpresa' in res) {
           this.empresasParaElegir.set(res.empresas);
         } else {
           this.router.navigate(['/dashboard']);
@@ -57,6 +77,87 @@ export class LoginComponent {
       error: (err) => {
         this.cargando.set(false);
         this.error.set(err?.error?.mensaje || 'No se pudo iniciar sesion');
+      },
+    });
+  }
+
+  enviarCodigo2FA(): void {
+    if (this.codeForm.invalid || !this.usuarioId2FA()) return;
+    this.cargando.set(true);
+    this.error.set(null);
+    this.auth.verificar2FA(this.usuarioId2FA()!, this.codeForm.getRawValue().code!).subscribe({
+      next: (res) => {
+        this.cargando.set(false);
+        if ('requiereSeleccionEmpresa' in res) {
+          this.usuarioId2FA.set(null);
+          this.empresasParaElegir.set(res.empresas);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
+      },
+      error: (err) => {
+        this.cargando.set(false);
+        this.error.set(err?.error?.mensaje || 'Codigo invalido');
+      },
+    });
+  }
+
+  cancelar2FA(): void {
+    this.usuarioId2FA.set(null);
+    this.codeForm.reset();
+    this.error.set(null);
+    this.mostrarRecuperacion2FA.set(false);
+    this.mensajeRecuperacion2FA.set(null);
+    this.fallaRecuperacion2FA.set(false);
+    this.fraseRetoRecuperacionForm.reset();
+  }
+
+  abrirRecuperacion2FA(): void {
+    this.mostrarRecuperacion2FA.set(true);
+    this.mensajeRecuperacion2FA.set(null);
+    this.fallaRecuperacion2FA.set(false);
+    this.fraseRetoRecuperacionForm.reset();
+  }
+
+  cerrarRecuperacion2FA(): void {
+    this.mostrarRecuperacion2FA.set(false);
+    this.mensajeRecuperacion2FA.set(null);
+    this.fallaRecuperacion2FA.set(false);
+  }
+
+  // Un solo intento: si falla, no se vuelve a llamar a este metodo -- la
+  // pantalla ofrece "Notificar a un administrador" o "Volver", ambos
+  // terminan en cancelar2FA().
+  enviarRecuperacion2FA(): void {
+    if (!this.usuarioId2FA()) return;
+    this.cargandoRecuperacion2FA.set(true);
+    this.mensajeRecuperacion2FA.set(null);
+    this.fallaRecuperacion2FA.set(false);
+    const frase = this.fraseRetoRecuperacionForm.getRawValue().frase_reto || '';
+    this.auth.solicitarRecuperacion2FA(this.usuarioId2FA()!, frase).subscribe({
+      next: (res) => {
+        this.cargandoRecuperacion2FA.set(false);
+        this.mensajeRecuperacion2FA.set(res.mensaje);
+      },
+      error: (err) => {
+        this.cargandoRecuperacion2FA.set(false);
+        this.fallaRecuperacion2FA.set(true);
+        this.mensajeRecuperacion2FA.set(err?.error?.mensaje || 'No se pudo procesar la solicitud.');
+      },
+    });
+  }
+
+  notificarAdmin2FA(): void {
+    if (!this.usuarioId2FA()) return;
+    this.cargandoNotificarAdmin.set(true);
+    this.auth.notificarAdmin2FA(this.usuarioId2FA()!).subscribe({
+      next: () => {
+        this.cargandoNotificarAdmin.set(false);
+        this.cancelar2FA();
+      },
+      error: () => {
+        this.cargandoNotificarAdmin.set(false);
+        this.cancelar2FA();
       },
     });
   }

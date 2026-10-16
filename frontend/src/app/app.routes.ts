@@ -5,6 +5,7 @@ import { permisoGuard } from './core/guards/permiso.guard';
 import { LayoutComponent } from './features/layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { RestablecerPasswordComponent } from './features/restablecer-password/restablecer-password.component';
+import { Recuperar2faComponent } from './features/recuperar-2fa/recuperar-2fa.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ClientesComponent } from './features/clientes/clientes.component';
 import { TiposServicioComponent } from './features/tipos-servicio/tipos-servicio.component';
@@ -27,6 +28,7 @@ import { ChecklistComponent } from './features/checklist/checklist.component';
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'restablecer-password', component: RestablecerPasswordComponent },
+  { path: 'recuperar-2fa', component: Recuperar2faComponent },
   {
     path: '',
     component: LayoutComponent,

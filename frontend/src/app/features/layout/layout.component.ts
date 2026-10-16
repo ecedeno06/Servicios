@@ -13,6 +13,7 @@ import { InactividadService } from '../../core/services/inactividad.service';
 import { SelectorFotoComponent } from '../../core/components/selector-foto/selector-foto.component';
 import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
 import { AvisoInactividadComponent } from '../../core/components/aviso-inactividad/aviso-inactividad.component';
+import { SeguridadComponent } from '../seguridad/seguridad.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { NotificacionComentario, PoliticaPassword } from '../../core/models/models';
 
@@ -23,7 +24,7 @@ const INTERVALO_NOTIFICACIONES_MS = 60000;
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
@@ -31,6 +32,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   anioActual = new Date().getFullYear();
   menuAbierto = signal(false);
   panelPasswordAbierto = signal(false);
+  panelSeguridadAbierto = signal(false);
   verPasswordNueva = signal(false);
   verPasswordConfirmar = signal(false);
   passwordGenerada = signal(false);
@@ -227,6 +229,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
       next: () => {},
       error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
     });
+  }
+
+  abrirSeguridad(): void {
+    this.menuAbierto.set(false);
+    this.panelSeguridadAbierto.set(true);
+  }
+
+  cerrarSeguridad(): void {
+    this.panelSeguridadAbierto.set(false);
   }
 
   abrirCambioPassword(): void {

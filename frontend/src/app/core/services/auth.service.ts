@@ -17,6 +17,13 @@ interface LoginRequiereSeleccion {
   empresas: EmpresaSeleccionable[];
 }
 
+// El login se detiene aqui cuando el usuario tiene 2FA activo -- el
+// frontend debe pedir el codigo y llamar a verificar2FA().
+interface LoginRequiere2FA {
+  requiere2FA: true;
+  usuarioId: string;
+}
+
 const STORAGE_KEY = 'hs_auth';
 
 @Injectable({ providedIn: 'root' })
@@ -40,24 +47,80 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router, private menu: MenuService) {}
 
-  login(email: string, password: string): Observable<LoginResponse | LoginRequiereSeleccion> {
+  login(email: string, password: string): Observable<LoginResponse | LoginRequiereSeleccion | LoginRequiere2FA> {
     return this.http
-      .post<LoginResponse | LoginRequiereSeleccion>(`${environment.apiUrl}/auth/login`, { email, password })
+      .post<LoginResponse | LoginRequiereSeleccion | LoginRequiere2FA>(`${environment.apiUrl}/auth/login`, { email, password })
       .pipe(
         tap((res) => {
-          if ('requiereSeleccionEmpresa' in res) {
-            // Se guarda el token parcial para que el interceptor lo use en
-            // la llamada a seleccionar-empresa (requireAuth acepta tokens
-            // parciales, solo requireEmpresa los rechaza).
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: res.tokenParcial, usuario: null }));
-            this._seleccionPendiente.set(res.empresas);
-          } else {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(res));
-            this._usuario.set(res.usuario);
-            this._seleccionPendiente.set(null);
-          }
+          if ('requiere2FA' in res) return;
+          this.manejarRespuestaLogin(res);
         })
       );
+  }
+
+  // POST /auth/2fa/verify-login -- continua el login tras el codigo TOTP.
+  verificar2FA(usuarioId: string, code: string): Observable<LoginResponse | LoginRequiereSeleccion> {
+    return this.http
+      .post<LoginResponse | LoginRequiereSeleccion>(`${environment.apiUrl}/auth/2fa/verify-login`, { usuarioId, code })
+      .pipe(tap((res) => this.manejarRespuestaLogin(res)));
+  }
+
+  private manejarRespuestaLogin(res: LoginResponse | LoginRequiereSeleccion): void {
+    if ('requiereSeleccionEmpresa' in res) {
+      // Se guarda el token parcial para que el interceptor lo use en la
+      // llamada a seleccionar-empresa (requireAuth acepta tokens
+      // parciales, solo requireEmpresa los rechaza).
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: res.tokenParcial, usuario: null }));
+      this._seleccionPendiente.set(res.empresas);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(res));
+      this._usuario.set(res.usuario);
+      this._seleccionPendiente.set(null);
+    }
+  }
+
+  // POST /auth/2fa/recovery -- publico. Se llama desde la pantalla que pide
+  // el codigo de la app autenticadora ("perdi acceso a mi 2FA"), usando el
+  // usuarioId que ya devolvio el login (ya validado por contrasena). frase
+  // es el segundo secreto definido al activar el 2FA -- un solo intento,
+  // sin reintentos.
+  solicitarRecuperacion2FA(usuarioId: string, fraseReto: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/2fa/recovery`, { usuarioId, frase_reto: fraseReto });
+  }
+
+  // POST /auth/2fa/recovery/confirm -- publico, usa el token del enlace
+  // enviado por correo (valido 1 hora, un solo uso). Desactiva el 2FA de
+  // la cuenta.
+  confirmarRecuperacion2FA(token: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/2fa/recovery/confirm`, { token });
+  }
+
+  // POST /auth/2fa/recovery/notificar-admin -- publico. Boton de escape
+  // para cuando tambien se olvido la frase-reto: avisa a los super admins
+  // por correo para que puedan desactivar el 2FA manualmente si el caso es
+  // legitimo.
+  notificarAdmin2FA(usuarioId: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/2fa/recovery/notificar-admin`, { usuarioId });
+  }
+
+  setup2FA(): Observable<{ secret: string; qrCode: string }> {
+    return this.http.post<{ secret: string; qrCode: string }>(`${environment.apiUrl}/auth/2fa/setup`, {});
+  }
+
+  // frase_reto es un secreto independiente de la contrasena, exigido aqui
+  // para poder pedir la recuperacion de 2FA por correo (ver
+  // solicitarRecuperacion2FA). Siempre se pide en blanco -- nunca se
+  // autocompleta con una anterior.
+  enable2FA(secret: string, code: string, fraseReto: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/2fa/enable`, { secret, code, frase_reto: fraseReto });
+  }
+
+  disable2FA(code: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${environment.apiUrl}/auth/2fa/disable`, { code });
+  }
+
+  obtenerMe(): Observable<Usuario> {
+    return this.http.get<Usuario>(`${environment.apiUrl}/auth/me`);
   }
 
   // Completa el login cuando hay mas de una empresa, o cambia la empresa

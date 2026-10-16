@@ -2,7 +2,57 @@
   <div class="auth-card">
     <div class="auth-logo">HS</div>
 
-    @if (mostrarOlvidoPassword()) {
+    @if (usuarioId2FA()) {
+      @if (mostrarRecuperacion2FA()) {
+        <h1>Perdiste acceso a tu autenticador</h1>
+
+        @if (!mensajeRecuperacion2FA()) {
+          <p class="text-muted text-sm">Escribe la frase-reto que definiste al activar el 2FA. Es un solo intento: si no coincide, no se enviara el enlace.</p>
+
+          <form [formGroup]="fraseRetoRecuperacionForm" (ngSubmit)="enviarRecuperacion2FA()" class="mt-16">
+            <div class="form-group">
+              <label>Frase-reto</label>
+              <input class="input" type="text" formControlName="frase_reto" autocomplete="off" autofocus />
+            </div>
+            <button type="submit" class="btn btn-primary w-full mt-16" [disabled]="cargandoRecuperacion2FA()">
+              {{ cargandoRecuperacion2FA() ? 'Enviando...' : 'Enviar enlace' }}
+            </button>
+          </form>
+
+          <button type="button" class="btn btn-outline w-full mt-16" (click)="cerrarRecuperacion2FA()">Volver</button>
+        } @else {
+          <div class="auth-hint mt-16">{{ mensajeRecuperacion2FA() }}</div>
+
+          @if (fallaRecuperacion2FA()) {
+            <button type="button" class="btn btn-outline w-full mt-16" [disabled]="cargandoNotificarAdmin()" (click)="notificarAdmin2FA()">
+              {{ cargandoNotificarAdmin() ? 'Enviando...' : 'Notificar a un administrador' }}
+            </button>
+          }
+
+          <button type="button" class="btn btn-outline w-full mt-16" (click)="cancelar2FA()">Volver a iniciar sesion</button>
+        }
+      } @else {
+        <h1>Verificacion en dos pasos</h1>
+        <p class="text-muted text-sm">Ingresa el codigo de 6 digitos de tu app autenticadora.</p>
+
+        @if (error()) {
+          <div class="auth-error mt-16">{{ error() }}</div>
+        }
+
+        <form [formGroup]="codeForm" (ngSubmit)="enviarCodigo2FA()" class="mt-16">
+          <div class="form-group">
+            <label>Codigo</label>
+            <input class="input" type="text" inputmode="numeric" maxlength="6" formControlName="code" placeholder="000000" autofocus />
+          </div>
+          <button class="btn btn-primary w-full mt-16" type="submit" [disabled]="codeForm.invalid || cargando()">
+            {{ cargando() ? 'Verificando...' : 'Verificar' }}
+          </button>
+        </form>
+
+        <button type="button" class="btn-link mt-16" (click)="abrirRecuperacion2FA()">No tengo acceso a mi autenticador</button>
+        <button type="button" class="btn btn-outline w-full mt-16" (click)="cancelar2FA()">Volver</button>
+      }
+    } @else if (mostrarOlvidoPassword()) {
       <h1>Recuperar contrasena</h1>
       <p class="text-muted text-sm">Te enviaremos un enlace a tu correo para restablecerla.</p>
 
