@@ -182,5 +182,12 @@
 .badge-red-solid { background: var(--red-600); color: white; text-align: center; }
 .info-icon-btn:hover { color: var(--teal-600); }
 
+/* Nombre del servicio como link cuando tiene URL cargada (columna Servicio). */
+.servicio-link {
+  color: var(--teal-600);
+  text-decoration: none;
+}
+.servicio-link:hover { text-decoration: underline; }
+
 /* .paste-area vive ahora en styles.css (global) -- la usan tanto este
    componente como Equipos Asignados. */
