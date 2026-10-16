@@ -510,6 +510,7 @@ export interface ServicioProveedor {
   facturas_pendientes_count?: number;
   monto_total_pagado?: number;
   ultimo_pago_monto?: number | null;
+  ultimo_pago_fecha?: string | null;
   penultimo_pago_monto?: number | null;
   incidentes_abiertos_count?: number;
   incidentes_total_count?: number;

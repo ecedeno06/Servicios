@@ -112,6 +112,15 @@
   width: 105px;
 }
 
+/* Fecha Pago: angosta igual que las demas columnas de fecha/costo, para
+   que la tabla no se ensanche al agregarla (pedido explicito). */
+.data-table th.col-fecha-pago,
+.data-table td.col-fecha-pago {
+  padding-left: 8px;
+  padding-right: 8px;
+  width: 90px;
+}
+
 /* Columna "Observacion": texto expandible -- colapsada muestra una sola
    linea truncada con puntos suspensivos; un click la expande para leer
    el texto completo (y otro click la vuelve a colapsar). */

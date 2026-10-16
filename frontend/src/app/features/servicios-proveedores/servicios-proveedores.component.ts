@@ -256,6 +256,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     return this.datePipe.transform(s.fecha_fin, 'dd/MM/yyyy', 'UTC') || '-';
   }
 
+  // Fecha de la ultima factura "pagada" de este servicio (ultimo_pago_fecha
+  // viene de SELECT_BASE en el backend, mismo registro que ultimo_pago_monto).
+  textoFechaPago(s: ServicioProveedor): string {
+    if (!s.ultimo_pago_fecha) return '-';
+    return this.datePipe.transform(s.ultimo_pago_fecha, 'dd/MM/yyyy', 'UTC') || '-';
+  }
+
   // Dias de hoy a fecha_fin (negativo si ya vencio). No aplica a
   // servicios indefinidos. Compara fechas puras en UTC (sin hora) para
   // no desfasarse un dia en timezones negativos.
@@ -296,7 +303,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const campos: (string | number | null | undefined)[] = [
       s.servicio, s.proveedor_nombre, this.obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector),
       s.no_contrato, s.costo_mensual, s.costo_anual, s.monto_total_pagado, this.textoFechaFin(s),
-      this.textoAvisoVencimiento(s), s.estado, s.facturas_count, s.observacion, s.responsable,
+      this.textoAvisoVencimiento(s), s.estado, s.facturas_count, s.observacion, s.responsable, this.textoFechaPago(s),
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
   }
@@ -327,6 +334,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   filtroServCostoMensual = signal<Set<string>>(new Set());
   filtroServCostoAnual = signal<Set<string>>(new Set());
   filtroServPagado = signal<Set<string>>(new Set());
+  filtroServFechaPago = signal<Set<string>>(new Set());
   filtroServFechaFin = signal<Set<string>>(new Set());
   filtroServAviso = signal<Set<string>>(new Set());
   filtroServEstado = signal<Set<string>>(new Set());
@@ -353,6 +361,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   valoresServPagado = computed(() =>
     this.valoresUnicosServ(this.servicios().map((s) => String(s.monto_total_pagado ?? 0))).sort((a, b) => Number(a) - Number(b))
   );
+  valoresServFechaPago = computed(() => this.valoresUnicosServ(this.servicios().map((s) => this.textoFechaPago(s))));
   valoresServEstado = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.estado)));
   valoresServResponsable = computed(() => this.valoresUnicosServ(this.servicios().map((s) => s.responsable)));
 
@@ -366,7 +375,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   hayFiltrosServ = computed(() => !!(
     this.busquedaGeneralServ() ||
     this.filtroServNombre().size || this.filtroServProveedor().size || this.filtroServSector().size || this.filtroServContrato() ||
-    this.filtroServCostoMensual().size || this.filtroServCostoAnual().size || this.filtroServPagado().size || this.filtroServFechaFin().size ||
+    this.filtroServCostoMensual().size || this.filtroServCostoAnual().size || this.filtroServPagado().size || this.filtroServFechaPago().size || this.filtroServFechaFin().size ||
     this.filtroServAviso().size || this.filtroServEstado().size || this.filtroServFacturas() || this.filtroServObservacion() ||
     this.filtroServResponsable().size || this.filtroSoloPendientes()
   ));
@@ -381,6 +390,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.filtroServCostoMensual.set(new Set());
     this.filtroServCostoAnual.set(new Set());
     this.filtroServPagado.set(new Set());
+    this.filtroServFechaPago.set(new Set());
     this.filtroServFechaFin.set(new Set());
     this.filtroServAviso.set(new Set());
     this.filtroServEstado.set(new Set());
@@ -399,6 +409,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     const costoM = this.filtroServCostoMensual();
     const costoA = this.filtroServCostoAnual();
     const pagado = this.filtroServPagado();
+    const fechaPago = this.filtroServFechaPago();
     const fechaFin = this.filtroServFechaFin();
     const aviso = this.filtroServAviso();
     const est = this.filtroServEstado();
@@ -415,6 +426,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       if (costoM.size && !costoM.has(String(s.costo_mensual))) return false;
       if (costoA.size && !costoA.has(String(s.costo_anual))) return false;
       if (pagado.size && !pagado.has(String(s.monto_total_pagado ?? 0))) return false;
+      if (fechaPago.size && !fechaPago.has(this.textoFechaPago(s))) return false;
       if (fechaFin.size && !fechaFin.has(this.textoFechaFin(s))) return false;
       if (aviso.size && !aviso.has(this.textoAvisoVencimiento(s))) return false;
       if (obs && !(s.observacion || '').toLowerCase().includes(obs)) return false;
@@ -454,6 +466,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       case 'costoMensual': return Number(s.costo_mensual) || 0;
       case 'costoAnual': return Number(s.costo_anual) || 0;
       case 'pagado': return Number(s.monto_total_pagado) || 0;
+      case 'fechaPago': return s.ultimo_pago_fecha ? new Date(s.ultimo_pago_fecha).getTime() : Number.NEGATIVE_INFINITY;
       case 'estado': return s.estado.toLowerCase();
       case 'facturas': return s.facturas_count ?? 0;
       case 'observacion': return (s.observacion ?? '').toLowerCase();
