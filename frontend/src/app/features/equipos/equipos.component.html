@@ -19,9 +19,11 @@
   <div class="table-wrap table-wrap-compact">
     <table class="data-table">
       <thead>
-        <tr><th>Nombre</th></tr>
-        <tr class="filter-row">
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)" /></th>
+        <tr>
+          <th>
+            <span class="th-label">Nombre</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCategoria()" (ngModelChange)="filtroCategoria.set($event)" />
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -65,15 +67,15 @@
       <thead>
         <tr>
           <th>
-            <span style="display: block; margin-bottom: 6px;">Categoria</span>
+            <span class="th-label">Categoria</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoCategoria()" (ngModelChange)="filtroProductoCategoria.set($event)" />
           </th>
           <th>
-            <span style="display: block; margin-bottom: 6px;">Producto</span>
+            <span class="th-label">Producto</span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoNombre()" (ngModelChange)="filtroProductoNombre.set($event)" />
           </th>
           <th>
-            <span style="display: block; margin-bottom: 6px;">Checklist</span>
+            <span class="th-label">Checklist</span>
             <select class="input input-th-filtro" [ngModel]="filtroProductoChecklist()" (ngModelChange)="filtroProductoChecklist.set($event)">
               <option value="">Todos</option>
               <option value="si">Si</option>
@@ -135,9 +137,11 @@
   <div class="table-wrap table-wrap-compact">
     <table class="data-table">
       <thead>
-        <tr><th>Nombre</th></tr>
-        <tr class="filter-row">
-          <th><input class="input" type="text" placeholder="Filtrar..." [ngModel]="filtroProcesador()" (ngModelChange)="filtroProcesador.set($event)" /></th>
+        <tr>
+          <th>
+            <span class="th-label">Nombre</span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProcesador()" (ngModelChange)="filtroProcesador.set($event)" />
+          </th>
         </tr>
       </thead>
       <tbody>

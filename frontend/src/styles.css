@@ -725,35 +725,34 @@ table.data-table {
   user-select: none;
 }
 
-.data-table thead th.sortable {
-  cursor: pointer;
-}
-
-.data-table thead th.sortable:hover {
-  color: var(--text-body);
-}
-
 /* Ancho minimo para columnas que quedan muy angostas con layout automatico
    (ej. Horas, Estado) cuando llevan un input de filtro debajo. */
 .data-table thead th.th-narrow {
   min-width: 90px;
 }
 
-.data-table thead tr.filter-row th {
-  background: var(--bg-surface);
-  padding: 6px 10px 10px;
-  border-bottom: 1px solid var(--border-subtle);
-  cursor: default;
-}
+/* Convencion de filtros por columna: encabezado + filtro en una sola fila
+   (una <th> con el nombre de columna arriba y el input/select de filtro
+   debajo), en vez de encabezado + fila de filtros por separado. Usado en
+   todas las tablas con filtro por columna de la app. */
+.th-label { display: block; white-space: nowrap; margin-bottom: 6px; }
 
-.data-table thead tr.filter-row .input {
-  padding: 6px 9px;
-  font-size: 12.5px;
-  font-weight: 400;
+/* Igual que .th-label pero para un nombre de columna ordenable (click
+   alterna asc/desc). */
+.th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+.data-table thead th input.input-th-filtro,
+.data-table thead th select.input-th-filtro {
   text-transform: none;
   letter-spacing: normal;
+  font-weight: 400;
+  font-size: 12px;
+  padding: 5px 8px;
   color: var(--text-heading);
 }
+.data-table thead th select.input-th-filtro { cursor: pointer; }
 
 .data-table tbody td {
   padding: 11px 14px;
