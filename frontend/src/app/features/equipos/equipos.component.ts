@@ -42,6 +42,7 @@ export class EquiposComponent implements OnInit {
   formProducto = this.fb.group({
     categoria_id: ['', Validators.required],
     nombre: ['', Validators.required],
+    aplica_checklist: [false],
   });
 
   hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre()));
@@ -129,18 +130,18 @@ export class EquiposComponent implements OnInit {
     const yaSeleccionado = this.productoSeleccionado()?.id === p.id;
     if (yaSeleccionado) { this.nuevoProducto(); return; }
     this.productoSeleccionado.set(p);
-    this.formProducto.reset({ categoria_id: String(p.categoria_id), nombre: p.nombre });
+    this.formProducto.reset({ categoria_id: String(p.categoria_id), nombre: p.nombre, aplica_checklist: !!p.aplica_checklist });
   }
 
   nuevoProducto(): void {
     this.productoSeleccionado.set(null);
-    this.formProducto.reset({ categoria_id: '', nombre: '' });
+    this.formProducto.reset({ categoria_id: '', nombre: '', aplica_checklist: false });
   }
 
   guardarProducto(): void {
     if (this.formProducto.invalid) return;
     const raw = this.formProducto.getRawValue();
-    const data = { categoria_id: Number(raw.categoria_id), nombre: raw.nombre! };
+    const data = { categoria_id: Number(raw.categoria_id), nombre: raw.nombre!, aplica_checklist: !!raw.aplica_checklist };
     const actual = this.productoSeleccionado();
     const req = actual ? this.productosSrv.actualizar(actual.id, data) : this.productosSrv.crear(data);
     req.subscribe({

@@ -15,11 +15,11 @@ async function listar(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { categoria_id, nombre } = req.body;
+    const { categoria_id, nombre, aplica_checklist } = req.body;
     if (!categoria_id || !nombre) return res.status(400).json({ mensaje: 'categoria_id y nombre son requeridos' });
     const { rows } = await pool.query(
-      'insert into productos (categoria_id, nombre) values ($1, $2) returning *',
-      [categoria_id, nombre]
+      'insert into productos (categoria_id, nombre, aplica_checklist) values ($1, $2, $3) returning *',
+      [categoria_id, nombre, !!aplica_checklist]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -27,13 +27,14 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { categoria_id, nombre } = req.body;
+    const { categoria_id, nombre, aplica_checklist } = req.body;
     const { rows } = await pool.query(
       `update productos set
          categoria_id = coalesce($1, categoria_id),
-         nombre = coalesce($2, nombre)
-       where id = $3 returning *`,
-      [categoria_id, nombre, req.params.id]
+         nombre = coalesce($2, nombre),
+         aplica_checklist = coalesce($3, aplica_checklist)
+       where id = $4 returning *`,
+      [categoria_id, nombre, aplica_checklist, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Producto no encontrado' });
     res.json(rows[0]);

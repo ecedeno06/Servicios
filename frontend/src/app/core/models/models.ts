@@ -116,6 +116,7 @@ export interface Producto {
   categoria_id: number;
   nombre: string;
   categoria_nombre?: string;
+  aplica_checklist?: boolean;
 }
 
 export interface Procesador {
