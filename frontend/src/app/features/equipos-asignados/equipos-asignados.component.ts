@@ -8,6 +8,8 @@ import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ChecklistsService } from '../../core/services/checklists.service';
+import { ChecklistEquipoPdfService } from '../../core/services/checklist-equipo-pdf.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
@@ -385,7 +387,9 @@ export class EquiposAsignadosComponent implements OnInit {
     private datePipe: DatePipe,
     private elRef: ElementRef<HTMLElement>,
     private sanitizer: DomSanitizer,
-    private checklistsSrv: ChecklistsService
+    private checklistsSrv: ChecklistsService,
+    private checklistPdfSrv: ChecklistEquipoPdfService,
+    private auth: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -876,5 +880,36 @@ export class EquiposAsignadosComponent implements OnInit {
         alert(err?.error?.mensaje || 'No se pudo guardar el checklist');
       },
     });
+  }
+
+  imprimirChecklistPdf(): void {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    if (!equipo || !ejecucion) return;
+
+    // La ventana se abre YA, dentro del click, para que el navegador no la
+    // bloquee -- pdfmake se carga de forma diferida (import() dinamico) y
+    // para cuando el PDF esta listo ya no estamos dentro del gesto de click.
+    const ventana = window.open('', '_blank') ?? undefined;
+    const empresa = this.auth.empresaActiva();
+    const formatearFecha = (f: string) => (this.datePipe.transform(f, 'd-MMM-y h:mm a') || '').toLowerCase();
+
+    this.checklistPdfSrv.generar({
+      empresaNombre: empresa?.empresa_nombre ?? '',
+      empresaLogo: empresa?.empresa_logo ?? null,
+      equipo: `${equipo.marca} ${equipo.modelo}`,
+      categoria: equipo.categoria_nombre,
+      asignadoA: ejecucion.asignado_a || undefined,
+      fechaEjecucion: formatearFecha(ejecucion.fecha),
+      fechaGeneracion: formatearFecha(new Date().toISOString()),
+      generadoPor: this.auth.usuario()?.nombre,
+      items: ejecucion.items.map((item) => ({
+        descripcion: item.descripcion,
+        completado: item.completado,
+        fechaCompletado: item.fecha_completado ? formatearFecha(item.fecha_completado) : null,
+        completadoPor: item.modificado_por_nombre,
+      })),
+    }).then((doc) => doc.open(undefined, ventana))
+      .catch(() => alert('No se pudo generar el PDF del checklist.'));
   }
 }
