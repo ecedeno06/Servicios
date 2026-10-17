@@ -39,6 +39,13 @@ export class ServiciosProveedoresService {
   }
 
   // FACTURAS / TRANSACCIONES
+  // Version "todo en uno" (facturas + adjuntos de cada una) para el popup
+  // de solo lectura "Facturas" -- una sola peticion en vez de pedir
+  // adjuntos por separado por factura.
+  listarFacturasConAdjuntos(servicioId: string): Observable<(FacturaServicioProveedor & { adjuntos: ImagenServicioProveedor[] })[]> {
+    return this.http.get<(FacturaServicioProveedor & { adjuntos: ImagenServicioProveedor[] })[]>(`${this.base}/${servicioId}/facturas-info`);
+  }
+
   listarFacturas(servicioId: string): Observable<FacturaServicioProveedor[]> {
     return this.http.get<FacturaServicioProveedor[]>(`${this.base}/${servicioId}/facturas`);
   }
@@ -92,6 +99,13 @@ export class ServiciosProveedoresService {
   // INCIDENTES
   listarIncidentes(servicioId: string): Observable<ServicioIncidente[]> {
     return this.http.get<ServicioIncidente[]>(`${this.base}/${servicioId}/incidentes`);
+  }
+
+  // Version "todo en uno" (incidentes + notas + adjuntos de cada uno) para
+  // el popup de solo lectura "Eventos, Notas y Adjuntos" -- una sola
+  // peticion en vez de pedir notas/adjuntos por separado por incidente.
+  listarIncidentesConDetalle(servicioId: string): Observable<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]> {
+    return this.http.get<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]>(`${this.base}/${servicioId}/incidentes-info`);
   }
 
   crearIncidente(servicioId: string, data: Partial<ServicioIncidente>): Observable<ServicioIncidente> {

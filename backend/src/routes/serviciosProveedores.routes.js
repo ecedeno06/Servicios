@@ -16,6 +16,10 @@ router.delete('/:id', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.
 
 // Facturas / Transacciones
 router.get('/:id/facturas', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarFacturas);
+// Version "todo en uno" (facturas + adjuntos de cada una) para el popup
+// de solo lectura "Facturas" -- evita el N+1 de pedir adjuntos por
+// separado por cada factura.
+router.get('/:id/facturas-info', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarFacturasConAdjuntos);
 router.post('/:id/facturas', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearFactura);
 router.put('/:id/facturas/:facturaId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarFactura);
 router.delete('/:id/facturas/:facturaId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarFactura);
@@ -34,6 +38,10 @@ router.delete('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('se
 
 // Incidentes
 router.get('/:id/incidentes', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarIncidentes);
+// Version "todo en uno" (incidentes + sus notas + sus adjuntos) para el
+// popup de solo lectura "Eventos, Notas y Adjuntos" -- evita el N+1 de
+// pedir notas/adjuntos por separado por cada incidente.
+router.get('/:id/incidentes-info', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarIncidentesConDetalle);
 router.post('/:id/incidentes', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearIncidente);
 router.put('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarIncidente);
 router.delete('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarIncidente);

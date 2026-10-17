@@ -2,7 +2,6 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { forkJoin } from 'rxjs';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ServiciosProveedoresService } from '../../core/services/servicios-proveedores.service';
 import { SectoresProveedoresService } from '../../core/services/sectores-proveedores.service';
@@ -1620,16 +1619,12 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.facturasInfoModal.set([]);
     this.modalFacturasInfoAbierta.set(true);
     this.cargandoFacturasInfoModal.set(true);
-    this.serviciosSrv.listarFacturas(s.id).subscribe((facturas) => {
-      if (!facturas.length) {
-        this.facturasInfoModal.set([]);
+    this.serviciosSrv.listarFacturasConAdjuntos(s.id).subscribe({
+      next: (facturas) => {
+        this.facturasInfoModal.set(facturas);
         this.cargandoFacturasInfoModal.set(false);
-        return;
-      }
-      forkJoin(facturas.map((f) => this.serviciosSrv.listarAdjuntosFactura(s.id, f.id))).subscribe((listas) => {
-        this.facturasInfoModal.set(facturas.map((f, i) => ({ ...f, adjuntos: listas[i] })));
-        this.cargandoFacturasInfoModal.set(false);
-      });
+      },
+      error: () => this.cargandoFacturasInfoModal.set(false),
     });
   }
 
@@ -1654,24 +1649,12 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.incidentesInfoModal.set([]);
     this.modalIncidentesInfoAbierta.set(true);
     this.cargandoIncidentesInfoModal.set(true);
-    this.serviciosSrv.obtener(s.id).subscribe((completo) => {
-      const incidentes = completo.incidentes || [];
-      if (!incidentes.length) {
-        this.incidentesInfoModal.set([]);
+    this.serviciosSrv.listarIncidentesConDetalle(s.id).subscribe({
+      next: (incidentes) => {
+        this.incidentesInfoModal.set(incidentes);
         this.cargandoIncidentesInfoModal.set(false);
-        return;
-      }
-      forkJoin(
-        incidentes.map((inc) =>
-          forkJoin({
-            notas: this.serviciosSrv.listarNotasIncidente(s.id, inc.id),
-            adjuntos: this.serviciosSrv.listarAdjuntosIncidente(s.id, inc.id),
-          })
-        )
-      ).subscribe((extras) => {
-        this.incidentesInfoModal.set(incidentes.map((inc, i) => ({ ...inc, ...extras[i] })));
-        this.cargandoIncidentesInfoModal.set(false);
-      });
+      },
+      error: () => this.cargandoIncidentesInfoModal.set(false),
     });
   }
 

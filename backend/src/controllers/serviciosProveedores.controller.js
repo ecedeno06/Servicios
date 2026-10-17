@@ -296,6 +296,50 @@ async function listarFacturas(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /:id/facturas-info -- version "todo en uno" de listarFacturas para
+// el popup de solo lectura "Facturas" (icono junto a Pagado): antes el
+// frontend pedia las facturas y despues, por cada una, sus adjuntos por
+// separado (1 request x factura, cada uno con su propia consulta de
+// verificacion) -- con N facturas eran 1 + 2N consultas y 1 + N
+// round-trips. Aca se trae todo con 2 consultas fijas (facturas, adjuntos
+// de todas) sin importar cuantas facturas haya. Mismo criterio que
+// listarIncidentesConDetalle.
+async function listarFacturasConAdjuntos(req, res, next) {
+  try {
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rows: facturas } = await pool.query(
+      `select f.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from facturas_servicios_proveedores f
+       join usuarios uc on uc.id = f.creado_por
+       left join usuarios um on um.id = f.modificado_por
+       where f.servicio_proveedor_id = $1
+       order by f.fecha_factura desc, f.created_at desc`,
+      [req.params.id]
+    );
+
+    if (facturas.length === 0) return res.json([]);
+
+    const { rows: adjuntos } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from factura_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.factura_id = any($1::uuid[])
+       order by a.fecha desc, a.created_at desc`,
+      [facturas.map((f) => f.id)]
+    );
+
+    res.json(facturas.map((f) => ({
+      ...f,
+      adjuntos: adjuntos.filter((a) => a.factura_id === f.id),
+    })));
+  } catch (err) { next(err); }
+}
+
 async function crearFactura(req, res, next) {
   try {
     const { fecha_factura, monto_factura, estado, forma_pago, observaciones } = req.body;
@@ -426,6 +470,58 @@ async function listarIncidentes(req, res, next) {
       [req.params.id]
     );
     res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// GET /:id/incidentes-info -- version "todo en uno" de listarIncidentes
+// para el popup de solo lectura "Eventos, Notas y Adjuntos": antes el
+// frontend pedia los incidentes y despues, por cada uno, sus notas y sus
+// adjuntos por separado (2 requests x incidente, cada uno con su propia
+// consulta de verificacion) -- con N incidentes eran 1 + 4N consultas y
+// 1 + 2N round-trips. Aca se trae todo con 3 consultas fijas (incidentes,
+// notas de todos, adjuntos de todos) sin importar cuantos incidentes haya.
+async function listarIncidentesConDetalle(req, res, next) {
+  try {
+    const { rows: me } = await pool.query(
+      'select id from servicios_proveedores where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+
+    const { rows: incidentes } = await pool.query(
+      `select i.*, uc.nombre as creado_por_nombre, um.nombre as modificado_por_nombre
+       from servicio_incidentes i
+       join usuarios uc on uc.id = i.creado_por
+       left join usuarios um on um.id = i.modificado_por
+       where i.servicio_proveedor_id = $1
+       order by i.fecha_incidente desc, i.created_at desc`,
+      [req.params.id]
+    );
+
+    if (incidentes.length === 0) return res.json([]);
+
+    const { rows: notas } = await pool.query(
+      `select n.*, u.nombre as creado_por_nombre
+       from incidente_notas n
+       join usuarios u on u.id = n.creado_por
+       where n.incidente_id = any($1::uuid[])
+       order by n.created_at desc`,
+      [incidentes.map((i) => i.id)]
+    );
+    const { rows: adjuntos } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from incidente_adjuntos a
+       join usuarios u on u.id = a.creado_por
+       where a.incidente_id = any($1::uuid[])
+       order by a.fecha desc, a.created_at desc`,
+      [incidentes.map((i) => i.id)]
+    );
+
+    res.json(incidentes.map((inc) => ({
+      ...inc,
+      notas: notas.filter((n) => n.incidente_id === inc.id),
+      adjuntos: adjuntos.filter((a) => a.incidente_id === inc.id),
+    })));
   } catch (err) { next(err); }
 }
 
@@ -1006,6 +1102,7 @@ module.exports = {
   eliminar,
   reportePagos,
   listarFacturas,
+  listarFacturasConAdjuntos,
   crearFactura,
   actualizarFactura,
   eliminarFactura,
@@ -1018,6 +1115,7 @@ module.exports = {
   actualizarAdjuntoFactura,
   eliminarAdjuntoFactura,
   listarIncidentes,
+  listarIncidentesConDetalle,
   crearIncidente,
   actualizarIncidente,
   eliminarIncidente,
