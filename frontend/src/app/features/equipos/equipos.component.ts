@@ -38,6 +38,7 @@ export class EquiposComponent implements OnInit {
   productoSeleccionado = signal<Producto | null>(null);
   filtroProductoCategoria = signal('');
   filtroProductoNombre = signal('');
+  filtroProductoChecklist = signal<'' | 'si' | 'no'>('');
 
   formProducto = this.fb.group({
     categoria_id: ['', Validators.required],
@@ -45,14 +46,17 @@ export class EquiposComponent implements OnInit {
     aplica_checklist: [false],
   });
 
-  hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre()));
+  hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre() || this.filtroProductoChecklist()));
 
   productosFiltrados = computed(() => {
     const fCat = this.filtroProductoCategoria().trim().toLowerCase();
     const fNombre = this.filtroProductoNombre().trim().toLowerCase();
+    const fChecklist = this.filtroProductoChecklist();
     return this.productos().filter((p) => {
       if (fCat && !(p.categoria_nombre ?? '').toLowerCase().includes(fCat)) return false;
       if (fNombre && !p.nombre.toLowerCase().includes(fNombre)) return false;
+      if (fChecklist === 'si' && !p.aplica_checklist) return false;
+      if (fChecklist === 'no' && p.aplica_checklist) return false;
       return true;
     });
   });
@@ -89,6 +93,7 @@ export class EquiposComponent implements OnInit {
   limpiarFiltrosProducto(): void {
     this.filtroProductoCategoria.set('');
     this.filtroProductoNombre.set('');
+    this.filtroProductoChecklist.set('');
   }
 
   // ---------- Categorias: mantenimiento ----------

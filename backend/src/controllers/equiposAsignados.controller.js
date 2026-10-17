@@ -8,6 +8,7 @@ const SELECT_BASE = `
   select
     ea.*,
     p.nombre as producto_nombre,
+    p.aplica_checklist as producto_aplica_checklist,
     c.nombre as categoria_nombre,
     pr.nombre as procesador_nombre,
     prov.nombre as proveedor_nombre,

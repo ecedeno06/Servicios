@@ -104,8 +104,25 @@ export class EquiposAsignadosComponent implements OnInit {
     if (this.menuAccionEquipo()?.id === e.id) { this.cerrarMenuAccion(); return; }
     const boton = event.currentTarget as HTMLElement;
     const rect = boton.getBoundingClientRect();
+    // Posicion provisional debajo del boton; se corrige en ajustarPosicionMenu
+    // una vez el menu esta en el DOM y se conoce su alto real (varia segun si
+    // el equipo tiene o no la opcion Checklist habilitada).
     this.posMenuAccion.set({ top: rect.bottom + 6, left: Math.max(8, rect.right - 220) });
     this.menuAccionEquipo.set(e);
+    setTimeout(() => this.ajustarPosicionMenu(rect));
+  }
+
+  // Si el menu no cabe completo debajo del boton (fila cerca del fondo de
+  // la ventana), se abre hacia arriba en su lugar para que ningun item
+  // quede recortado fuera de la pantalla.
+  private ajustarPosicionMenu(rectBoton: DOMRect): void {
+    const menuEl = document.querySelector('.dropdown-menu-fixed') as HTMLElement | null;
+    if (!menuEl) return;
+    const margen = 8;
+    const alto = menuEl.offsetHeight;
+    if (rectBoton.bottom + 6 + alto > window.innerHeight - margen) {
+      this.posMenuAccion.set({ top: Math.max(margen, rectBoton.top - 6 - alto), left: Math.max(8, rectBoton.right - 220) });
+    }
   }
 
   cerrarMenuAccion(): void {

@@ -133,6 +133,7 @@ export interface EquipoAsignado {
   empresa_id: string;
   producto_id: number;
   producto_nombre: string;
+  producto_aplica_checklist?: boolean;
   categoria_nombre: string;
   marca: string;
   modelo: string;
