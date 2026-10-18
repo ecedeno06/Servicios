@@ -933,12 +933,13 @@ export class EquiposAsignadosComponent implements OnInit {
 
 
   // WhatsApp Web/la app no permiten adjuntar un archivo a traves de un
-  // enlace (wa.me solo acepta texto, y solo para un numero especifico) --
-  // sin una integracion de pago (WhatsApp Business API) no hay forma de
-  // mandar el PDF ya elegido el contacto y adjunto en un solo paso. Como
-  // alternativa: se descarga el PDF y se abre WhatsApp Web directo (sin
-  // numero fijo), para que el usuario elija el contacto y adjunte el
-  // archivo ya descargado el mismo.
+  // enlace -- sin una integracion de pago (WhatsApp Business API) no hay
+  // forma de mandar el PDF ya elegido el contacto y adjunto en un solo
+  // paso. Como alternativa: se descarga el PDF y se abre wa.me SIN numero
+  // pero CON texto (?text=... sin telefono) -- a diferencia de
+  // web.whatsapp.com a secas, este formato abre la pantalla de "Compartir
+  // con" de WhatsApp que deja elegir el contacto de la lista (mismo
+  // patron que campanas.component.ts/sucursales.component.ts en clinica).
   enviandoPorWhatsApp = signal(false);
 
   enviarPorWhatsApp(): void {
@@ -948,12 +949,13 @@ export class EquiposAsignadosComponent implements OnInit {
     // La ventana se abre YA, dentro del click, para que el navegador no la
     // bloquee -- se le asigna la URL de WhatsApp una vez el PDF esta listo.
     const ventana = window.open('', '_blank') ?? undefined;
+    const mensaje = encodeURIComponent(`Checklist de equipo: ${datos.equipo}. Te adjunto el PDF que acabas de descargar.`);
 
     this.enviandoPorWhatsApp.set(true);
     this.checklistPdfSrv.generar(datos)
       .then((doc) => {
         doc.download('checklist-equipo.pdf');
-        const url = 'https://web.whatsapp.com/';
+        const url = `https://wa.me/?text=${mensaje}`;
         if (ventana) ventana.location.href = url;
         else window.open(url, '_blank');
         this.enviandoPorWhatsApp.set(false);
