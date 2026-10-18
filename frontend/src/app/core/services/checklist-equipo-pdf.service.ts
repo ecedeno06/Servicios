@@ -64,15 +64,9 @@ export class ChecklistEquipoPdfService {
     const total = data.items.length;
     const completados = data.items.filter((i) => i.completado).length;
 
-    // Avatar con las iniciales de quien genera el PDF (mismo estilo que el
-    // circulo del topbar) -- se dibuja como celda de tabla rellena en vez
-    // de texto SVG, para no depender del soporte de <text> dentro de svg.
+    // Iniciales de "Asignado a", grandes y sin fondo (pedido explicito).
     const avatarIniciales = data.asignadoIniciales
-      ? {
-          table: { widths: [36], heights: [36], body: [[{ text: data.asignadoIniciales, style: 'avatarIniciales', fillColor: PRIMARY }]] },
-          layout: 'noBorders',
-          width: 36,
-        }
+      ? { text: data.asignadoIniciales, style: 'avatarIniciales', width: 'auto' }
       : { text: '', width: 0 };
 
     const encabezadoEmpresa: any[] = [];
@@ -82,7 +76,7 @@ export class ChecklistEquipoPdfService {
           data.empresaLogo
             ? { image: data.empresaLogo, fit: [70, 70] }
             : { text: '', width: 50 },
-          { text: data.empresaNombre || '', style: 'empresaNombre', alignment: 'left' },
+          { text: data.empresaNombre || '', style: 'empresaNombre', alignment: 'left', width: '*' },
           avatarIniciales,
         ],
         columnGap: 10,
@@ -195,7 +189,7 @@ export class ChecklistEquipoPdfService {
 
       styles: {
         empresaNombre: { fontSize: 13, bold: true, color: PRIMARY, margin: [0, 8, 0, 0] } as Style,
-        avatarIniciales: { fontSize: 13, bold: true, color: 'white', alignment: 'center', margin: [0, 11, 0, 0] } as Style,
+        avatarIniciales: { fontSize: 36, bold: true, color: PRIMARY, alignment: 'right' } as Style,
         titulo: { fontSize: 15, bold: true, color: 'white', alignment: 'center', margin: [0, 9, 0, 9] } as Style,
         label: { fontSize: 9, bold: true, color: GREY_TEXT, margin: [0, 3, 0, 3] } as Style,
         valor: { fontSize: 9.5, margin: [0, 3, 0, 3] } as Style,
