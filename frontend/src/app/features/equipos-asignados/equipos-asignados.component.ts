@@ -994,4 +994,40 @@ export class EquiposAsignadosComponent implements OnInit {
         if (err?.name !== 'AbortError') alert('No se pudo compartir el PDF del checklist.');
       });
   }
+
+  // WhatsApp Web/la app no permiten adjuntar un archivo a traves de un
+  // enlace (wa.me solo acepta texto) -- sin una integracion de pago
+  // (WhatsApp Business API) no hay forma de mandar el PDF ya adjunto. Como
+  // alternativa: se descarga el PDF y se abre un chat de WhatsApp con un
+  // mensaje, para que el usuario lo adjunte el mismo en un paso mas.
+  enviandoPorWhatsApp = signal(false);
+
+  enviarPorWhatsApp(): void {
+    const datos = this.construirDatosChecklistPdf();
+    if (!datos) return;
+
+    const numero = prompt('¿A qué número de WhatsApp enviamos? (con código de país, ej. 50760001234)', '');
+    if (!numero || !numero.trim()) return;
+    const numeroLimpio = numero.replace(/\D/g, '');
+
+    // La ventana se abre YA, dentro del click, para que el navegador no la
+    // bloquee -- se le asigna la URL de WhatsApp una vez el PDF esta listo.
+    const ventana = window.open('', '_blank') ?? undefined;
+    const mensaje = encodeURIComponent(`Checklist de equipo: ${datos.equipo}. Te adjunto el PDF que acabas de descargar.`);
+
+    this.enviandoPorWhatsApp.set(true);
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => {
+        doc.download('checklist-equipo.pdf');
+        const url = `https://wa.me/${numeroLimpio}?text=${mensaje}`;
+        if (ventana) ventana.location.href = url;
+        else window.open(url, '_blank');
+        this.enviandoPorWhatsApp.set(false);
+      })
+      .catch(() => {
+        this.enviandoPorWhatsApp.set(false);
+        ventana?.close();
+        alert('No se pudo preparar el PDF del checklist.');
+      });
+  }
 }
