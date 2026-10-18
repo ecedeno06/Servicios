@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -798,6 +799,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.checklistEjecuciones.set([]);
     this.checklistEjecucionActual.set(null);
     this.mostrandoNuevoChecklist.set(false);
+    this.mostrandoFormCorreoChecklist.set(false);
   }
 
   mostrarNuevoChecklistForm(): void {
@@ -848,6 +850,7 @@ export class EquiposAsignadosComponent implements OnInit {
 
   volverListaChecklist(): void {
     this.checklistEjecucionActual.set(null);
+    this.mostrandoFormCorreoChecklist.set(false);
     this.cargarChecklistEjecuciones();
   }
 
@@ -931,30 +934,46 @@ export class EquiposAsignadosComponent implements OnInit {
       .catch(() => alert('No se pudo generar el PDF del checklist.'));
   }
 
-  // mailto: no permite adjuntar un archivo (misma limitacion que WhatsApp
-  // via wa.me) -- en vez de pedir el destinatario y mandarlo nosotros, se
-  // descarga el PDF y se abre el cliente de correo del usuario (Outlook,
-  // Gmail, etc.) con el asunto y cuerpo ya armados y el destinatario en
-  // blanco, para que el usuario lo complete y adjunte el PDF ya
-  // descargado el mismo.
+  // mailto: no permite adjuntar un archivo -- por eso el envio real (con
+  // el PDF ya adjunto) tiene que pasar por el backend (Microsoft Graph).
+  // En vez de pedir el destinatario con un prompt() nativo, se muestra un
+  // campo propio dentro del modal.
+  mostrandoFormCorreoChecklist = signal(false);
+  destinatarioChecklistForm = this.fb.group({ destinatario: ['', [Validators.required, Validators.email]] });
   enviandoChecklistPorCorreo = signal(false);
 
+  abrirFormCorreoChecklist(): void {
+    this.destinatarioChecklistForm.reset();
+    this.mostrandoFormCorreoChecklist.set(true);
+  }
+
+  cancelarFormCorreoChecklist(): void {
+    this.mostrandoFormCorreoChecklist.set(false);
+  }
+
   enviarChecklistPorCorreo(): void {
+    if (this.destinatarioChecklistForm.invalid) return;
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
     const datos = this.construirDatosChecklistPdf();
-    if (!datos) return;
+    if (!equipo || !ejecucion || !datos) return;
+
+    const destinatario = this.destinatarioChecklistForm.getRawValue().destinatario!.trim();
 
     this.enviandoChecklistPorCorreo.set(true);
     this.checklistPdfSrv.generar(datos)
-      .then((doc) => {
-        doc.download('checklist-equipo.pdf');
-        const asunto = encodeURIComponent('Checklist de equipo');
-        const cuerpo = encodeURIComponent(`Adjunto el checklist de equipo: ${datos.equipo}.\n\nTe adjunto el PDF que acabas de descargar.`);
-        window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+      .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
+      .then((pdfBase64) =>
+        firstValueFrom(this.srv.enviarChecklistPdfPorCorreo(equipo.id, ejecucion.id, { destinatario, pdfBase64 }))
+      )
+      .then(() => {
         this.enviandoChecklistPorCorreo.set(false);
+        this.mostrandoFormCorreoChecklist.set(false);
+        alert('Checklist enviado por correo.');
       })
-      .catch(() => {
+      .catch((err) => {
         this.enviandoChecklistPorCorreo.set(false);
-        alert('No se pudo preparar el PDF del checklist.');
+        alert(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
       });
   }
 }

@@ -63,4 +63,10 @@ export class EquiposAsignadosService {
   actualizarChecklistEjecucionItem(equipoId: string, ejecucionId: string, checklistId: string, data: { completado: boolean }): Observable<EquipoChecklistItem> {
     return this.http.put<EquipoChecklistItem>(`${this.base}/${equipoId}/checklist/${ejecucionId}/items/${checklistId}`, data);
   }
+
+  // El PDF ya viene armado (pdfmake, base64) del lado del frontend -- el
+  // backend solo lo adjunta y lo manda por correo.
+  enviarChecklistPdfPorCorreo(equipoId: string, ejecucionId: string, data: { destinatario: string; pdfBase64: string }): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/enviar-pdf`, data);
+  }
 }
