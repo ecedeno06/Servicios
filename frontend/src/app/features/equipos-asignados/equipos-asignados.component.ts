@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -929,5 +930,32 @@ export class EquiposAsignadosComponent implements OnInit {
     this.checklistPdfSrv.generar(datos)
       .then((doc) => doc.open(undefined, ventana))
       .catch(() => alert('No se pudo generar el PDF del checklist.'));
+  }
+
+  enviandoChecklistPorCorreo = signal(false);
+
+  enviarChecklistPorCorreo(): void {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    const datos = this.construirDatosChecklistPdf();
+    if (!equipo || !ejecucion || !datos) return;
+
+    const destinatario = prompt('¿A qué correo enviamos el checklist?', '');
+    if (!destinatario || !destinatario.trim()) return;
+
+    this.enviandoChecklistPorCorreo.set(true);
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
+      .then((pdfBase64) =>
+        firstValueFrom(this.srv.enviarChecklistPdfPorCorreo(equipo.id, ejecucion.id, { destinatario: destinatario.trim(), pdfBase64 }))
+      )
+      .then(() => {
+        this.enviandoChecklistPorCorreo.set(false);
+        alert('Checklist enviado por correo.');
+      })
+      .catch((err) => {
+        this.enviandoChecklistPorCorreo.set(false);
+        alert(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
+      });
   }
 }
