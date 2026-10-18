@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const { enviarCorreo } = require('../utils/correo');
 
 const MAX_ADJUNTOS = 20;
 const MAX_IMAGEN_BASE64_CHARS = 4 * 1024 * 1024; // ~4MB de texto base64 (~3MB de archivo real)
@@ -508,9 +509,41 @@ async function actualizarChecklistEjecucionItem(req, res, next) {
   } catch (err) { next(err); }
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// POST /:id/checklist/:ejecucionId/enviar-pdf  { destinatario, pdfBase64 }
+// El PDF ya viene armado del lado del frontend (pdfmake) -- este endpoint
+// solo lo adjunta y lo manda por correo via el mismo canal (Microsoft
+// Graph) que usa el resto de la app.
+async function enviarChecklistPdfPorCorreo(req, res, next) {
+  try {
+    if (!(await verificarEjecucion(req))) return res.status(404).json({ mensaje: 'Checklist no encontrado' });
+
+    const destinatario = String(req.body?.destinatario || '').trim();
+    const pdfBase64 = req.body?.pdfBase64;
+    if (!destinatario || !EMAIL_REGEX.test(destinatario)) {
+      return res.status(400).json({ mensaje: 'Ingresa un correo valido' });
+    }
+    if (!pdfBase64 || typeof pdfBase64 !== 'string') {
+      return res.status(400).json({ mensaje: 'pdfBase64 es requerido' });
+    }
+
+    await enviarCorreo({
+      destinatario,
+      asunto: 'Checklist de equipo',
+      texto: 'Adjunto el checklist de equipo en PDF.',
+      html: '<p>Adjunto el checklist de equipo en PDF.</p>',
+      attachments: [{ nombre: 'checklist-equipo.pdf', contentBase64: pdfBase64, contentType: 'application/pdf' }],
+    });
+
+    res.json({ ok: true, mensaje: 'Correo enviado correctamente' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar, crear, actualizar, eliminar, historial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,
+  enviarChecklistPdfPorCorreo,
 };

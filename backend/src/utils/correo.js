@@ -41,7 +41,8 @@ function comoDestinatarios(valor) {
 
 // destinatario: string o array de strings. html es opcional (si no se
 // pasa, se envia como texto plano). cc es opcional (string o array).
-async function enviarCorreo({ destinatario, asunto, texto, html, cc }) {
+// attachments es opcional: [{ nombre, contentBase64, contentType }].
+async function enviarCorreo({ destinatario, asunto, texto, html, cc, attachments }) {
   const remitente = process.env.EMAIL_FROM;
   if (!remitente) throw new Error('EMAIL_FROM debe estar definida en el entorno para enviar correo');
 
@@ -52,6 +53,16 @@ async function enviarCorreo({ destinatario, asunto, texto, html, cc }) {
       body: { contentType: html ? 'HTML' : 'Text', content: html || texto },
       toRecipients: comoDestinatarios(destinatario),
       ...(cc ? { ccRecipients: comoDestinatarios(cc) } : {}),
+      ...(attachments && attachments.length
+        ? {
+            attachments: attachments.map((a) => ({
+              '@odata.type': '#microsoft.graph.fileAttachment',
+              name: a.nombre,
+              contentType: a.contentType || 'application/octet-stream',
+              contentBytes: a.contentBase64,
+            })),
+          }
+        : {}),
     },
     saveToSentItems: false,
   };

@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -8,7 +9,7 @@ import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { ChecklistsService } from '../../core/services/checklists.service';
-import { ChecklistEquipoPdfService } from '../../core/services/checklist-equipo-pdf.service';
+import { ChecklistEquipoPdfService, ChecklistPdfData } from '../../core/services/checklist-equipo-pdf.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
@@ -882,15 +883,11 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  imprimirChecklistPdf(): void {
+  private construirDatosChecklistPdf(): ChecklistPdfData | null {
     const equipo = this.checklistEquipoActual();
     const ejecucion = this.checklistEjecucionActual();
-    if (!equipo || !ejecucion) return;
+    if (!equipo || !ejecucion) return null;
 
-    // La ventana se abre YA, dentro del click, para que el navegador no la
-    // bloquee -- pdfmake se carga de forma diferida (import() dinamico) y
-    // para cuando el PDF esta listo ya no estamos dentro del gesto de click.
-    const ventana = window.open('', '_blank') ?? undefined;
     const empresa = this.auth.empresaActiva();
     const formatearFecha = (f: string) => (this.datePipe.transform(f, 'd-MMM-y h:mm a') || '').toLowerCase();
     // Iniciales de "Asignado a" (inicial de Nombre + inicial de Apellido),
@@ -903,7 +900,7 @@ export class EquiposAsignadosComponent implements OnInit {
       .map((p) => p[0]?.toUpperCase())
       .join('');
 
-    this.checklistPdfSrv.generar({
+    return {
       empresaNombre: empresa?.empresa_nombre ?? '',
       empresaLogo: empresa?.empresa_logo ?? null,
       equipo: `${equipo.marca} ${equipo.modelo}` + (equipo.numero_serie ? ` (SN:${equipo.numero_serie})` : ''),
@@ -919,7 +916,82 @@ export class EquiposAsignadosComponent implements OnInit {
         fechaCompletado: item.fecha_completado ? formatearFecha(item.fecha_completado) : null,
         completadoPor: item.modificado_por_nombre,
       })),
-    }).then((doc) => doc.open(undefined, ventana))
+    };
+  }
+
+  imprimirChecklistPdf(): void {
+    const datos = this.construirDatosChecklistPdf();
+    if (!datos) return;
+
+    // La ventana se abre YA, dentro del click, para que el navegador no la
+    // bloquee -- pdfmake se carga de forma diferida (import() dinamico) y
+    // para cuando el PDF esta listo ya no estamos dentro del gesto de click.
+    const ventana = window.open('', '_blank') ?? undefined;
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => doc.open(undefined, ventana))
       .catch(() => alert('No se pudo generar el PDF del checklist.'));
+  }
+
+  enviandoChecklistPorCorreo = signal(false);
+
+  enviarChecklistPorCorreo(): void {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    const datos = this.construirDatosChecklistPdf();
+    if (!equipo || !ejecucion || !datos) return;
+
+    const destinatario = prompt('¿A qué correo enviamos el checklist?', '');
+    if (!destinatario || !destinatario.trim()) return;
+
+    this.enviandoChecklistPorCorreo.set(true);
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
+      .then((pdfBase64) =>
+        firstValueFrom(this.srv.enviarChecklistPdfPorCorreo(equipo.id, ejecucion.id, { destinatario: destinatario.trim(), pdfBase64 }))
+      )
+      .then(() => {
+        this.enviandoChecklistPorCorreo.set(false);
+        alert('Checklist enviado por correo.');
+      })
+      .catch((err) => {
+        this.enviandoChecklistPorCorreo.set(false);
+        alert(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
+      });
+  }
+
+  // Comparte el PDF a traves del selector nativo del sistema operativo
+  // (navigator.share con archivos) -- en celular el usuario puede elegir
+  // WhatsApp directamente. No hay forma de mandarlo a un numero especifico
+  // sin una integracion de WhatsApp Business API, que esta app no tiene.
+  compartiendoChecklist = signal(false);
+
+  compartirChecklistPdf(): void {
+    const datos = this.construirDatosChecklistPdf();
+    if (!datos) return;
+
+    const nav = navigator as Navigator & { canShare?: (data?: any) => boolean; share?: (data: any) => Promise<void> };
+    if (!nav.share) {
+      alert('Tu navegador no soporta compartir archivos directamente. Usa "Imprimir PDF" y compártelo manualmente.');
+      return;
+    }
+
+    this.compartiendoChecklist.set(true);
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => new Promise<Blob>((resolve) => doc.getBlob((blob: Blob) => resolve(blob))))
+      .then((blob) => {
+        const archivo = new File([blob], 'checklist-equipo.pdf', { type: 'application/pdf' });
+        const payload = { files: [archivo], title: 'Checklist de equipo', text: `Checklist de equipo: ${datos.equipo}` };
+        if (nav.canShare && !nav.canShare(payload)) {
+          this.compartiendoChecklist.set(false);
+          alert('Tu navegador no soporta compartir este archivo. Usa "Imprimir PDF" y compártelo manualmente.');
+          return;
+        }
+        return nav.share!(payload).finally(() => this.compartiendoChecklist.set(false));
+      })
+      .catch((err) => {
+        this.compartiendoChecklist.set(false);
+        // El usuario cancelando el selector de compartir tambien cae aca (AbortError) -- no es un error real.
+        if (err?.name !== 'AbortError') alert('No se pudo compartir el PDF del checklist.');
+      });
   }
 }
