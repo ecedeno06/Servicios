@@ -40,6 +40,7 @@ export interface ChecklistPdfData {
   fechaEjecucion: string; // ya formateada
   fechaGeneracion: string; // ya formateada
   generadoPor?: string;
+  generadoPorIniciales?: string; // ej. "AL" -- mismo criterio que el avatar del topbar (inicial de Nombre + inicial de Apellido)
   items: ChecklistPdfItem[];
 }
 
@@ -63,14 +64,26 @@ export class ChecklistEquipoPdfService {
     const total = data.items.length;
     const completados = data.items.filter((i) => i.completado).length;
 
+    // Avatar con las iniciales de quien genera el PDF (mismo estilo que el
+    // circulo del topbar) -- se dibuja como celda de tabla rellena en vez
+    // de texto SVG, para no depender del soporte de <text> dentro de svg.
+    const avatarIniciales = data.generadoPorIniciales
+      ? {
+          table: { widths: [36], heights: [36], body: [[{ text: data.generadoPorIniciales, style: 'avatarIniciales', fillColor: PRIMARY }]] },
+          layout: 'noBorders',
+          width: 36,
+        }
+      : { text: '', width: 0 };
+
     const encabezadoEmpresa: any[] = [];
-    if (data.empresaLogo || data.empresaNombre) {
+    if (data.empresaLogo || data.empresaNombre || data.generadoPorIniciales) {
       encabezadoEmpresa.push({
         columns: [
           data.empresaLogo
             ? { image: data.empresaLogo, fit: [70, 70] }
             : { text: '', width: 50 },
           { text: data.empresaNombre || '', style: 'empresaNombre', alignment: 'left' },
+          avatarIniciales,
         ],
         columnGap: 10,
         margin: [0, 0, 0, 16],
@@ -182,6 +195,7 @@ export class ChecklistEquipoPdfService {
 
       styles: {
         empresaNombre: { fontSize: 13, bold: true, color: PRIMARY, margin: [0, 8, 0, 0] } as Style,
+        avatarIniciales: { fontSize: 13, bold: true, color: 'white', alignment: 'center', margin: [0, 11, 0, 0] } as Style,
         titulo: { fontSize: 15, bold: true, color: 'white', alignment: 'center', margin: [0, 9, 0, 9] } as Style,
         label: { fontSize: 9, bold: true, color: GREY_TEXT, margin: [0, 3, 0, 3] } as Style,
         valor: { fontSize: 9.5, margin: [0, 3, 0, 3] } as Style,
