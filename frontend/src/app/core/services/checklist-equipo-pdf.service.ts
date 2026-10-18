@@ -40,7 +40,7 @@ export interface ChecklistPdfData {
   fechaEjecucion: string; // ya formateada
   fechaGeneracion: string; // ya formateada
   generadoPor?: string;
-  generadoPorIniciales?: string; // ej. "AL" -- mismo criterio que el avatar del topbar (inicial de Nombre + inicial de Apellido)
+  asignadoIniciales?: string; // iniciales de "Asignado a" -- ej. "AM" -- mismo criterio que el avatar del topbar (inicial de Nombre + inicial de Apellido)
   items: ChecklistPdfItem[];
 }
 
@@ -67,16 +67,16 @@ export class ChecklistEquipoPdfService {
     // Avatar con las iniciales de quien genera el PDF (mismo estilo que el
     // circulo del topbar) -- se dibuja como celda de tabla rellena en vez
     // de texto SVG, para no depender del soporte de <text> dentro de svg.
-    const avatarIniciales = data.generadoPorIniciales
+    const avatarIniciales = data.asignadoIniciales
       ? {
-          table: { widths: [36], heights: [36], body: [[{ text: data.generadoPorIniciales, style: 'avatarIniciales', fillColor: PRIMARY }]] },
+          table: { widths: [36], heights: [36], body: [[{ text: data.asignadoIniciales, style: 'avatarIniciales', fillColor: PRIMARY }]] },
           layout: 'noBorders',
           width: 36,
         }
       : { text: '', width: 0 };
 
     const encabezadoEmpresa: any[] = [];
-    if (data.empresaLogo || data.empresaNombre || data.generadoPorIniciales) {
+    if (data.empresaLogo || data.empresaNombre || data.asignadoIniciales) {
       encabezadoEmpresa.push({
         columns: [
           data.empresaLogo

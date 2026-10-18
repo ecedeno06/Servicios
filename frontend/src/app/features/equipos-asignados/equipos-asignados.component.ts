@@ -893,10 +893,12 @@ export class EquiposAsignadosComponent implements OnInit {
     const ventana = window.open('', '_blank') ?? undefined;
     const empresa = this.auth.empresaActiva();
     const formatearFecha = (f: string) => (this.datePipe.transform(f, 'd-MMM-y h:mm a') || '').toLowerCase();
-    // Mismas iniciales que el avatar del topbar (inicial de Nombre + inicial
-    // de Apellido, ver layout.component.ts#iniciales).
-    const iniciales = (this.auth.usuario()?.nombre || '')
+    // Iniciales de "Asignado a" (inicial de Nombre + inicial de Apellido),
+    // mismo criterio que el avatar del topbar (ver layout.component.ts#iniciales).
+    const iniciales = (ejecucion.asignado_a || '')
+      .trim()
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
       .map((p) => p[0]?.toUpperCase())
       .join('');
@@ -910,7 +912,7 @@ export class EquiposAsignadosComponent implements OnInit {
       fechaEjecucion: formatearFecha(ejecucion.fecha),
       fechaGeneracion: formatearFecha(new Date().toISOString()),
       generadoPor: this.auth.usuario()?.nombre,
-      generadoPorIniciales: iniciales || undefined,
+      asignadoIniciales: iniciales || undefined,
       items: ejecucion.items.map((item) => ({
         descripcion: item.descripcion,
         completado: item.completado,
