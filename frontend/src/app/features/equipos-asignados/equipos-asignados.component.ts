@@ -930,40 +930,4 @@ export class EquiposAsignadosComponent implements OnInit {
       .then((doc) => doc.open(undefined, ventana))
       .catch(() => alert('No se pudo generar el PDF del checklist.'));
   }
-
-
-  // WhatsApp Web/la app no permiten adjuntar un archivo a traves de un
-  // enlace -- sin una integracion de pago (WhatsApp Business API) no hay
-  // forma de mandar el PDF ya elegido el contacto y adjunto en un solo
-  // paso. Como alternativa: se descarga el PDF y se abre wa.me SIN numero
-  // pero CON texto (?text=... sin telefono) -- a diferencia de
-  // web.whatsapp.com a secas, este formato abre la pantalla de "Compartir
-  // con" de WhatsApp que deja elegir el contacto de la lista (mismo
-  // patron que campanas.component.ts/sucursales.component.ts en clinica).
-  enviandoPorWhatsApp = signal(false);
-
-  enviarPorWhatsApp(): void {
-    const datos = this.construirDatosChecklistPdf();
-    if (!datos) return;
-
-    // La ventana se abre YA, dentro del click, para que el navegador no la
-    // bloquee -- se le asigna la URL de WhatsApp una vez el PDF esta listo.
-    const ventana = window.open('', '_blank') ?? undefined;
-    const mensaje = encodeURIComponent(`Checklist de equipo: ${datos.equipo}. Te adjunto el PDF que acabas de descargar.`);
-
-    this.enviandoPorWhatsApp.set(true);
-    this.checklistPdfSrv.generar(datos)
-      .then((doc) => {
-        doc.download('checklist-equipo.pdf');
-        const url = `https://wa.me/?text=${mensaje}`;
-        if (ventana) ventana.location.href = url;
-        else window.open(url, '_blank');
-        this.enviandoPorWhatsApp.set(false);
-      })
-      .catch(() => {
-        this.enviandoPorWhatsApp.set(false);
-        ventana?.close();
-        alert('No se pudo preparar el PDF del checklist.');
-      });
-  }
 }
