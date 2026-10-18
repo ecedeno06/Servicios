@@ -1,5 +1,4 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -932,30 +931,30 @@ export class EquiposAsignadosComponent implements OnInit {
       .catch(() => alert('No se pudo generar el PDF del checklist.'));
   }
 
+  // mailto: no permite adjuntar un archivo (misma limitacion que WhatsApp
+  // via wa.me) -- en vez de pedir el destinatario y mandarlo nosotros, se
+  // descarga el PDF y se abre el cliente de correo del usuario (Outlook,
+  // Gmail, etc.) con el asunto y cuerpo ya armados y el destinatario en
+  // blanco, para que el usuario lo complete y adjunte el PDF ya
+  // descargado el mismo.
   enviandoChecklistPorCorreo = signal(false);
 
   enviarChecklistPorCorreo(): void {
-    const equipo = this.checklistEquipoActual();
-    const ejecucion = this.checklistEjecucionActual();
     const datos = this.construirDatosChecklistPdf();
-    if (!equipo || !ejecucion || !datos) return;
-
-    const destinatario = prompt('¿A qué correo enviamos el checklist?', '');
-    if (!destinatario || !destinatario.trim()) return;
+    if (!datos) return;
 
     this.enviandoChecklistPorCorreo.set(true);
     this.checklistPdfSrv.generar(datos)
-      .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
-      .then((pdfBase64) =>
-        firstValueFrom(this.srv.enviarChecklistPdfPorCorreo(equipo.id, ejecucion.id, { destinatario: destinatario.trim(), pdfBase64 }))
-      )
-      .then(() => {
+      .then((doc) => {
+        doc.download('checklist-equipo.pdf');
+        const asunto = encodeURIComponent('Checklist de equipo');
+        const cuerpo = encodeURIComponent(`Adjunto el checklist de equipo: ${datos.equipo}.\n\nTe adjunto el PDF que acabas de descargar.`);
+        window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
         this.enviandoChecklistPorCorreo.set(false);
-        alert('Checklist enviado por correo.');
       })
-      .catch((err) => {
+      .catch(() => {
         this.enviandoChecklistPorCorreo.set(false);
-        alert(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
+        alert('No se pudo preparar el PDF del checklist.');
       });
   }
 }
