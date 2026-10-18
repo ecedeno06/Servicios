@@ -906,7 +906,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.checklistPdfSrv.generar({
       empresaNombre: empresa?.empresa_nombre ?? '',
       empresaLogo: empresa?.empresa_logo ?? null,
-      equipo: `${equipo.marca} ${equipo.modelo}`,
+      equipo: `${equipo.marca} ${equipo.modelo}` + (equipo.numero_serie ? ` (SN:${equipo.numero_serie})` : ''),
       categoria: equipo.categoria_nombre,
       asignadoA: ejecucion.asignado_a || undefined,
       fechaEjecucion: formatearFecha(ejecucion.fecha),
