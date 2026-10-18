@@ -22,6 +22,5 @@ router.get('/:id/checklist/:ejecucionId', requirePermiso('equipos_asignados', 'v
 router.put('/:id/checklist/:ejecucionId', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizarChecklistEjecucion);
 router.delete('/:id/checklist/:ejecucionId', requirePermiso('equipos_asignados', 'eliminar'), ctrl.eliminarChecklistEjecucion);
 router.put('/:id/checklist/:ejecucionId/items/:checklistId', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizarChecklistEjecucionItem);
-router.post('/:id/checklist/:ejecucionId/enviar-pdf', requirePermiso('equipos_asignados', 'ver'), ctrl.enviarChecklistPdfPorCorreo);
 
 module.exports = router;
