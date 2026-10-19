@@ -503,21 +503,29 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   });
 
+  // "estado" es texto libre que viene del catalogo configurable de la
+  // empresa (estados_servicios_proveedores.nombre, ej. "Activo", "En
+  // Pausa"...) -- se compara sin importar mayusculas/minusculas para no
+  // depender de como lo haya tipeado cada empresa en su catalogo.
+  private esActivo(s: ServicioProveedor): boolean {
+    return (s.estado ?? '').trim().toLowerCase() === 'activo';
+  }
+
   // Métricas KPI: se calculan sobre serviciosFiltrados(), no sobre
   // servicios() completo -- al aplicar cualquier filtro/busqueda (o
   // tocar la tarjeta de Facturas Pendientes) las tarjetas reflejan solo
   // lo que esta visible en la tabla en ese momento.
-  kpiTotalServicios = computed(() => this.serviciosFiltrados().filter((s) => s.estado === 'activo').length);
+  kpiTotalServicios = computed(() => this.serviciosFiltrados().filter((s) => this.esActivo(s)).length);
 
   kpiCostoMensualTotal = computed(() =>
     this.serviciosFiltrados()
-      .filter((s) => s.estado === 'activo')
+      .filter((s) => this.esActivo(s))
       .reduce((acc, s) => acc + (Number(s.costo_mensual) || 0), 0)
   );
 
   kpiCostoAnualTotal = computed(() =>
     this.serviciosFiltrados()
-      .filter((s) => s.estado === 'activo')
+      .filter((s) => this.esActivo(s))
       .reduce((acc, s) => acc + (Number(s.costo_anual) || 0), 0)
   );
 
