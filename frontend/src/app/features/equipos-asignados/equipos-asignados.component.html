@@ -3,6 +3,30 @@
     <h1>Equipos asignados</h1>
     <div class="desc">Inventario de equipos de esta empresa: estado, vida util y a quien estan asignados</div>
   </div>
+  @if (estadoConteos().length) {
+    <div class="chart-estados" role="group" aria-label="Equipos por estado -- clic en una barra para filtrar">
+      @for (c of estadoConteos(); track c.valor) {
+        <button
+          type="button"
+          class="chart-estados-bar"
+          [class.is-active]="filtroEstado().has(c.etiqueta)"
+          [attr.aria-pressed]="filtroEstado().has(c.etiqueta)"
+          [title]="c.etiqueta + ': ' + c.cantidad + ' equipo(s). Clic para filtrar la tabla.'"
+          (click)="toggleFiltroEstadoChart(c.etiqueta)"
+        >
+          <span class="chart-estados-label">{{ c.etiqueta }}</span>
+          <span class="chart-estados-track">
+            <span
+              class="chart-estados-fill"
+              [style.width.%]="(c.cantidad / maxConteoEstado()) * 100"
+              [style.background]="colorEstado(c.valor)"
+            ></span>
+          </span>
+          <span class="chart-estados-valor">{{ c.cantidad }}</span>
+        </button>
+      }
+    </div>
+  }
 </div>
 
 <div class="page-header">

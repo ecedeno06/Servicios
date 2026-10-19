@@ -66,3 +66,68 @@
 .card-adjunto-info .text-muted {
   color: var(--text-muted-card-adjunto-info);
 }
+
+/* Grafica "Equipos por estado" (cabecera) -- una fila por estado con barra
+   horizontal fina, mismo mark-spec que .hour-gauge (track 7px, rounded
+   999px). Cada barra es un boton real: clic filtra la tabla por ese
+   estado (toggle). Etiqueta y valor van fuera del relleno a proposito
+   (texto siempre en color de texto, nunca sobre el color de la serie). */
+.chart-estados {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.chart-estados-bar {
+  display: grid;
+  grid-template-columns: 72px 1fr 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.chart-estados-bar:hover { background: var(--bg-surface-muted); }
+
+.chart-estados-bar.is-active {
+  background: var(--bg-surface-muted);
+  outline: 1.5px solid var(--border-default);
+}
+
+.chart-estados-label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-estados-bar.is-active .chart-estados-label { color: var(--text-body); font-weight: 600; }
+
+.chart-estados-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg-surface-muted);
+  overflow: hidden;
+}
+
+.chart-estados-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.chart-estados-valor {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-body);
+  text-align: right;
+}

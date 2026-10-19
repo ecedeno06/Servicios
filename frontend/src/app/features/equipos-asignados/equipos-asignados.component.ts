@@ -470,6 +470,48 @@ export class EquiposAsignadosComponent implements OnInit {
     }
   }
 
+  // Mismos colores que los badges de la columna Estado (claseEstado), para
+  // que la grafica de arriba sea visualmente consistente con la tabla.
+  colorEstado(estado: EstadoEquipo): string {
+    switch (estado) {
+      case 'en_uso': return 'var(--green-600)';
+      case 'reparacion': return 'var(--amber-500)';
+      case 'dano': return 'var(--red-600)';
+      case 'descarte': return 'var(--red-600)';
+      default: return 'var(--slate-500)'; // stock, vendida
+    }
+  }
+
+  // Grafica "Equipos por estado": cuenta sobre el total (sin aplicar los
+  // demas filtros), para que siempre se vea el panorama completo de la
+  // empresa y no cambie de tamano al filtrar. Solo se listan los estados
+  // con al menos un equipo, en el orden fijo de ESTADOS (el color sigue a
+  // la entidad, nunca al ranking).
+  estadoConteos = computed(() => {
+    const equipos = this.equipos();
+    return this.estados
+      .map((es) => ({
+        valor: es.valor,
+        etiqueta: es.etiqueta,
+        cantidad: equipos.filter((e) => e.estado === es.valor).length,
+      }))
+      .filter((c) => c.cantidad > 0);
+  });
+
+  maxConteoEstado = computed(() => Math.max(1, ...this.estadoConteos().map((c) => c.cantidad)));
+
+  // Clic en una barra filtra la tabla por ese estado; clic de nuevo sobre
+  // la barra ya activa limpia el filtro (toggle), igual que destildar el
+  // unico valor marcado en el filtro de columna Estado.
+  toggleFiltroEstadoChart(etiqueta: string): void {
+    const actual = this.filtroEstado();
+    if (actual.size === 1 && actual.has(etiqueta)) {
+      this.filtroEstado.set(new Set());
+    } else {
+      this.filtroEstado.set(new Set([etiqueta]));
+    }
+  }
+
   seleccionar(e: EquipoAsignado): void {
     const yaSeleccionado = this.seleccionado()?.id === e.id;
     if (yaSeleccionado) { this.nuevo(); return; }
