@@ -331,6 +331,20 @@ export class RegistroHorasComponent implements OnInit {
     input.value = '';
   }
 
+  onPasteImagenComentario(event: ClipboardEvent, comentarioId: string): void {
+    this.errorAdjuntoComentario.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoComentario(archivo, comentarioId);
+        return;
+      }
+    }
+    this.errorAdjuntoComentario.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
   private procesarArchivoComentario(archivo: File, comentarioId: string): void {
     this.errorAdjuntoComentario.set(null);
     const registro = this.registroComentando();
