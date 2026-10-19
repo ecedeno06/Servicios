@@ -20,5 +20,9 @@ router.delete('/:id', requirePermiso('horas', 'eliminar'), ctrl.eliminar);
 router.get('/:id/comentarios', ctrl.listarComentarios);
 router.post('/:id/comentarios', ctrl.agregarComentario); // cualquier rol autenticado puede comentar
 router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);
+// Adjuntos de un comentario -- mismo alcance que el comentario mismo
+// (cualquier rol autenticado con acceso al registro), no un permiso aparte.
+router.post('/:id/comentarios/:comentarioId/adjuntos', ctrl.crearAdjuntoComentario);
+router.delete('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', ctrl.eliminarAdjuntoComentario);
 
 module.exports = router;

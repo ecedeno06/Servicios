@@ -301,6 +301,7 @@ export interface Comentario {
   usuario_id: string;
   usuario_nombre: string;
   nota: string;
+  adjuntos?: ImagenServicioProveedor[];
 }
 
 export interface NotificacionComentario {
@@ -325,7 +326,6 @@ export interface RegistroHora {
   hora_fin?: string | null;
   horas: number;
   descripcion?: string;
-  documentos?: Documento[];
   comentarios_count?: number;
   created_at?: string;
 }

@@ -179,43 +179,6 @@
           <textarea class="input" rows="3" formControlName="descripcion" placeholder="Detalle de la actividad realizada"></textarea>
         </div>
 
-        <div class="card mt-16">
-          <h3 style="margin:0;">Documentos</h3>
-
-          <div class="table-wrap mt-16">
-            <table class="data-table">
-              <thead>
-                <tr><th>Nombre</th><th>URL</th><th></th></tr>
-              </thead>
-              <tbody>
-                @for (d of documentosActuales(); track $index) {
-                  <tr>
-                    <td>{{ d.nombre }}</td>
-                    <td><a [href]="d.url" target="_blank" rel="noopener">Abrir</a></td>
-                    <td class="table-actions">
-                      <button type="button" class="btn btn-danger btn-sm" (click)="quitarDocumento($index)">Quitar</button>
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr><td colspan="3"><div class="empty-state">Sin documentos asociados.</div></td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div [formGroup]="docForm">
-            <div class="form-group mt-16">
-              <label>Nombre</label>
-              <input class="input" formControlName="nombre" placeholder="Evidencia.pdf" />
-            </div>
-            <div class="form-group mt-16">
-              <label>URL (OneDrive u otro origen)</label>
-              <input class="input" type="url" formControlName="url" placeholder="https://onedrive.live.com/..." />
-            </div>
-            <button type="button" class="btn btn-outline btn-sm mt-16" [disabled]="docForm.invalid" (click)="agregarDocumento()">+ Agregar documento</button>
-          </div>
-        </div>
-
         @if (errorGuardar()) {
           <div class="error-text mt-16">{{ errorGuardar() }}</div>
         }
@@ -238,25 +201,46 @@
 
       <div class="text-muted text-sm">{{ r.cliente_nombre }} &middot; {{ r.numero_contrato }} &middot; {{ r.tipo_servicio_nombre }}</div>
 
-      <div class="table-wrap mt-16">
-        <table class="data-table">
-          <thead><tr><th>Fecha</th><th>Usuario</th><th>Nota</th></tr></thead>
-          <tbody>
-            @if (cargandoComentarios()) {
-              <tr><td colspan="3"><div class="empty-state">Cargando comentarios...</div></td></tr>
-            } @else {
-              @for (c of comentariosOrdenados(); track c.id) {
-                <tr>
-                  <td style="white-space: nowrap;">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>{{ c.usuario_nombre }}</td>
-                  <td style="white-space: pre-wrap;">{{ c.nota }}</td>
-                </tr>
-              } @empty {
-                <tr><td colspan="3"><div class="empty-state">Aun no hay comentarios en este registro.</div></td></tr>
+      @if (errorAdjuntoComentario()) {
+        <div class="error-text mt-16">{{ errorAdjuntoComentario() }}</div>
+      }
+
+      <div class="mt-16">
+        @if (cargandoComentarios()) {
+          <div class="empty-state">Cargando comentarios...</div>
+        } @else {
+          @for (c of comentariosOrdenados(); track c.id) {
+            <div class="card mt-16" style="padding: 12px;">
+              <div class="text-muted text-sm">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ c.usuario_nombre }}</div>
+              <div style="white-space: pre-wrap; margin-top: 4px;">{{ c.nota }}</div>
+
+              @if (c.id) {
+                <div class="flex items-center gap-8" style="margin-top: 10px; flex-wrap: wrap;">
+                  @for (img of c.adjuntos ?? []; track img.id) {
+                    <span class="badge badge-slate" style="cursor: pointer;" (click)="abrirAdjuntoComentario(img.imagen_base64)" [title]="'Ver / Descargar · ' + tamanoArchivo(img.imagen_base64)">
+                      {{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}
+                    </span>
+                    <button type="button" class="btn-icon" title="Eliminar adjunto" aria-label="Eliminar adjunto" style="margin-left: -8px;" (click)="eliminarAdjuntoComentario(c.id, img.id)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  }
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    #inputArchivoComentario
+                    hidden
+                    (change)="onSeleccionArchivoComentario($event, c.id)"
+                  />
+                  <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjuntoComentario() === c.id" (click)="inputArchivoComentario.click()">
+                    {{ guardandoAdjuntoComentario() === c.id ? 'Subiendo...' : '+ Adjuntar archivo' }}
+                  </button>
+                </div>
               }
-            }
-          </tbody>
-        </table>
+            </div>
+          } @empty {
+            <div class="empty-state">Aun no hay comentarios en este registro.</div>
+          }
+        }
       </div>
 
       <div class="form-group mt-16">

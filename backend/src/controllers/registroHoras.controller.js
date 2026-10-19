@@ -1,5 +1,9 @@
 const { pool } = require('../config/db');
 
+const MAX_ADJUNTOS_COMENTARIO = 20;
+const MAX_IMAGEN_BASE64_CHARS = Math.ceil(2 * 1024 * 1024 * 4 / 3); // ~2.7MB de texto base64 (~2MB de archivo real)
+const IMAGEN_BASE64_PREFIJO = /^data:(image\/png|image\/jpeg|application\/pdf);base64,/;
+
 // Calcula las horas ejecutadas (decimal) a partir de "HH:MM" - "HH:MM".
 // Retorna null si el rango es invalido (fin <= inicio).
 function calcularHoras(horaInicio, horaFin) {
@@ -87,7 +91,7 @@ async function obtener(req, res, next) {
 // activa, y que el contrato este vigente segun sus fechas y estado.
 async function crear(req, res, next) {
   try {
-    const { contrato_id, tipo_servicio_id, fecha, hora_inicio, hora_fin, descripcion, documentos } = req.body;
+    const { contrato_id, tipo_servicio_id, fecha, hora_inicio, hora_fin, descripcion } = req.body;
     const usuario_id = req.body.usuario_id || req.usuario.id; // por defecto quien ejecuta la peticion
 
     if (!hora_inicio || !hora_fin) {
@@ -127,9 +131,9 @@ async function crear(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      `insert into registro_horas (empresa_id, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, coalesce($10,'[]'::jsonb)) returning *`,
-      [req.empresaId, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null]
+      `insert into registro_horas (empresa_id, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9) returning *`,
+      [req.empresaId, contrato_id, tipo_servicio_id, usuario_id, fecha, hora_inicio, hora_fin, horas, descripcion]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -137,7 +141,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { fecha, hora_inicio, hora_fin, descripcion, documentos } = req.body;
+    const { fecha, hora_inicio, hora_fin, descripcion } = req.body;
 
     let horas = null;
     if (hora_inicio && hora_fin) {
@@ -153,10 +157,9 @@ async function actualizar(req, res, next) {
          hora_inicio = coalesce($2, hora_inicio),
          hora_fin = coalesce($3, hora_fin),
          horas = coalesce($4, horas),
-         descripcion = coalesce($5, descripcion),
-         documentos = coalesce($6, documentos)
-       where id = $7 and empresa_id = $8 returning *`,
-      [fecha, hora_inicio, hora_fin, horas, descripcion, documentos ? JSON.stringify(documentos) : null, req.params.id, req.empresaId]
+         descripcion = coalesce($5, descripcion)
+       where id = $6 and empresa_id = $7 returning *`,
+      [fecha, hora_inicio, hora_fin, horas, descripcion, req.params.id, req.empresaId]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Registro no encontrado' });
     res.json(rows[0]);
@@ -209,14 +212,95 @@ async function listarComentarios(req, res, next) {
     if (!id) return res.status(404).json({ mensaje: 'Registro no encontrado' });
 
     const { rows } = await pool.query(
-      `select c.id, c.usuario_id, u.nombre as usuario_nombre, c.nota, c.created_at as fecha
+      `select c.id, c.usuario_id, u.nombre as usuario_nombre, c.nota, c.created_at as fecha,
+              coalesce(adj.lista, '[]'::json) as adjuntos
        from comentarios c
        join usuarios u on u.id = c.usuario_id
+       left join lateral (
+         select json_agg(json_build_object(
+           'id', a.id, 'fecha', a.fecha, 'descripcion', a.descripcion,
+           'imagen_base64', a.imagen_base64, 'creado_por', a.creado_por,
+           'creado_por_nombre', ua.nombre, 'created_at', a.created_at
+         ) order by a.fecha desc, a.created_at desc) as lista
+         from hora_servicio_contrato_adjunto a
+         join usuarios ua on ua.id = a.creado_por
+         where a.comentario_id = c.id
+       ) adj on true
        where c.registro_horas_id = $1
        order by c.created_at asc`,
       [id]
     );
     res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// Confirma que el comentario exista y pertenezca a un registro de horas
+// dentro del alcance de quien pide (mismo criterio que idRegistroEnAlcance,
+// ya que comentarios no tiene su propio empresa_id).
+async function verificarComentario(req) {
+  const registroId = await idRegistroEnAlcance(req, req.params.id);
+  if (!registroId) return false;
+  const { rows } = await pool.query(
+    'select id from comentarios where id = $1 and registro_horas_id = $2',
+    [req.params.comentarioId, registroId]
+  );
+  return !!rows[0];
+}
+
+// POST /api/horas/:id/comentarios/:comentarioId/adjuntos
+// Mismo criterio de acceso que agregarComentario: cualquier rol autenticado
+// con alcance sobre el registro puede adjuntar un archivo a un comentario.
+async function crearAdjuntoComentario(req, res, next) {
+  try {
+    const { descripcion, imagen_base64 } = req.body;
+
+    if (!(await verificarComentario(req))) return res.status(404).json({ mensaje: 'Comentario no encontrado' });
+
+    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    }
+    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (2MB)' });
+    }
+
+    const { rows: cuenta } = await pool.query(
+      'select count(*)::int as n from hora_servicio_contrato_adjunto where comentario_id = $1',
+      [req.params.comentarioId]
+    );
+    if (cuenta[0].n >= MAX_ADJUNTOS_COMENTARIO) {
+      return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS_COMENTARIO} archivos adjuntos por comentario` });
+    }
+
+    const { rows } = await pool.query(
+      `insert into hora_servicio_contrato_adjunto (comentario_id, descripcion, imagen_base64, creado_por)
+       values ($1, $2, $3, $4)
+       returning id`,
+      [req.params.comentarioId, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from hora_servicio_contrato_adjunto a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1`,
+      [rows[0].id]
+    );
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/horas/:id/comentarios/:comentarioId/adjuntos/:adjuntoId
+async function eliminarAdjuntoComentario(req, res, next) {
+  try {
+    if (!(await verificarComentario(req))) return res.status(404).json({ mensaje: 'Comentario no encontrado' });
+
+    const { rowCount } = await pool.query(
+      'delete from hora_servicio_contrato_adjunto where id = $1 and comentario_id = $2',
+      [req.params.adjuntoId, req.params.comentarioId]
+    );
+
+    if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
   } catch (err) { next(err); }
 }
 
@@ -336,4 +420,5 @@ module.exports = {
   listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral,
   listarComentarios, agregarComentario, marcarComentariosVistos,
   contarComentariosNoLeidos, listarNotificaciones,
+  crearAdjuntoComentario, eliminarAdjuntoComentario,
 };

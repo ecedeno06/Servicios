@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Comentario, ConsumoHoras, NotificacionComentario, RegistroHora } from '../models/models';
+import { Comentario, ConsumoHoras, ImagenServicioProveedor, NotificacionComentario, RegistroHora } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class RegistroHorasService {
@@ -45,5 +45,15 @@ export class RegistroHorasService {
   }
   listarNotificaciones(): Observable<NotificacionComentario[]> {
     return this.http.get<NotificacionComentario[]>(`${this.base}/notificaciones`);
+  }
+
+  // Adjuntos de un comentario (PDF/PNG/JPG en base64, max 2MB) -- se
+  // guardan/borran al instante contra su propio endpoint, no forman parte
+  // del payload del comentario (mismo patron que servicio_adjuntos).
+  crearAdjuntoComentario(registroId: string, comentarioId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
+    return this.http.post<ImagenServicioProveedor>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos`, data);
+  }
+  eliminarAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`);
   }
 }

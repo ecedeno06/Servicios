@@ -7,7 +7,8 @@ import { ContratosService } from '../../core/services/contratos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
-import { RegistroHora, Contrato, ConsumoHoras, Documento, Comentario } from '../../core/models/models';
+import { RegistroHora, Contrato, ConsumoHoras, Comentario } from '../../core/models/models';
+import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
 @Component({
   selector: 'app-registro-horas',
@@ -121,13 +122,20 @@ export class RegistroHorasComponent implements OnInit {
   });
 
   horasCalculadas = signal(0);
-  documentosActuales = signal<Documento[]>([]);
   errorGuardar = signal<string | null>(null);
 
   registroComentando = signal<RegistroHora | null>(null);
   comentariosDelRegistro = signal<Comentario[]>([]);
   cargandoComentarios = signal(false);
   notaNueva = '';
+
+  // Adjuntos de un comentario (PDF/PNG/JPG en base64, max 2MB) -- se
+  // guardan/borran al instante contra su propio endpoint, solo disponibles
+  // una vez el comentario ya existe (igual que Servicios/Equipos).
+  private readonly TIPOS_ARCHIVO_PERMITIDOS = ['image/png', 'image/jpeg', 'application/pdf'];
+  private readonly MAX_ARCHIVO_BYTES = 2 * 1024 * 1024; // 2MB
+  guardandoAdjuntoComentario = signal<string | null>(null); // id del comentario en subida
+  errorAdjuntoComentario = signal<string | null>(null);
 
   form = this.fb.group(
     {
@@ -140,11 +148,6 @@ export class RegistroHorasComponent implements OnInit {
     },
     { validators: horaFinPosteriorValidator }
   );
-
-  docForm = this.fb.group({
-    nombre: ['', Validators.required],
-    url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/)]],
-  });
 
   constructor(
     private fb: FormBuilder,
@@ -218,8 +221,6 @@ export class RegistroHorasComponent implements OnInit {
     const tipoServicioId = this.filtroTipoServicioId();
     this.form.reset({ fecha: new Date().toISOString().substring(0, 10), contrato_id: contratoId ?? '' });
     this.horasCalculadas.set(0);
-    this.documentosActuales.set([]);
-    this.docForm.reset();
     this.errorGuardar.set(null);
 
     if (contratoId) {
@@ -245,20 +246,8 @@ export class RegistroHorasComponent implements OnInit {
       descripcion: r.descripcion ?? '',
     });
     this.horasCalculadas.set(calcularHoras(r.hora_inicio, r.hora_fin));
-    this.documentosActuales.set(r.documentos ?? []);
-    this.docForm.reset();
     this.errorGuardar.set(null);
     this.panelAbierto.set(true);
-  }
-
-  agregarDocumento(): void {
-    if (this.docForm.invalid) return;
-    this.documentosActuales.update((docs) => [...docs, this.docForm.getRawValue() as Documento]);
-    this.docForm.reset();
-  }
-
-  quitarDocumento(index: number): void {
-    this.documentosActuales.update((docs) => docs.filter((_, i) => i !== index));
   }
 
   cerrarPanel(): void { this.panelAbierto.set(false); }
@@ -273,11 +262,10 @@ export class RegistroHorasComponent implements OnInit {
     if (this.form.invalid) return;
     this.errorGuardar.set(null);
     const editando = this.registroEditando();
-    const documentos = this.documentosActuales();
     const { fecha, hora_inicio, hora_fin, descripcion } = this.form.getRawValue();
     const peticion = editando
-      ? this.srv.actualizar(editando.id, { fecha, hora_inicio, hora_fin, descripcion, documentos })
-      : this.srv.crear({ ...this.form.getRawValue(), documentos });
+      ? this.srv.actualizar(editando.id, { fecha, hora_inicio, hora_fin, descripcion })
+      : this.srv.crear(this.form.getRawValue());
     peticion.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
       error: (err) => this.errorGuardar.set(err?.error?.mensaje || 'No se pudo guardar el registro de horas'),
@@ -310,7 +298,10 @@ export class RegistroHorasComponent implements OnInit {
     this.srv.marcarComentariosVistos(r.id).subscribe();
   }
 
-  cerrarComentarios(): void { this.registroComentando.set(null); }
+  cerrarComentarios(): void {
+    this.registroComentando.set(null);
+    this.errorAdjuntoComentario.set(null);
+  }
 
   comentariosOrdenados(): Comentario[] {
     return [...this.comentariosDelRegistro()].reverse();
@@ -331,6 +322,89 @@ export class RegistroHorasComponent implements OnInit {
       },
       error: (err) => alert(err?.error?.mensaje || 'No se pudo agregar el comentario'),
     });
+  }
+
+  onSeleccionArchivoComentario(event: Event, comentarioId: string): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoComentario(archivo, comentarioId);
+    input.value = '';
+  }
+
+  private procesarArchivoComentario(archivo: File, comentarioId: string): void {
+    this.errorAdjuntoComentario.set(null);
+    const registro = this.registroComentando();
+    if (!registro) return;
+
+    if (!this.TIPOS_ARCHIVO_PERMITIDOS.includes(archivo.type)) {
+      this.errorAdjuntoComentario.set('Solo se permiten archivos PDF, PNG o JPG.');
+      return;
+    }
+    if (archivo.size > this.MAX_ARCHIVO_BYTES) {
+      this.errorAdjuntoComentario.set('El archivo supera el tamaño máximo permitido (2MB).');
+      return;
+    }
+
+    this.guardandoAdjuntoComentario.set(comentarioId);
+    leerArchivoComoBase64(archivo).then((base64) => {
+      this.srv.crearAdjuntoComentario(registro.id, comentarioId, { imagen_base64: base64 }).subscribe({
+        next: (nuevo) => {
+          this.guardandoAdjuntoComentario.set(null);
+          this.comentariosDelRegistro.update((lista) =>
+            lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: [nuevo, ...(c.adjuntos ?? [])] } : c))
+          );
+        },
+        error: (err) => {
+          this.guardandoAdjuntoComentario.set(null);
+          this.errorAdjuntoComentario.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+        },
+      });
+    }).catch(() => {
+      this.guardandoAdjuntoComentario.set(null);
+      this.errorAdjuntoComentario.set('No se pudo leer el archivo.');
+    });
+  }
+
+  eliminarAdjuntoComentario(comentarioId: string, adjuntoId: string): void {
+    const registro = this.registroComentando();
+    if (!registro) return;
+    if (!confirm('¿Eliminar este adjunto?')) return;
+    this.srv.eliminarAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
+      next: () => this.comentariosDelRegistro.update((lista) =>
+        lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
+      ),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+    });
+  }
+
+  // Un <a href="data:..."> no alcanza (Chrome/Edge bloquean la navegacion a
+  // un data: URI), asi que se convierte a Blob primero -- mismo patron que
+  // Equipos Asignados/Servicios y Proveedores.
+  abrirAdjuntoComentario(base64: string): void {
+    const [meta, datos] = base64.split(',');
+    const tipo = meta.match(/data:(.*);base64/)?.[1] || 'application/octet-stream';
+    const binario = atob(datos);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  tipoArchivoLabel(base64: string): string {
+    if (base64.startsWith('data:application/pdf')) return 'PDF';
+    if (base64.startsWith('data:image/png')) return 'PNG';
+    if (base64.startsWith('data:image/jpeg')) return 'JPG';
+    return 'Archivo';
+  }
+
+  tamanoArchivo(base64: string): string {
+    const datos = base64.split(',')[1] || '';
+    const padding = (datos.match(/=+$/) || [''])[0].length;
+    const bytes = Math.max(0, (datos.length * 3) / 4 - padding);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   generarPdf(r: RegistroHora): void {
