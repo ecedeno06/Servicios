@@ -89,9 +89,11 @@
           <td>{{ r.tipo_servicio_nombre }}</td>
           <td>
             <span class="flex items-center gap-6">
-              <button type="button" class="info-icon-btn" title="Ver comentarios y adjuntos" aria-label="Ver comentarios y adjuntos" (click)="abrirModalInfoComentarios($event, r)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              </button>
+              @if (r.comentarios_count) {
+                <button type="button" class="info-icon-btn" title="Ver comentarios y adjuntos" aria-label="Ver comentarios y adjuntos" (click)="abrirModalInfoComentarios($event, r)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+              }
               <span>{{ r.horas | number:'1.0-2' }}</span>
             </span>
           </td>
