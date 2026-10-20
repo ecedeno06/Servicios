@@ -93,6 +93,9 @@
             <button type="button" class="btn-icon" title="Generar PDF" aria-label="Generar PDF" (click)="generarPdf(r)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h6"/></svg>
             </button>
+            <button type="button" class="btn-icon" title="Ver comentarios y adjuntos" aria-label="Ver comentarios y adjuntos" (click)="abrirModalInfoComentarios($event, r)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
             <button type="button" class="btn-icon" title="Comentarios" aria-label="Comentarios" (click)="abrirComentarios(r)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
               @if (r.comentarios_count) { <span class="btn-icon-badge">{{ r.comentarios_count }}</span> }
@@ -256,6 +259,45 @@
         <button type="button" class="btn btn-primary" [disabled]="!notaNueva.trim()" (click)="agregarComentario()">Agregar comentario</button>
         <button type="button" class="btn btn-outline" (click)="cerrarComentarios()">Cerrar</button>
       </div>
+    </div>
+  </div>
+}
+
+<!-- Popup de solo lectura (icono "i"): ver comentarios + adjuntos sin abrir
+     el formulario de "Agregar comentario" -- misma idea que el popup de
+     Observacion/Historico de Equipos Asignados. -->
+@if (registroInfoActual(); as r) {
+  <div class="modal-overlay" (click)="cerrarModalInfoComentarios()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Comentarios &middot; {{ numeroServicio(r) }}</h2>
+        <button class="close" (click)="cerrarModalInfoComentarios()">&times;</button>
+      </div>
+
+      <div class="text-muted text-sm">{{ r.cliente_nombre }} &middot; {{ r.numero_contrato }} &middot; {{ r.tipo_servicio_nombre }}</div>
+
+      @if (cargandoComentariosInfo()) {
+        <p class="text-muted text-sm mt-16">Cargando...</p>
+      } @else if (comentariosInfoRegistro().length === 0) {
+        <p class="text-muted text-sm mt-16">Aun no hay comentarios en este registro.</p>
+      } @else {
+        @for (c of comentariosInfoRegistro(); track c.id) {
+          <div class="card mt-16" style="padding: 10px;">
+            <div class="text-muted text-sm">{{ c.fecha | date:'dd/MM/yyyy HH:mm' }} &middot; {{ c.usuario_nombre }}</div>
+            <div class="text-sm" style="white-space: pre-wrap; margin-top: 4px;">{{ c.nota }}</div>
+
+            @if (c.adjuntos?.length) {
+              <div class="flex items-center gap-8" style="margin-top: 8px; flex-wrap: wrap;">
+                @for (img of c.adjuntos; track img.id) {
+                  <span class="badge badge-slate" style="cursor: pointer;" (click)="abrirAdjuntoInfo(c.id!, img.id)" [title]="'Ver / Descargar · ' + tamanoAdjunto(img)">
+                    {{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoAdjunto(img) }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
     </div>
   </div>
 }

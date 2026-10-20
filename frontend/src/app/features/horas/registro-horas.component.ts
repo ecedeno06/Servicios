@@ -129,6 +129,13 @@ export class RegistroHorasComponent implements OnInit {
   cargandoComentarios = signal(false);
   notaNueva = '';
 
+  // Popup de solo lectura (icono "i"): ver comentarios + adjuntos sin abrir
+  // el formulario de "Agregar comentario" -- senales propias para no pisar
+  // el drawer de comentarios si estuviera abierto para otro registro.
+  registroInfoActual = signal<RegistroHora | null>(null);
+  comentariosInfoRegistro = signal<Comentario[]>([]);
+  cargandoComentariosInfo = signal(false);
+
   // Adjuntos de un comentario (PDF/PNG/JPG en base64, max 2MB) -- se
   // guardan/borran al instante contra su propio endpoint, solo disponibles
   // una vez el comentario ya existe (igual que Servicios/Equipos).
@@ -303,6 +310,25 @@ export class RegistroHorasComponent implements OnInit {
     this.errorAdjuntoComentario.set(null);
   }
 
+  abrirModalInfoComentarios(event: MouseEvent, r: RegistroHora): void {
+    event.stopPropagation();
+    this.registroInfoActual.set(r);
+    this.comentariosInfoRegistro.set([]);
+    this.cargandoComentariosInfo.set(true);
+    this.srv.listarComentarios(r.id).subscribe({
+      next: (data) => {
+        this.comentariosInfoRegistro.set(data);
+        this.cargandoComentariosInfo.set(false);
+      },
+      error: () => this.cargandoComentariosInfo.set(false),
+    });
+  }
+
+  cerrarModalInfoComentarios(): void {
+    this.registroInfoActual.set(null);
+    this.comentariosInfoRegistro.set([]);
+  }
+
   comentariosOrdenados(): Comentario[] {
     return [...this.comentariosDelRegistro()].reverse();
   }
@@ -394,14 +420,24 @@ export class RegistroHorasComponent implements OnInit {
   // El listado de comentarios solo trae el encabezado recortado del base64
   // (ver backend#listarComentarios), asi que el contenido completo se pide
   // recien al abrirlo -- evita traer de una vez el peso de todos los
-  // archivos de todos los comentarios cada vez que se abre este drawer.
-  abrirAdjuntoComentario(comentarioId: string, adjuntoId: string): void {
-    const registro = this.registroComentando();
-    if (!registro) return;
-    this.srv.obtenerAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
+  // archivos de todos los comentarios cada vez que se abre un drawer/popup.
+  private abrirAdjuntoLazy(registroId: string, comentarioId: string, adjuntoId: string): void {
+    this.srv.obtenerAdjuntoComentario(registroId, comentarioId, adjuntoId).subscribe({
       next: (completo) => this.abrirBase64(completo.imagen_base64),
       error: (err) => alert(err.error?.mensaje || 'No se pudo abrir el adjunto.'),
     });
+  }
+
+  abrirAdjuntoComentario(comentarioId: string, adjuntoId: string): void {
+    const registro = this.registroComentando();
+    if (!registro) return;
+    this.abrirAdjuntoLazy(registro.id, comentarioId, adjuntoId);
+  }
+
+  abrirAdjuntoInfo(comentarioId: string, adjuntoId: string): void {
+    const registro = this.registroInfoActual();
+    if (!registro) return;
+    this.abrirAdjuntoLazy(registro.id, comentarioId, adjuntoId);
   }
 
   // Un <a href="data:..."> no alcanza (Chrome/Edge bloquean la navegacion a
