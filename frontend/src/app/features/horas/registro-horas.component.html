@@ -217,8 +217,8 @@
               @if (c.id) {
                 <div class="flex items-center gap-8" style="margin-top: 10px; flex-wrap: wrap;">
                   @for (img of c.adjuntos ?? []; track img.id) {
-                    <span class="badge badge-slate" style="cursor: pointer;" (click)="abrirAdjuntoComentario(img.imagen_base64)" [title]="'Ver / Descargar · ' + tamanoArchivo(img.imagen_base64)">
-                      {{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}
+                    <span class="badge badge-slate" style="cursor: pointer;" (click)="abrirAdjuntoComentario(c.id, img.id)" [title]="'Ver / Descargar · ' + tamanoAdjunto(img)">
+                      {{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoAdjunto(img) }}
                     </span>
                     <button type="button" class="btn-icon" title="Eliminar adjunto" aria-label="Eliminar adjunto" style="margin-left: -8px;" (click)="eliminarAdjuntoComentario(c.id, img.id)">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

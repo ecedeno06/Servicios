@@ -206,6 +206,11 @@ async function consumoPorContrato(req, res, next) {
 }
 
 // GET /api/horas/:id/comentarios
+// Los adjuntos van con el encabezado del base64 recortado (alcanza para
+// saber PDF/PNG/JPG) y el tamano ya calculado -- el contenido completo se
+// pide aparte (obtenerAdjuntoComentario) solo al abrir uno, para no cargar
+// de una vez el base64 de todos los archivos de todos los comentarios cada
+// vez que se abre este drawer.
 async function listarComentarios(req, res, next) {
   try {
     const id = await idRegistroEnAlcance(req, req.params.id);
@@ -219,8 +224,9 @@ async function listarComentarios(req, res, next) {
        left join lateral (
          select json_agg(json_build_object(
            'id', a.id, 'fecha', a.fecha, 'descripcion', a.descripcion,
-           'imagen_base64', a.imagen_base64, 'creado_por', a.creado_por,
-           'creado_por_nombre', ua.nombre, 'created_at', a.created_at
+           'imagen_base64', left(a.imagen_base64, 40),
+           'tamano_bytes', ((length(a.imagen_base64) - position(',' in a.imagen_base64)) * 3 / 4)::bigint,
+           'creado_por', a.creado_por, 'creado_por_nombre', ua.nombre, 'created_at', a.created_at
          ) order by a.fecha desc, a.created_at desc) as lista
          from hora_servicio_contrato_adjunto a
          join usuarios ua on ua.id = a.creado_por
@@ -279,13 +285,34 @@ async function crearAdjuntoComentario(req, res, next) {
     );
 
     const { rows: completo } = await pool.query(
-      `select a.*, u.nombre as creado_por_nombre
+      `select a.id, a.fecha, a.descripcion, left(a.imagen_base64, 40) as imagen_base64,
+              ((length(a.imagen_base64) - position(',' in a.imagen_base64)) * 3 / 4)::bigint as tamano_bytes,
+              a.creado_por, u.nombre as creado_por_nombre, a.created_at
        from hora_servicio_contrato_adjunto a
        join usuarios u on u.id = a.creado_por
        where a.id = $1`,
       [rows[0].id]
     );
     res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+// GET /api/horas/:id/comentarios/:comentarioId/adjuntos/:adjuntoId
+// Contenido completo (imagen_base64 real) de un adjunto -- se pide solo al
+// abrirlo (ver listarComentarios).
+async function obtenerAdjuntoComentario(req, res, next) {
+  try {
+    if (!(await verificarComentario(req))) return res.status(404).json({ mensaje: 'Comentario no encontrado' });
+
+    const { rows } = await pool.query(
+      `select a.*, u.nombre as creado_por_nombre
+       from hora_servicio_contrato_adjunto a
+       join usuarios u on u.id = a.creado_por
+       where a.id = $1 and a.comentario_id = $2`,
+      [req.params.adjuntoId, req.params.comentarioId]
+    );
+    if (!rows[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json(rows[0]);
   } catch (err) { next(err); }
 }
 
@@ -420,5 +447,5 @@ module.exports = {
   listar, obtener, crear, actualizar, eliminar, consumoPorContrato, consumoGeneral,
   listarComentarios, agregarComentario, marcarComentariosVistos,
   contarComentariosNoLeidos, listarNotificaciones,
-  crearAdjuntoComentario, eliminarAdjuntoComentario,
+  crearAdjuntoComentario, obtenerAdjuntoComentario, eliminarAdjuntoComentario,
 };

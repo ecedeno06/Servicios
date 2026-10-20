@@ -23,6 +23,7 @@ router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);
 // Adjuntos de un comentario -- mismo alcance que el comentario mismo
 // (cualquier rol autenticado con acceso al registro), no un permiso aparte.
 router.post('/:id/comentarios/:comentarioId/adjuntos', ctrl.crearAdjuntoComentario);
+router.get('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', ctrl.obtenerAdjuntoComentario);
 router.delete('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', ctrl.eliminarAdjuntoComentario);
 
 module.exports = router;

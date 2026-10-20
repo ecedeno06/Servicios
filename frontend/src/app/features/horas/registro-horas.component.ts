@@ -7,7 +7,7 @@ import { ContratosService } from '../../core/services/contratos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
-import { RegistroHora, Contrato, ConsumoHoras, Comentario } from '../../core/models/models';
+import { RegistroHora, Contrato, ConsumoHoras, Comentario, ImagenServicioProveedor } from '../../core/models/models';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
 @Component({
@@ -391,10 +391,23 @@ export class RegistroHorasComponent implements OnInit {
     });
   }
 
+  // El listado de comentarios solo trae el encabezado recortado del base64
+  // (ver backend#listarComentarios), asi que el contenido completo se pide
+  // recien al abrirlo -- evita traer de una vez el peso de todos los
+  // archivos de todos los comentarios cada vez que se abre este drawer.
+  abrirAdjuntoComentario(comentarioId: string, adjuntoId: string): void {
+    const registro = this.registroComentando();
+    if (!registro) return;
+    this.srv.obtenerAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
+      next: (completo) => this.abrirBase64(completo.imagen_base64),
+      error: (err) => alert(err.error?.mensaje || 'No se pudo abrir el adjunto.'),
+    });
+  }
+
   // Un <a href="data:..."> no alcanza (Chrome/Edge bloquean la navegacion a
   // un data: URI), asi que se convierte a Blob primero -- mismo patron que
   // Equipos Asignados/Servicios y Proveedores.
-  abrirAdjuntoComentario(base64: string): void {
+  private abrirBase64(base64: string): void {
     const [meta, datos] = base64.split(',');
     const tipo = meta.match(/data:(.*);base64/)?.[1] || 'application/octet-stream';
     const binario = atob(datos);
@@ -412,10 +425,13 @@ export class RegistroHorasComponent implements OnInit {
     return 'Archivo';
   }
 
-  tamanoArchivo(base64: string): string {
-    const datos = base64.split(',')[1] || '';
-    const padding = (datos.match(/=+$/) || [''])[0].length;
-    const bytes = Math.max(0, (datos.length * 3) / 4 - padding);
+  // El backend ya manda tamano_bytes calculado (solo tiene el encabezado
+  // recortado del base64, no el contenido completo para medirlo aca).
+  tamanoAdjunto(img: ImagenServicioProveedor): string {
+    return this.formatearBytes(img.tamano_bytes ?? 0);
+  }
+
+  private formatearBytes(bytes: number): string {
     if (bytes < 1024) return `${Math.round(bytes)} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;

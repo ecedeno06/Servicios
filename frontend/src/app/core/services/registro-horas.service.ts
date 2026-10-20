@@ -53,6 +53,11 @@ export class RegistroHorasService {
   crearAdjuntoComentario(registroId: string, comentarioId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
     return this.http.post<ImagenServicioProveedor>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos`, data);
   }
+  // Contenido completo del adjunto (listarComentarios solo trae el
+  // encabezado + tamano, para no inflar la carga del drawer de comentarios).
+  obtenerAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string): Observable<ImagenServicioProveedor> {
+    return this.http.get<ImagenServicioProveedor>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`);
+  }
   eliminarAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`);
   }

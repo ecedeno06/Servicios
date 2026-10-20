@@ -393,6 +393,9 @@ export interface ImagenServicioProveedor {
   fecha: string;
   descripcion?: string | null;
   imagen_base64: string;
+  // Presente cuando el backend manda el encabezado recortado en vez del
+  // contenido completo (ver Comentario.adjuntos en Registro de horas).
+  tamano_bytes?: number;
   creado_por: string;
   creado_por_nombre?: string;
   created_at: string;
