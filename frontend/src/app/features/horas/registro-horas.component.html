@@ -87,14 +87,18 @@
           <td>{{ r.cliente_nombre }}</td>
           <td>{{ r.numero_contrato }}</td>
           <td>{{ r.tipo_servicio_nombre }}</td>
-          <td>{{ r.horas | number:'1.0-2' }}</td>
+          <td>
+            <span class="flex items-center gap-6">
+              <button type="button" class="info-icon-btn" title="Ver comentarios y adjuntos" aria-label="Ver comentarios y adjuntos" (click)="abrirModalInfoComentarios($event, r)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </button>
+              <span>{{ r.horas | number:'1.0-2' }}</span>
+            </span>
+          </td>
           <td>{{ r.usuario_nombre }}</td>
           <td class="table-actions">
             <button type="button" class="btn-icon" title="Generar PDF" aria-label="Generar PDF" (click)="generarPdf(r)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h6"/></svg>
-            </button>
-            <button type="button" class="btn-icon" title="Ver comentarios y adjuntos" aria-label="Ver comentarios y adjuntos" (click)="abrirModalInfoComentarios($event, r)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             </button>
             <button type="button" class="btn-icon" title="Comentarios" aria-label="Comentarios" (click)="abrirComentarios(r)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
