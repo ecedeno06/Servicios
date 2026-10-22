@@ -365,6 +365,7 @@ export class EquiposAsignadosComponent implements OnInit {
     locacion_pais: [''],
     proveedor_id: [''],
     no_factura: [''],
+    url: ['', Validators.pattern(/^https?:\/\/.+/)],
   });
 
   // Senal propia (no el FormControl.value directo, que no es una senal y
@@ -545,6 +546,7 @@ export class EquiposAsignadosComponent implements OnInit {
       locacion_pais: e.locacion_pais ?? '',
       proveedor_id: e.proveedor_id ?? '',
       no_factura: e.no_factura ?? '',
+      url: e.url ?? '',
     });
     this.cargarHistorial(e.id);
     this.errorArchivoImagen.set(null);
@@ -703,7 +705,7 @@ export class EquiposAsignadosComponent implements OnInit {
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',
       procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
-      precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '',
+      precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '', url: '',
     });
   }
 
@@ -729,6 +731,7 @@ export class EquiposAsignadosComponent implements OnInit {
       locacion_pais: raw.locacion_pais?.trim() || null,
       proveedor_id: raw.proveedor_id || null,
       no_factura: raw.no_factura?.trim() || null,
+      url: raw.url?.trim() || null,
     };
     const actual = this.seleccionado();
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);

@@ -358,6 +358,13 @@
         <label>No. Factura</label>
         <input class="input" formControlName="no_factura" placeholder="Ej: F-00123" />
       </div>
+      <div class="form-group">
+        <label>URL</label>
+        <input class="input" type="url" formControlName="url" placeholder="https://..." />
+        @if (form.get('url')?.errors?.['pattern']) {
+          <div class="error-text">La URL debe comenzar con http:// o https://</div>
+        }
+      </div>
     </div>
 
     <div class="form-grid mt-16">
