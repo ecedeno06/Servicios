@@ -115,7 +115,13 @@
               <span>{{ e.categoria_nombre }}</span>
             </span>
           </td>
-          <td [title]="e.numero_serie ? 'N/S: ' + e.numero_serie : 'Sin numero de serie'">{{ e.marca }} {{ e.modelo }}</td>
+          <td [title]="e.numero_serie ? 'N/S: ' + e.numero_serie : 'Sin numero de serie'">
+            @if (e.producto_url) {
+              <a [href]="e.producto_url" target="_blank" rel="noopener" (click)="$event.stopPropagation()">{{ e.marca }} {{ e.modelo }}</a>
+            } @else {
+              {{ e.marca }} {{ e.modelo }}
+            }
+          </td>
           <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e.estado) }}</span></td>
           <td>
             <span class="flex items-center gap-6">

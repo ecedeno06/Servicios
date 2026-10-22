@@ -136,6 +136,7 @@ export interface EquipoAsignado {
   producto_id: number;
   producto_nombre: string;
   producto_aplica_checklist?: boolean;
+  producto_url?: string | null;
   categoria_nombre: string;
   marca: string;
   modelo: string;
