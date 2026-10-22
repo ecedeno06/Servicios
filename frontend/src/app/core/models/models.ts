@@ -117,6 +117,8 @@ export interface Producto {
   nombre: string;
   categoria_nombre?: string;
   aplica_checklist?: boolean;
+  observacion?: string | null;
+  url?: string | null;
 }
 
 export interface Procesador {
