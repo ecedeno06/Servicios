@@ -169,6 +169,10 @@ export class EquiposComponent implements OnInit {
     });
   }
 
+  abrirUrlProducto(url: string): void {
+    window.open(url, '_blank', 'noopener');
+  }
+
   eliminarProducto(): void {
     const actual = this.productoSeleccionado();
     if (!actual) return;
