@@ -606,7 +606,13 @@
   <div class="modal-overlay" (click)="cerrarModalInfoEquipo()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="drawer-header">
-        <h2>{{ equipoInfo.marca }} {{ equipoInfo.modelo }}</h2>
+        <h2>
+          @if (equipoInfo.url) {
+            <a [href]="equipoInfo.url" target="_blank" rel="noopener">{{ equipoInfo.marca }} {{ equipoInfo.modelo }}</a>
+          } @else {
+            {{ equipoInfo.marca }} {{ equipoInfo.modelo }}
+          }
+        </h2>
         <button class="close" (click)="cerrarModalInfoEquipo()">&times;</button>
       </div>
 
