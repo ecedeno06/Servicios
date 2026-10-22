@@ -361,7 +361,14 @@
         </div>
         <div class="form-group" style="flex: 1 1 auto;">
           <label>URL</label>
-          <input class="input" type="url" formControlName="url" placeholder="https://..." />
+          <div class="flex items-center gap-8">
+            <input class="input" type="url" formControlName="url" placeholder="https://..." style="flex: 1;" />
+            @if (form.get('url')?.value && !form.get('url')?.errors?.['pattern']) {
+              <button type="button" class="btn-icon" title="Abrir URL" aria-label="Abrir URL" (click)="abrirUrlEquipo(form.get('url')!.value!)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+              </button>
+            }
+          </div>
           @if (form.get('url')?.errors?.['pattern']) {
             <div class="error-text">La URL debe comenzar con http:// o https://</div>
           }

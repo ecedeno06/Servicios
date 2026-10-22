@@ -695,6 +695,10 @@ export class EquiposAsignadosComponent implements OnInit {
     }
   }
 
+  abrirUrlEquipo(url: string): void {
+    window.open(url, '_blank', 'noopener');
+  }
+
   nuevo(): void {
     this.seleccionado.set(null);
     this.categoriaIdForm.set(null);
