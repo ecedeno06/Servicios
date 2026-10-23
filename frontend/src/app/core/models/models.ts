@@ -155,6 +155,7 @@ export interface EquipoAsignado {
   numero_puertos_hdmi: number | null;
   mac_address: string | null;
   ip_fija: string | null;
+  hardware_address: string | null;
   precio_usd: number | null;
   locacion_pais: string | null;
   proveedor_id: string | null;

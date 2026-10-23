@@ -40,7 +40,7 @@ async function crear(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      mac_address, ip_fija,
+      mac_address, ip_fija, hardware_address,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
     } = req.body;
     if (!producto_id || !marca || !modelo) {
@@ -50,14 +50,14 @@ async function crear(req, res, next) {
     const { rows } = await pool.query(
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
-          procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi, mac_address, ip_fija,
+          procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi, mac_address, ip_fija, hardware_address,
           precio_usd, locacion_pais, proveedor_id, no_factura, url, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
        returning id`,
       [
         req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        mac_address?.trim() || null, ip_fija?.trim() || null,
+        mac_address?.trim() || null, ip_fija?.trim() || null, hardware_address?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
         req.usuario.id,
       ]
@@ -84,7 +84,7 @@ async function actualizar(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
-      mac_address, ip_fija,
+      mac_address, ip_fija, hardware_address,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
     } = req.body;
     if (!producto_id || !marca || !modelo || !estado) {
@@ -118,18 +118,19 @@ async function actualizar(req, res, next) {
          numero_puertos_hdmi = $14,
          mac_address = $15,
          ip_fija = $16,
-         precio_usd = $17,
-         locacion_pais = $18,
-         proveedor_id = $19,
-         no_factura = $20,
-         url = $21,
-         modificado_por = $22
-       where id = $23 and empresa_id = $24
+         hardware_address = $17,
+         precio_usd = $18,
+         locacion_pais = $19,
+         proveedor_id = $20,
+         no_factura = $21,
+         url = $22,
+         modificado_por = $23
+       where id = $24 and empresa_id = $25
        returning id`,
       [
         producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
-        mac_address?.trim() || null, ip_fija?.trim() || null,
+        mac_address?.trim() || null, ip_fija?.trim() || null, hardware_address?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
         req.usuario.id, req.params.id, req.empresaId,
       ]
