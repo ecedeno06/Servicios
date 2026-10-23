@@ -609,6 +609,8 @@
           <label>Observacion</label>
           <textarea class="input" rows="2" formControlName="observacion" placeholder="Opcional"></textarea>
         </div>
+        <!-- Checklist en el popup de asignar/reasignar oculto hasta nueva
+             orden (pedido explicito) -- no se borra, solo se oculta.
         @if (checklistActivos().length > 0) {
           <div class="form-group mt-16">
             <label>Checklist</label>
@@ -622,6 +624,7 @@
             </div>
           </div>
         }
+        -->
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="guardandoAccion()">{{ guardandoAccion() ? 'Guardando...' : 'Confirmar' }}</button>
           <button type="button" class="btn btn-outline" (click)="cerrarAccion()">Cancelar</button>
