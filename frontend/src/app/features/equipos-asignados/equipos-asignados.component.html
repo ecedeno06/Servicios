@@ -424,27 +424,27 @@
       </div>
     </div>
 
-    <div class="form-grid mt-16">
-      <div class="form-group">
+    <div class="mt-16" style="display:flex; gap:14px;">
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>Numero de serie</label>
         <input class="input" formControlName="numero_serie" />
       </div>
-      <div class="form-group">
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>Numero de puertos</label>
         <input class="input" type="number" min="0" formControlName="numero_puertos" />
       </div>
-      <div class="form-group">
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>Puertos HDMI</label>
         <input class="input" type="number" min="0" formControlName="numero_puertos_hdmi" />
       </div>
-      <div class="form-group">
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>MAC Address</label>
         <input class="input" formControlName="mac_address" placeholder="Ej: 00:1A:2B:3C:4D:5E" />
         @if (form.get('mac_address')?.errors?.['pattern']) {
           <div class="error-text">Formato esperado: 00:1A:2B:3C:4D:5E</div>
         }
       </div>
-      <div class="form-group">
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>IP Fijo</label>
         <input class="input" formControlName="ip_fija" placeholder="Ej: 192.168.1.10" />
         @if (form.get('ip_fija')?.errors?.['pattern']) {
