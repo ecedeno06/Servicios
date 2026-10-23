@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/equiposAsignados.controller');
-const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso, requireSuperAdmin } = require('../middleware/auth');
 
 router.use(requireAuth, requireEmpresa);
 
@@ -9,6 +9,10 @@ router.post('/', requirePermiso('equipos_asignados', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizar);
 router.delete('/:id', requirePermiso('equipos_asignados', 'eliminar'), ctrl.eliminar);
 router.get('/:id/historial', requirePermiso('equipos_asignados', 'ver'), ctrl.historial);
+// Borrar un movimiento del historico es mas sensible que el "eliminar"
+// normal de equipos_asignados -- se restringe a super-admin, no al
+// permiso por rol de la empresa.
+router.delete('/:id/historial/:historialId', requireSuperAdmin, ctrl.eliminarHistorial);
 router.post('/:id/movimiento', requirePermiso('equipos_asignados', 'editar'), ctrl.cambiarEstado);
 
 router.get('/:id/adjuntos', requirePermiso('equipos_asignados', 'ver'), ctrl.listarAdjuntos);

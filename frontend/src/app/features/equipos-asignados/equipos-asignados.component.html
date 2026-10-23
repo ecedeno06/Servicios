@@ -437,6 +437,20 @@
         <label>Puertos HDMI</label>
         <input class="input" type="number" min="0" formControlName="numero_puertos_hdmi" />
       </div>
+      <div class="form-group">
+        <label>MAC Address</label>
+        <input class="input" formControlName="mac_address" placeholder="Ej: 00:1A:2B:3C:4D:5E" />
+        @if (form.get('mac_address')?.errors?.['pattern']) {
+          <div class="error-text">Formato esperado: 00:1A:2B:3C:4D:5E</div>
+        }
+      </div>
+      <div class="form-group">
+        <label>IP Fijo</label>
+        <input class="input" formControlName="ip_fija" placeholder="Ej: 192.168.1.10" />
+        @if (form.get('ip_fija')?.errors?.['pattern']) {
+          <div class="error-text">Formato esperado: 192.168.1.10</div>
+        }
+      </div>
     </div>
 
     <div class="form-group mt-16">
@@ -549,6 +563,11 @@
                 <span class="text-muted text-sm">se quito la asignacion a {{ m.asignada_a_anterior }}</span>
               }
               <span class="text-muted text-sm">&middot; por {{ m.registrado_por_nombre }}</span>
+              @if (auth.esSuperAdmin()) {
+                <button type="button" class="btn-icon btn-icon-danger" style="margin-left:auto;" title="Eliminar movimiento (solo super admin)" aria-label="Eliminar movimiento" (click)="eliminarMovimientoHistorial(m.id)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                </button>
+              }
             </div>
             @if (m.observacion) {
               <div class="text-sm mt-8">{{ m.observacion }}</div>

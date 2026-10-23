@@ -153,6 +153,8 @@ export interface EquipoAsignado {
   numero_serie: string | null;
   numero_puertos: number | null;
   numero_puertos_hdmi: number | null;
+  mac_address: string | null;
+  ip_fija: string | null;
   precio_usd: number | null;
   locacion_pais: string | null;
   proveedor_id: string | null;

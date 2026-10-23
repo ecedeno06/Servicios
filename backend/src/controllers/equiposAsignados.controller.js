@@ -40,6 +40,7 @@ async function crear(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
+      mac_address, ip_fija,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
     } = req.body;
     if (!producto_id || !marca || !modelo) {
@@ -49,13 +50,14 @@ async function crear(req, res, next) {
     const { rows } = await pool.query(
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
-          procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
+          procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi, mac_address, ip_fija,
           precio_usd, locacion_pais, proveedor_id, no_factura, url, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
        returning id`,
       [
         req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
+        mac_address?.trim() || null, ip_fija?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
         req.usuario.id,
       ]
@@ -82,6 +84,7 @@ async function actualizar(req, res, next) {
     const {
       producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
+      mac_address, ip_fija,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
     } = req.body;
     if (!producto_id || !marca || !modelo || !estado) {
@@ -113,17 +116,20 @@ async function actualizar(req, res, next) {
          numero_serie = $12,
          numero_puertos = $13,
          numero_puertos_hdmi = $14,
-         precio_usd = $15,
-         locacion_pais = $16,
-         proveedor_id = $17,
-         no_factura = $18,
-         url = $19,
-         modificado_por = $20
-       where id = $21 and empresa_id = $22
+         mac_address = $15,
+         ip_fija = $16,
+         precio_usd = $17,
+         locacion_pais = $18,
+         proveedor_id = $19,
+         no_factura = $20,
+         url = $21,
+         modificado_por = $22
+       where id = $23 and empresa_id = $24
        returning id`,
       [
         producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
+        mac_address?.trim() || null, ip_fija?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
         req.usuario.id, req.params.id, req.empresaId,
       ]
@@ -236,6 +242,24 @@ async function historial(req, res, next) {
       [req.params.id]
     );
     res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// DELETE /api/equipos-asignados/:id/historial/:historialId
+// Solo super-admin (ver routes.js) -- borrar un movimiento del historico
+// rompe la trazabilidad, asi que se restringe mas alla del permiso normal
+// de "eliminar" sobre equipos_asignados.
+async function eliminarHistorial(req, res, next) {
+  try {
+    const { rowCount } = await pool.query(
+      `delete from equipos_historial h
+       using equipos_asignados ea
+       where h.id = $1 and h.equipo_asignado_id = $2
+         and ea.id = h.equipo_asignado_id and ea.empresa_id = $3`,
+      [req.params.historialId, req.params.id, req.empresaId]
+    );
+    if (!rowCount) return res.status(404).json({ mensaje: 'Movimiento no encontrado' });
+    res.json({ ok: true, mensaje: 'Movimiento eliminado correctamente' });
   } catch (err) { next(err); }
 }
 
@@ -543,7 +567,7 @@ async function enviarChecklistPdfPorCorreo(req, res, next) {
 }
 
 module.exports = {
-  listar, crear, actualizar, eliminar, historial, cambiarEstado,
+  listar, crear, actualizar, eliminar, historial, eliminarHistorial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,

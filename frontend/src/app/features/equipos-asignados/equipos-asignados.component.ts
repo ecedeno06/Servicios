@@ -211,7 +211,7 @@ export class EquiposAsignadosComponent implements OnInit {
       this.etiquetaEstado(e.estado), e.asignada_a,
       this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'),
       this.textoVidaUtil(e), e.procesador_nombre, e.memoria_ram, e.disco_duro,
-      e.numero_serie, e.numero_puertos, e.numero_puertos_hdmi, e.precio_usd, e.locacion_pais,
+      e.numero_serie, e.numero_puertos, e.numero_puertos_hdmi, e.mac_address, e.ip_fija, e.precio_usd, e.locacion_pais,
       e.observacion, e.creado_por_nombre, e.modificado_por_nombre, e.proveedor_nombre, e.no_factura,
     ];
     return campos.some((c) => c != null && String(c).toLowerCase().includes(texto));
@@ -361,6 +361,8 @@ export class EquiposAsignadosComponent implements OnInit {
     numero_serie: [''],
     numero_puertos: [''],
     numero_puertos_hdmi: [''],
+    mac_address: ['', Validators.pattern(/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/)],
+    ip_fija: ['', Validators.pattern(/^(\d{1,3}\.){3}\d{1,3}$/)],
     precio_usd: [''],
     locacion_pais: [''],
     proveedor_id: [''],
@@ -391,7 +393,7 @@ export class EquiposAsignadosComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private checklistsSrv: ChecklistsService,
     private checklistPdfSrv: ChecklistEquipoPdfService,
-    private auth: AuthService
+    public auth: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -542,6 +544,8 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_serie: e.numero_serie ?? '',
       numero_puertos: e.numero_puertos != null ? String(e.numero_puertos) : '',
       numero_puertos_hdmi: e.numero_puertos_hdmi != null ? String(e.numero_puertos_hdmi) : '',
+      mac_address: e.mac_address ?? '',
+      ip_fija: e.ip_fija ?? '',
       precio_usd: e.precio_usd != null ? String(e.precio_usd) : '',
       locacion_pais: e.locacion_pais ?? '',
       proveedor_id: e.proveedor_id ?? '',
@@ -555,6 +559,19 @@ export class EquiposAsignadosComponent implements OnInit {
 
   cargarHistorial(id: string): void {
     this.srv.historial(id).subscribe((data) => this.historial.set(data));
+  }
+
+  // Solo super-admin (ver tambien el boton en la plantilla) -- borrar un
+  // movimiento rompe la trazabilidad del historico, por eso va mas alla
+  // del permiso normal de "eliminar" de equipos_asignados.
+  eliminarMovimientoHistorial(historialId: string): void {
+    const equipo = this.seleccionado();
+    if (!equipo) return;
+    if (!confirm('Eliminar este movimiento del historico? Esta accion no se puede deshacer.')) return;
+    this.srv.eliminarHistorial(equipo.id, historialId).subscribe({
+      next: () => this.cargarHistorial(equipo.id),
+      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el movimiento'),
+    });
   }
 
   // ---------- Adjuntos (imagenes/documentos) ----------
@@ -709,6 +726,7 @@ export class EquiposAsignadosComponent implements OnInit {
       categoria_id: '', producto_id: '', marca: '', modelo: '', fecha_entrada: this.hoyISO(), vida_util_meses: '',
       estado: 'stock', asignada_a: '', observacion: '',
       procesador_id: '', memoria_ram: '', disco_duro: '', numero_serie: '', numero_puertos: '', numero_puertos_hdmi: '',
+      mac_address: '', ip_fija: '',
       precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '', url: '',
     });
   }
@@ -731,6 +749,8 @@ export class EquiposAsignadosComponent implements OnInit {
       numero_serie: raw.numero_serie?.trim() || null,
       numero_puertos: raw.numero_puertos !== '' && raw.numero_puertos != null ? Number(raw.numero_puertos) : null,
       numero_puertos_hdmi: raw.numero_puertos_hdmi !== '' && raw.numero_puertos_hdmi != null ? Number(raw.numero_puertos_hdmi) : null,
+      mac_address: raw.mac_address?.trim() || null,
+      ip_fija: raw.ip_fija?.trim() || null,
       precio_usd: raw.precio_usd !== '' && raw.precio_usd != null ? Number(raw.precio_usd) : null,
       locacion_pais: raw.locacion_pais?.trim() || null,
       proveedor_id: raw.proveedor_id || null,
