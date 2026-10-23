@@ -20,6 +20,7 @@ export class ChecklistComponent implements OnInit {
 
   form = this.fb.group({
     descripcion: ['', [Validators.required]],
+    url: ['', Validators.pattern(/^https?:\/\/.+/)],
     observacion: [''],
     responsable: [''],
     activo: [true],
@@ -52,17 +53,17 @@ export class ChecklistComponent implements OnInit {
     const yaSeleccionado = this.itemSeleccionado()?.id === i.id;
     if (yaSeleccionado) { this.nuevoItem(); return; }
     this.itemSeleccionado.set(i);
-    this.form.reset({ descripcion: i.descripcion, observacion: i.observacion || '', responsable: i.responsable || '', activo: i.activo });
+    this.form.reset({ descripcion: i.descripcion, url: i.url || '', observacion: i.observacion || '', responsable: i.responsable || '', activo: i.activo });
   }
 
   nuevoItem(): void {
     this.itemSeleccionado.set(null);
-    this.form.reset({ descripcion: '', observacion: '', responsable: '', activo: true });
+    this.form.reset({ descripcion: '', url: '', observacion: '', responsable: '', activo: true });
   }
 
   guardarItem(): void {
     if (this.form.invalid || this.guardando()) return;
-    const data = this.form.getRawValue() as { descripcion: string; observacion: string; responsable: string; activo: boolean };
+    const data = this.form.getRawValue() as { descripcion: string; url: string; observacion: string; responsable: string; activo: boolean };
     const actual = this.itemSeleccionado();
     const req = actual ? this.checklistsSrv.actualizar(actual.id, data) : this.checklistsSrv.crear(data);
     this.guardando.set(true);

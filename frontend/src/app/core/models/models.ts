@@ -436,6 +436,7 @@ export interface ChecklistItem {
   descripcion: string;
   observacion?: string | null;
   responsable?: string | null;
+  url?: string | null;
   activo: boolean;
   creado_por: string;
   creado_por_nombre?: string;

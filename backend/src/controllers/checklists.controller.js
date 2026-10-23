@@ -33,20 +33,21 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { descripcion, observacion, responsable, activo } = req.body;
+    const { descripcion, observacion, responsable, url, activo } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
 
     const { rows } = await pool.query(
-      `insert into checklists (empresa_id, descripcion, observacion, responsable, activo, creado_por)
-       values ($1, $2, $3, $4, $5, $6)
+      `insert into checklists (empresa_id, descripcion, observacion, responsable, url, activo, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7)
        returning id`,
       [
         req.empresaId,
         descripcion.trim(),
         observacion ? observacion.trim() : null,
         responsable ? responsable.trim() : null,
+        url ? url.trim() : null,
         activo ?? true,
         req.usuario.id,
       ]
@@ -59,7 +60,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { descripcion, observacion, responsable, activo } = req.body;
+    const { descripcion, observacion, responsable, url, activo } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
@@ -75,13 +76,15 @@ async function actualizar(req, res, next) {
          descripcion = $1,
          observacion = $2,
          responsable = $3,
-         activo = $4,
-         modificado_por = $5
-       where id = $6 and empresa_id = $7`,
+         url = $4,
+         activo = $5,
+         modificado_por = $6
+       where id = $7 and empresa_id = $8`,
       [
         descripcion.trim(),
         observacion ? observacion.trim() : null,
         responsable ? responsable.trim() : null,
+        url ? url.trim() : null,
         activo ?? true,
         req.usuario.id,
         req.params.id,
