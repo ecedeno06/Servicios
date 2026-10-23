@@ -445,17 +445,17 @@
         }
       </div>
       <div class="form-group" style="flex: 1 1 0; min-width: 0;">
-        <label>IP Fijo</label>
-        <input class="input" formControlName="ip_fija" placeholder="Ej: 192.168.1.10" />
-        @if (form.get('ip_fija')?.errors?.['pattern']) {
-          <div class="error-text">Formato esperado: 192.168.1.10</div>
-        }
-      </div>
-      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
         <label>Hardware Address</label>
         <input class="input" formControlName="hardware_address" placeholder="Ej: e2:10:20:3e:ff:77" />
         @if (form.get('hardware_address')?.errors?.['pattern']) {
           <div class="error-text">Formato esperado: e2:10:20:3e:ff:77</div>
+        }
+      </div>
+      <div class="form-group" style="flex: 1 1 0; min-width: 0;">
+        <label>IP Fijo</label>
+        <input class="input" formControlName="ip_fija" placeholder="Ej: 192.168.1.10" />
+        @if (form.get('ip_fija')?.errors?.['pattern']) {
+          <div class="error-text">Formato esperado: 192.168.1.10</div>
         }
       </div>
     </div>
