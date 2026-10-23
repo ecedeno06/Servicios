@@ -216,7 +216,11 @@
               <div class="card" style="margin-bottom: 8px; padding: 10px;" [style.opacity]="guardandoChecklistItem() === item.checklist_id ? 0.6 : 1">
                 <label class="flex items-center gap-6" style="cursor: pointer;">
                   <input type="checkbox" [checked]="item.completado" (change)="toggleCompletadoChecklistItem(item)" />
-                  <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
+                  @if (item.url) {
+                    <a [href]="item.url" target="_blank" rel="noopener" class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'" (click)="$event.stopPropagation()">{{ item.descripcion }}</a>
+                  } @else {
+                    <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
+                  }
                 </label>
                 @if (item.completado && item.fecha_completado) {
                   <div class="text-muted text-sm" style="margin-top: 4px;">

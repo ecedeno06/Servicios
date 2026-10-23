@@ -469,6 +469,7 @@ export interface EquipoChecklistEjecucionDetalle extends EquipoChecklistEjecucio
 export interface EquipoChecklistItem {
   checklist_id: string;
   descripcion: string;
+  url?: string | null;
   completado: boolean;
   fecha_completado?: string | null;
   modificado_por_nombre?: string | null;

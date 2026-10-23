@@ -453,6 +453,7 @@ async function obtenerChecklistEjecucion(req, res, next) {
       `select
          c.id as checklist_id,
          c.descripcion,
+         c.url,
          coalesce(i.completado, false) as completado,
          i.fecha_completado,
          um.nombre as modificado_por_nombre
@@ -523,6 +524,7 @@ async function actualizarChecklistEjecucionItem(req, res, next) {
       `select
          c.id as checklist_id,
          c.descripcion,
+         c.url,
          i.completado,
          i.fecha_completado,
          um.nombre as modificado_por_nombre
