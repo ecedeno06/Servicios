@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CarritosService } from '../../core/services/carritos.service';
@@ -7,6 +7,8 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
+import { AuthService } from '../../core/services/auth.service';
+import { CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
 import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
@@ -37,10 +39,20 @@ const CLASES_BADGE_ESTADO: Record<EstadoCarrito, string> = {
   cerrada: 'badge-slate',
 };
 
+// Mismos tonos que CLASES_BADGE_ESTADO, pero como hex -- pdfmake no
+// entiende clases CSS.
+const COLOR_ESTADO_PDF: Record<EstadoCarrito, string> = {
+  en_construccion: '#64748B',
+  en_revision: '#D97706',
+  aprobada: '#16A34A',
+  cerrada: '#64748B',
+};
+
 @Component({
   selector: 'app-carritos',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  providers: [DatePipe],
   templateUrl: './carritos.component.html',
   styleUrl: './carritos.component.css',
 })
@@ -119,6 +131,9 @@ export class CarritosComponent implements OnInit {
     private proveedoresSrv: ProveedoresService,
     private fb: FormBuilder,
     private route: ActivatedRoute,
+    private datePipe: DatePipe,
+    private auth: AuthService,
+    private pdfSrv: CarritoPdfService,
     public menu: MenuService
   ) {}
 
@@ -486,5 +501,66 @@ export class CarritosComponent implements OnInit {
 
   abrirUrlProducto(url: string): void {
     window.open(url, '_blank', 'noopener');
+  }
+
+  // Encabezado + detalle + totales + historico de la solicitud, todo en
+  // un PDF -- mismo mecanismo que el checklist de equipo (pdfmake con
+  // carga diferida, ventana en blanco abierta YA dentro del click para
+  // que el navegador no la bloquee mientras pdfmake carga).
+  generarPdf(): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+
+    const ventana = window.open('', '_blank') ?? undefined;
+
+    const formatearFecha = (f?: string | null): string | null =>
+      f ? this.datePipe.transform(f, 'mediumDate', 'UTC') : null;
+    const formatearFechaHora = (f?: string | null): string | null =>
+      f ? (this.datePipe.transform(f, 'd-MMM-y h:mm a') || '').toLowerCase() : null;
+
+    const empresa = this.auth.empresaActiva();
+    // El backend entrega el historico del mas reciente al mas antiguo --
+    // el ultimo movimiento (indice 0) identifica "quien" hizo el estado
+    // actual; para el PDF se muestra en orden cronologico (invertido).
+    const ultimoMovimiento = this.historico()[0];
+    const movimientosCronologicos = [...this.historico()].reverse();
+
+    const data: CarritoPdfData = {
+      empresaNombre: empresa?.empresa_nombre ?? '',
+      empresaLogo: empresa?.empresa_logo ?? null,
+      idCorto: this.idCorto(carrito.id),
+      titulo: carrito.titulo,
+      estado: this.etiquetasEstado[carrito.estado],
+      estadoColor: COLOR_ESTADO_PDF[carrito.estado],
+      fechaSolicitud: formatearFecha(carrito.fecha_solicitud) || '-',
+      fechaAprobacion: formatearFecha(carrito.fecha_aprobacion),
+      creadoPor: carrito.creado_por_nombre,
+      actorUltimoEstado: ultimoMovimiento?.registrado_por_nombre || carrito.creado_por_nombre || null,
+      fechaUltimoEstado: formatearFechaHora(ultimoMovimiento?.fecha_cambio) ?? formatearFechaHora(carrito.created_at),
+      lineas: this.detalles().map((d) => ({
+        equipo: `${d.marca} ${d.modelo}`,
+        categoria: d.categoria_nombre,
+        proveedor: d.proveedor_nombre,
+        cantidadPropuesta: d.cantidad_propuesta,
+        cantidadAprobada: d.cantidad_aprobada,
+        costoEstimado: d.costo_estimado,
+        totalLinea: this.totalLinea(d),
+        observacion: d.observacion,
+      })),
+      totalPropuesto: carrito.costo_estimado_propuesto_total ?? 0,
+      totalAprobado: carrito.costo_estimado_aprobado_total ?? 0,
+      movimientos: movimientosCronologicos.map((h) => ({
+        estadoAnterior: h.estado_anterior ? this.etiquetasEstado[h.estado_anterior] : null,
+        estadoNuevo: this.etiquetasEstado[h.estado_nuevo],
+        registradoPor: h.registrado_por_nombre,
+        fecha: formatearFechaHora(h.fecha_cambio) || '',
+      })),
+      fechaGeneracion: formatearFechaHora(new Date().toISOString()) || '',
+      generadoPor: this.auth.usuario()?.nombre,
+    };
+
+    this.pdfSrv.generar(data)
+      .then((doc) => doc.open(undefined, ventana))
+      .catch(() => alert('No se pudo generar el PDF de la solicitud.'));
   }
 }
