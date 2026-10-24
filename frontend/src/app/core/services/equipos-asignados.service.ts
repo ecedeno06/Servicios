@@ -12,7 +12,7 @@ export class EquiposAsignadosService {
   listar(): Observable<EquipoAsignado[]> { return this.http.get<EquipoAsignado[]>(this.base); }
   crear(data: any): Observable<EquipoAsignado> { return this.http.post<EquipoAsignado>(this.base, data); }
   actualizar(id: string, data: any): Observable<EquipoAsignado> { return this.http.put<EquipoAsignado>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
   historial(id: string): Observable<MovimientoEquipo[]> { return this.http.get<MovimientoEquipo[]>(`${this.base}/${id}/historial`); }
   eliminarHistorial(id: string, historialId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/historial/${historialId}`, { body: { password } });

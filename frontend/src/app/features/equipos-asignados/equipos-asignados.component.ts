@@ -797,13 +797,43 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  eliminar(): void {
+  // Pide confirmar la contrasena de la sesion actual antes de borrar el
+  // equipo -- mismo patron que eliminar un movimiento del historico.
+  confirmandoEliminarEquipo = signal(false);
+  passwordEliminarEquipoForm = this.fb.group({ password: ['', Validators.required] });
+  eliminandoEquipo = signal(false);
+  errorEliminarEquipo = signal<string | null>(null);
+
+  pedirEliminarEquipo(): void {
     const actual = this.seleccionado();
     if (!actual) return;
-    if (!confirm(`Eliminar el equipo "${actual.marca} ${actual.modelo}" de esta empresa?`)) return;
-    this.srv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevo(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el equipo'),
+    this.passwordEliminarEquipoForm.reset();
+    this.errorEliminarEquipo.set(null);
+    this.confirmandoEliminarEquipo.set(true);
+  }
+
+  cancelarEliminarEquipo(): void {
+    if (this.eliminandoEquipo()) return;
+    this.confirmandoEliminarEquipo.set(false);
+  }
+
+  confirmarEliminarEquipo(): void {
+    const actual = this.seleccionado();
+    if (!actual || this.passwordEliminarEquipoForm.invalid) return;
+    const password = this.passwordEliminarEquipoForm.getRawValue().password!;
+    this.eliminandoEquipo.set(true);
+    this.errorEliminarEquipo.set(null);
+    this.srv.eliminar(actual.id, password).subscribe({
+      next: () => {
+        this.eliminandoEquipo.set(false);
+        this.confirmandoEliminarEquipo.set(false);
+        this.nuevo();
+        this.cargar();
+      },
+      error: (err) => {
+        this.eliminandoEquipo.set(false);
+        this.errorEliminarEquipo.set(err?.error?.mensaje || 'No se pudo eliminar el equipo');
+      },
     });
   }
 

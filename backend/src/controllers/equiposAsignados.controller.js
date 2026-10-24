@@ -153,8 +153,24 @@ async function actualizar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// Pide la contrasena de la sesion actual y la verifica contra la BD --
+// mismo patron que eliminarHistorial, para que borrar un equipo completo
+// no sea un solo click accidental.
 async function eliminar(req, res, next) {
   try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ mensaje: 'La contrasena es requerida' });
+
+    const { rows: usuarioRows } = await pool.query(
+      'select password_hash from usuarios where id = $1',
+      [req.usuario.id]
+    );
+    // 403, no 401: el interceptor del frontend trata cualquier 401 como
+    // "sesion invalida" y cierra la sesion -- esto es solo una contrasena
+    // equivocada, no un token vencido.
+    const passwordOk = usuarioRows[0] && await bcrypt.compare(password, usuarioRows[0].password_hash);
+    if (!passwordOk) return res.status(403).json({ mensaje: 'Contrasena incorrecta' });
+
     const { rowCount } = await pool.query(
       'delete from equipos_asignados where id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]

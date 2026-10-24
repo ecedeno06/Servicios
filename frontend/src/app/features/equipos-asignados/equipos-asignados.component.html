@@ -535,7 +535,7 @@
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
       @if (seleccionado()) {
-        <button type="button" class="btn btn-danger" (click)="eliminar()">Eliminar</button>
+        <button type="button" class="btn btn-danger" (click)="pedirEliminarEquipo()">Eliminar</button>
         <button type="button" class="btn btn-outline" (click)="nuevo()">Nuevo equipo</button>
       }
     </div>
@@ -587,6 +587,33 @@
         }
       </ul>
     }
+  </div>
+}
+
+@if (confirmandoEliminarEquipo()) {
+  <div class="modal-overlay" (click)="cancelarEliminarEquipo()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Eliminar equipo</h2>
+        <button class="close" (click)="cancelarEliminarEquipo()">&times;</button>
+      </div>
+      <p class="text-sm">Esta accion no se puede deshacer. Confirma tu contraseña para continuar.</p>
+      <form [formGroup]="passwordEliminarEquipoForm" (ngSubmit)="confirmarEliminarEquipo()">
+        <div class="form-group mt-16">
+          <label>Contraseña *</label>
+          <input class="input" type="password" formControlName="password" autofocus />
+        </div>
+        @if (errorEliminarEquipo()) {
+          <div class="error-text mt-16">{{ errorEliminarEquipo() }}</div>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-danger" [disabled]="passwordEliminarEquipoForm.invalid || eliminandoEquipo()">
+            {{ eliminandoEquipo() ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+          <button type="button" class="btn btn-outline" (click)="cancelarEliminarEquipo()">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
 }
 
