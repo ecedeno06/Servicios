@@ -1,1 +1,16 @@
 /* Estilos especificos del componente -- el resto se hereda de styles.css global. */
+
+/* La clase global .table-actions pone display:flex directo en el <td>,
+   lo que lo saca del layout normal de celda y hace que sus hijos (los
+   botones-icono) terminen apilados en vertical en vez de uno al lado del
+   otro. Se revierte aqui (encapsulado al componente) a celda normal y el
+   flex se mueve al <div> interno -- mismo patron ya usado en Servicios y
+   Proveedores. */
+.table-actions { display: table-cell; text-align: right; }
+.table-actions .actions-inner {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
