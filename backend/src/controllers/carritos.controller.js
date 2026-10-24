@@ -59,6 +59,17 @@ async function obtenerPorId(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// Registra una entrada en el historico -- mismo patron que
+// equipos_historial, se llena a mano en cada punto donde el estado
+// realmente cambia, nunca con un trigger.
+async function registrarMovimiento(carritoId, estadoAnterior, estadoNuevo, usuarioId) {
+  await pool.query(
+    `insert into historico_movimiento_carrito (carrito_id, estado_anterior, estado_nuevo, registrado_por)
+     values ($1, $2, $3, $4)`,
+    [carritoId, estadoAnterior, estadoNuevo, usuarioId]
+  );
+}
+
 async function crear(req, res, next) {
   try {
     const { titulo, fecha_solicitud } = req.body;
@@ -72,6 +83,7 @@ async function crear(req, res, next) {
        returning id`,
       [req.empresaId, titulo.trim(), fecha_solicitud || null, req.usuario.id]
     );
+    await registrarMovimiento(rows[0].id, null, 'en_construccion', req.usuario.id);
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where c.id = $1`, [rows[0].id]);
     res.status(201).json(completo[0]);
@@ -145,6 +157,7 @@ async function avanzarEstado(req, res, next) {
        returning id`,
       [siguiente, esAprobacion, req.usuario.id, req.params.id, req.empresaId]
     );
+    await registrarMovimiento(rows[0].id, actual[0].estado, siguiente, req.usuario.id);
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where c.id = $1`, [rows[0].id]);
     res.json(completo[0]);
@@ -187,9 +200,27 @@ async function retrocederEstado(req, res, next) {
        returning id`,
       [anterior, limpiarFechaAprobacion, req.usuario.id, req.params.id, req.empresaId]
     );
+    await registrarMovimiento(rows[0].id, actual[0].estado, anterior, req.usuario.id);
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where c.id = $1`, [rows[0].id]);
     res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+// GET /:id/historico
+async function listarHistorico(req, res, next) {
+  try {
+    if (!(await verificarCarrito(req))) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
+
+    const { rows } = await pool.query(
+      `select h.*, u.nombre as registrado_por_nombre
+       from historico_movimiento_carrito h
+       join usuarios u on u.id = h.registrado_por
+       where h.carrito_id = $1
+       order by h.fecha_cambio desc`,
+      [req.params.id]
+    );
+    res.json(rows);
   } catch (err) { next(err); }
 }
 
@@ -377,6 +408,7 @@ module.exports = {
   eliminar,
   avanzarEstado,
   retrocederEstado,
+  listarHistorico,
   listarDetalles,
   crearDetalle,
   actualizarDetalle,

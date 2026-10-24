@@ -6,7 +6,7 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
-import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, Producto, Proveedor } from '../../core/models/models';
+import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
 // boton de avance que se muestra es el siguiente de esta lista respecto
@@ -158,6 +158,9 @@ export class CarritosComponent implements OnInit {
   guardandoHeader = signal(false);
   avanzando = signal(false);
 
+  historico = signal<HistoricoMovimientoCarrito[]>([]);
+  cargandoHistorico = signal(false);
+
   headerForm = this.fb.group({
     titulo: ['', Validators.required],
     fecha_solicitud: [this.hoyISO(), Validators.required],
@@ -194,6 +197,7 @@ export class CarritosComponent implements OnInit {
   abrirNuevo(): void {
     this.carritoSeleccionado.set(null);
     this.detalles.set([]);
+    this.historico.set([]);
     this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO() });
   }
 
@@ -201,6 +205,7 @@ export class CarritosComponent implements OnInit {
     this.carritoSeleccionado.set(c);
     this.headerForm.reset({ titulo: c.titulo, fecha_solicitud: c.fecha_solicitud?.substring(0, 10) });
     this.cargarDetalles(c.id);
+    this.cargarHistorico(c.id);
   }
 
   cargarDetalles(carritoId: string): void {
@@ -211,18 +216,31 @@ export class CarritosComponent implements OnInit {
     });
   }
 
+  cargarHistorico(carritoId: string): void {
+    this.cargandoHistorico.set(true);
+    this.srv.listarHistorico(carritoId).subscribe({
+      next: (data) => { this.historico.set(data); this.cargandoHistorico.set(false); },
+      error: () => this.cargandoHistorico.set(false),
+    });
+  }
+
   guardarHeader(): void {
     if (this.headerForm.invalid || this.guardandoHeader()) return;
     this.guardandoHeader.set(true);
     const val = this.headerForm.getRawValue() as { titulo: string; fecha_solicitud: string };
     const actual = this.carritoSeleccionado();
 
+    const esNuevo = !actual;
     const obs = actual ? this.srv.actualizar(actual.id, val) : this.srv.crear(val);
     obs.subscribe({
       next: (c) => {
         this.guardandoHeader.set(false);
         this.carritoSeleccionado.set(c);
         this.cargar();
+        if (esNuevo) {
+          this.cargarDetalles(c.id);
+          this.cargarHistorico(c.id);
+        }
       },
       error: (err) => {
         this.guardandoHeader.set(false);
@@ -244,6 +262,7 @@ export class CarritosComponent implements OnInit {
         this.carritoSeleccionado.set(actualizado);
         this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
         this.cargar();
+        this.cargarHistorico(actualizado.id);
       },
       error: (err) => {
         this.avanzando.set(false);
@@ -265,6 +284,7 @@ export class CarritosComponent implements OnInit {
         this.carritoSeleccionado.set(actualizado);
         this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
         this.cargar();
+        this.cargarHistorico(actualizado.id);
       },
       error: (err) => {
         this.avanzando.set(false);

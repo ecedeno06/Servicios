@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Carrito, CarritoDetalle, EstadoCarrito } from '../models/models';
+import { Carrito, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class CarritosService {
@@ -23,6 +23,9 @@ export class CarritosService {
   }
   retrocederEstado(id: string, estado: EstadoCarrito): Observable<Carrito> {
     return this.http.post<Carrito>(`${this.base}/${id}/retroceder`, { estado });
+  }
+  listarHistorico(id: string): Observable<HistoricoMovimientoCarrito[]> {
+    return this.http.get<HistoricoMovimientoCarrito[]>(`${this.base}/${id}/historico`);
   }
 
   // DETALLES (lineas de equipos a comprar)

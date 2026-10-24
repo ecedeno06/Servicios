@@ -602,6 +602,19 @@ export interface CarritoDetalle {
   updated_at: string;
 }
 
+// Historico de cambios de estado de un carrito -- una fila por cada
+// transicion (de null al crear, o de un estado a otro al avanzar/devolver).
+export interface HistoricoMovimientoCarrito {
+  id: string;
+  carrito_id: string;
+  estado_anterior: EstadoCarrito | null;
+  estado_nuevo: EstadoCarrito;
+  observacion?: string | null;
+  registrado_por: string;
+  registrado_por_nombre?: string;
+  fecha_cambio: string;
+}
+
 // Entrada de la bitacora de un incidente: nota libre, cambio de estado
 // y/o documento adjunto, cualquier combinacion, en un solo registro.
 export interface IncidenteNota {
