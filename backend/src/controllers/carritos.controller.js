@@ -151,6 +151,48 @@ async function avanzarEstado(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// POST /:id/retroceder  { estado }
+// Permite corregir un avance equivocado, salvo la transicion final: una
+// vez "cerrada" el carrito queda bloqueado para siempre (ver
+// ORDEN_ESTADOS -- no hay "anterior" valido desde el ultimo estado).
+async function retrocederEstado(req, res, next) {
+  try {
+    const { rows: actual } = await pool.query(
+      'select estado from carritos where id = $1 and empresa_id = $2',
+      [req.params.id, req.empresaId]
+    );
+    if (!actual[0]) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
+
+    if (actual[0].estado === 'cerrada') {
+      return res.status(400).json({ mensaje: 'Un carrito "Cerrado" no se puede reabrir' });
+    }
+
+    const idxActual = ORDEN_ESTADOS.indexOf(actual[0].estado);
+    const anterior = ORDEN_ESTADOS[idxActual - 1];
+    if (!anterior) return res.status(400).json({ mensaje: 'El carrito ya esta en su primer estado' });
+    if (req.body.estado !== anterior) {
+      return res.status(400).json({ mensaje: `Solo se puede devolver a "${anterior}" desde el estado actual` });
+    }
+
+    // Al devolver desde "aprobada" se limpia fecha_aprobacion -- si mas
+    // adelante se vuelve a aprobar, debe quedar la fecha de ESA
+    // aprobacion, no la de un intento anterior que se corrigio.
+    const limpiarFechaAprobacion = actual[0].estado === 'aprobada';
+    const { rows } = await pool.query(
+      `update carritos set
+         estado = $1,
+         fecha_aprobacion = case when $2 then null else fecha_aprobacion end,
+         modificado_por = $3
+       where id = $4 and empresa_id = $5
+       returning id`,
+      [anterior, limpiarFechaAprobacion, req.usuario.id, req.params.id, req.empresaId]
+    );
+
+    const { rows: completo } = await pool.query(`${SELECT_BASE} where c.id = $1`, [rows[0].id]);
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
 // -------------------------------------------------------------
 // DETALLES (lineas de equipos a comprar)
 // -------------------------------------------------------------
@@ -334,6 +376,7 @@ module.exports = {
   actualizar,
   eliminar,
   avanzarEstado,
+  retrocederEstado,
   listarDetalles,
   crearDetalle,
   actualizarDetalle,

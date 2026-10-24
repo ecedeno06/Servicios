@@ -122,12 +122,21 @@
   }
 
   @if (carritoSeleccionado(); as carrito) {
-    <!-- Avance de estado: un solo boton con el UNICO siguiente estado valido -->
-    @if (siguienteEstado() && menu.tienePermiso('carrito_compras', 'editar')) {
+    <!-- Avance/retroceso de estado: un solo boton con el UNICO siguiente estado
+         valido, y otro para corregir un avance equivocado -- salvo desde
+         "Cerrada", que no se puede reabrir (ver computed anteriorEstado). -->
+    @if (menu.tienePermiso('carrito_compras', 'editar') && (siguienteEstado() || anteriorEstado())) {
       <div class="form-actions" style="margin: 16px 0;">
-        <button type="button" class="btn btn-accent" [disabled]="avanzando()" (click)="avanzar()">
-          {{ avanzando() ? 'Procesando...' : etiquetaAvance() }}
-        </button>
+        @if (anteriorEstado()) {
+          <button type="button" class="btn btn-outline" [disabled]="avanzando()" (click)="retroceder()">
+            {{ avanzando() ? 'Procesando...' : 'Devolver a ' + etiquetasEstado[anteriorEstado()!] }}
+          </button>
+        }
+        @if (siguienteEstado()) {
+          <button type="button" class="btn btn-accent" [disabled]="avanzando()" (click)="avanzar()">
+            {{ avanzando() ? 'Procesando...' : etiquetaAvance() }}
+          </button>
+        }
       </div>
     }
 

@@ -174,6 +174,15 @@ export class CarritosComponent implements OnInit {
     return c ? ETIQUETAS_AVANCE[c.estado] : '';
   });
 
+  // Se puede corregir un avance equivocado devolviendo el carrito al
+  // estado inmediatamente anterior -- excepto la transicion final: una
+  // vez "cerrada" el carrito no se puede reabrir (ver controller).
+  anteriorEstado = computed<EstadoCarrito | null>(() => {
+    const c = this.carritoSeleccionado();
+    if (!c || c.estado === 'cerrada') return null;
+    return ORDEN_ESTADOS[ORDEN_ESTADOS.indexOf(c.estado) - 1] || null;
+  });
+
   // Mientras esta en_construccion se puede editar todo libremente (crear/
   // editar/borrar lineas, titulo, fecha); en en_revision solo se carga
   // cantidad_aprobada/observacion por linea (ver controller); de ahi en
@@ -239,6 +248,27 @@ export class CarritosComponent implements OnInit {
       error: (err) => {
         this.avanzando.set(false);
         alert(err.error?.mensaje || 'Error al avanzar de estado');
+      },
+    });
+  }
+
+  retroceder(): void {
+    const c = this.carritoSeleccionado();
+    const anterior = this.anteriorEstado();
+    if (!c || !anterior || this.avanzando()) return;
+    if (!confirm(`¿Devolver el carrito "${c.titulo}" a "${this.etiquetasEstado[anterior]}"?`)) return;
+
+    this.avanzando.set(true);
+    this.srv.retrocederEstado(c.id, anterior).subscribe({
+      next: (actualizado) => {
+        this.avanzando.set(false);
+        this.carritoSeleccionado.set(actualizado);
+        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
+        this.cargar();
+      },
+      error: (err) => {
+        this.avanzando.set(false);
+        alert(err.error?.mensaje || 'Error al devolver el estado');
       },
     });
   }

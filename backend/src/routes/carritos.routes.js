@@ -12,6 +12,7 @@ router.post('/', requirePermiso('carrito_compras', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('carrito_compras', 'editar'), ctrl.actualizar);
 router.delete('/:id', requirePermiso('carrito_compras', 'eliminar'), ctrl.eliminar);
 router.post('/:id/avanzar', requirePermiso('carrito_compras', 'editar'), ctrl.avanzarEstado);
+router.post('/:id/retroceder', requirePermiso('carrito_compras', 'editar'), ctrl.retrocederEstado);
 
 // Lineas de detalle (equipos a comprar)
 router.get('/:id/detalles', requirePermiso('carrito_compras', 'ver'), ctrl.listarDetalles);

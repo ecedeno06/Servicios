@@ -21,6 +21,9 @@ export class CarritosService {
   avanzarEstado(id: string, estado: EstadoCarrito): Observable<Carrito> {
     return this.http.post<Carrito>(`${this.base}/${id}/avanzar`, { estado });
   }
+  retrocederEstado(id: string, estado: EstadoCarrito): Observable<Carrito> {
+    return this.http.post<Carrito>(`${this.base}/${id}/retroceder`, { estado });
+  }
 
   // DETALLES (lineas de equipos a comprar)
   listarDetalles(carritoId: string): Observable<CarritoDetalle[]> {
