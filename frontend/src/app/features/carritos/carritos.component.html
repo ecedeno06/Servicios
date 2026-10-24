@@ -93,7 +93,13 @@
 <!-- DETALLE DE LA SOLICITUD -- seccion fija debajo de la lista (no popup), igual que Equipos Asignados -->
 <div class="card mt-16">
   <div class="flex items-center gap-8" style="justify-content: space-between;">
-    <h2>{{ carritoSeleccionado() ? carritoSeleccionado()!.titulo : 'Nueva solicitud de compra' }}</h2>
+    <h2>
+      @if (carritoSeleccionado(); as carritoTitulo) {
+        {{ carritoTitulo.titulo | uppercase }} <span class="text-muted" style="font-family: monospace; font-weight: 400;">· {{ idCorto(carritoTitulo.id) }}</span>
+      } @else {
+        Nueva solicitud de compra
+      }
+    </h2>
     @if (carritoSeleccionado(); as carrito) {
       <div class="flex items-center gap-8">
         <span class="badge" [class]="clasesBadgeEstado[carrito.estado]">{{ etiquetasEstado[carrito.estado] }}</span>
