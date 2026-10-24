@@ -64,12 +64,13 @@ export class CarritosComponent implements OnInit {
   filtroEstado = signal('');
   filtroFechaAprobacion = signal('');
   filtroCantPropuesta = signal('');
-  filtroCostoEstimado = signal('');
+  filtroCostoPropuesto = signal('');
+  filtroCostoAprobado = signal('');
   filtroCreadoPor = signal('');
 
   hayFiltros = computed(() =>
     !!(this.filtroTitulo() || this.filtroFechaSolicitud() || this.filtroEstado() || this.filtroFechaAprobacion() ||
-       this.filtroCantPropuesta() || this.filtroCostoEstimado() || this.filtroCreadoPor())
+       this.filtroCantPropuesta() || this.filtroCostoPropuesto() || this.filtroCostoAprobado() || this.filtroCreadoPor())
   );
 
   limpiarFiltros(): void {
@@ -78,7 +79,8 @@ export class CarritosComponent implements OnInit {
     this.filtroEstado.set('');
     this.filtroFechaAprobacion.set('');
     this.filtroCantPropuesta.set('');
-    this.filtroCostoEstimado.set('');
+    this.filtroCostoPropuesto.set('');
+    this.filtroCostoAprobado.set('');
     this.filtroCreadoPor.set('');
   }
 
@@ -88,7 +90,8 @@ export class CarritosComponent implements OnInit {
     const est = this.filtroEstado();
     const fa = this.filtroFechaAprobacion().trim().toLowerCase();
     const cp = this.filtroCantPropuesta().trim().toLowerCase();
-    const ce = this.filtroCostoEstimado().trim().toLowerCase();
+    const cop = this.filtroCostoPropuesto().trim().toLowerCase();
+    const coa = this.filtroCostoAprobado().trim().toLowerCase();
     const cre = this.filtroCreadoPor().trim().toLowerCase();
 
     return this.carritos().filter((c) => {
@@ -97,7 +100,8 @@ export class CarritosComponent implements OnInit {
       if (est && c.estado !== est) return false;
       if (fa && !(c.fecha_aprobacion || '').toLowerCase().includes(fa)) return false;
       if (cp && !String(c.cantidad_propuesta_total ?? 0).includes(cp)) return false;
-      if (ce && !String(c.costo_estimado_total ?? 0).includes(ce)) return false;
+      if (cop && !String(c.costo_estimado_propuesto_total ?? 0).includes(cop)) return false;
+      if (coa && !String(c.costo_estimado_aprobado_total ?? 0).includes(coa)) return false;
       if (cre && !(c.creado_por_nombre || '').toLowerCase().includes(cre)) return false;
       return true;
     });

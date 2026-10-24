@@ -572,7 +572,8 @@ export interface Carrito {
   created_at: string;
   updated_at: string;
   cantidad_propuesta_total?: number;
-  costo_estimado_total?: number;
+  costo_estimado_propuesto_total?: number;
+  costo_estimado_aprobado_total?: number;
   // Opcional: solo llega poblada cuando se pide obtenerPorId().
   detalles?: CarritoDetalle[];
 }
