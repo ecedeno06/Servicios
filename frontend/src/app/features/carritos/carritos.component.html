@@ -9,29 +9,49 @@
 </div>
 
 <div class="page-header">
-  <div class="desc">{{ carritosFiltrados().length }} de {{ carritos().length }} carrito(s).</div>
-  <input
-    class="input"
-    style="max-width:280px;"
-    type="text"
-    placeholder="Buscar..."
-    [ngModel]="busqueda()"
-    (ngModelChange)="busqueda.set($event)"
-  />
+  <div class="desc">{{ carritosFiltrados().length }} de {{ carritos().length }} carrito(s). Haz clic en una fila para ver el detalle.</div>
+  @if (hayFiltros()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Limpiar filtros</button> }
 </div>
 
-<div class="table-wrap">
+<div class="table-wrap table-wrap-compact">
   <table class="data-table">
     <thead>
       <tr>
-        <th>Titulo</th>
-        <th>Fecha Solicitud</th>
-        <th>Estado</th>
-        <th>Fecha Aprobacion</th>
-        <th style="text-align:center;">Lineas</th>
-        <th style="text-align:center;">Cant. Propuesta</th>
-        <th style="text-align:center;">Cant. Aprobada</th>
-        <th>Creado por</th>
+        <th>
+          <span class="th-label">Titulo</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroTitulo()" (ngModelChange)="filtroTitulo.set($event)" />
+        </th>
+        <th>
+          <span class="th-label">Fecha Solicitud</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroFechaSolicitud()" (ngModelChange)="filtroFechaSolicitud.set($event)" />
+        </th>
+        <th>
+          <span class="th-label">Estado</span>
+          <select class="input input-th-filtro" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+            <option value="">Todos</option>
+            @for (e of estadosFiltro; track e) { <option [value]="e">{{ etiquetasEstado[e] }}</option> }
+          </select>
+        </th>
+        <th>
+          <span class="th-label">Fecha Aprobacion</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroFechaAprobacion()" (ngModelChange)="filtroFechaAprobacion.set($event)" />
+        </th>
+        <th style="text-align:center;">
+          <span class="th-label">Lineas</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroLineas()" (ngModelChange)="filtroLineas.set($event)" />
+        </th>
+        <th style="text-align:center;">
+          <span class="th-label">Cant. Propuesta</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCantPropuesta()" (ngModelChange)="filtroCantPropuesta.set($event)" />
+        </th>
+        <th style="text-align:center;">
+          <span class="th-label">Cant. Aprobada</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCantAprobada()" (ngModelChange)="filtroCantAprobada.set($event)" />
+        </th>
+        <th>
+          <span class="th-label">Creado por</span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCreadoPor()" (ngModelChange)="filtroCreadoPor.set($event)" />
+        </th>
         <th></th>
       </tr>
     </thead>
@@ -60,198 +80,203 @@
             </td>
           </tr>
         } @empty {
-          <tr><td colspan="9" class="empty-state">No hay carritos de compra registrados.</td></tr>
+          <tr><td colspan="9" class="empty-state">{{ hayFiltros() ? 'Ningun carrito coincide con los filtros.' : 'No hay carritos de compra registrados.' }}</td></tr>
         }
       }
     </tbody>
   </table>
 </div>
 
-<!-- DRAWER: encabezado + lineas de un carrito -->
-@if (panelAbierto()) {
-  <div class="overlay" (click)="cerrarPanel()">
-    <div class="drawer" (click)="$event.stopPropagation()">
-      <div class="drawer-header">
-        <div>
-          <h2>{{ carritoSeleccionado() ? carritoSeleccionado()!.titulo : 'Nuevo carrito' }}</h2>
-          @if (carritoSeleccionado()) {
-            <div class="desc">
-              <span class="badge" [class]="clasesBadgeEstado[carritoSeleccionado()!.estado]">{{ etiquetasEstado[carritoSeleccionado()!.estado] }}</span>
-            </div>
-          }
+<!-- DETALLE DE LA SOLICITUD -- seccion fija debajo de la lista (no popup), igual que Equipos Asignados -->
+<div class="card mt-16">
+  <div class="flex items-center gap-8" style="justify-content: space-between;">
+    <h2>{{ carritoSeleccionado() ? carritoSeleccionado()!.titulo : 'Nueva solicitud de compra' }}</h2>
+    @if (carritoSeleccionado(); as carrito) {
+      <div class="flex items-center gap-8">
+        <span class="badge" [class]="clasesBadgeEstado[carrito.estado]">{{ etiquetasEstado[carrito.estado] }}</span>
+        <button type="button" class="btn btn-outline btn-sm" (click)="abrirNuevo()">+ Nuevo carrito</button>
+      </div>
+    }
+  </div>
+
+  <!-- Encabezado: titulo / fecha de solicitud -->
+  @if (!carritoSeleccionado() || puedeEditarEncabezado()) {
+    <form [formGroup]="headerForm" (ngSubmit)="guardarHeader()" style="margin-top: 14px;">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Titulo</label>
+          <input class="input" type="text" formControlName="titulo" placeholder="Ej. Reposicion laptops equipo soporte" />
         </div>
-        <button type="button" class="close" (click)="cerrarPanel()">&times;</button>
+        <div class="form-group">
+          <label>Fecha Solicitud</label>
+          <input class="input" type="date" formControlName="fecha_solicitud" />
+        </div>
       </div>
 
-      <!-- Encabezado: titulo / fecha de solicitud -->
-      @if (!carritoSeleccionado() || puedeEditarEncabezado()) {
-        <form [formGroup]="headerForm" (ngSubmit)="guardarHeader()" class="card" style="margin-bottom: 20px;">
-          <h3>{{ carritoSeleccionado() ? 'Datos de la solicitud' : 'Nueva solicitud de compra' }}</h3>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-accent btn-sm" [disabled]="headerForm.invalid || guardandoHeader()">
+          {{ guardandoHeader() ? 'Guardando...' : (carritoSeleccionado() ? 'Guardar cambios' : 'Crear carrito') }}
+        </button>
+      </div>
+    </form>
+  }
 
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Titulo</label>
-            <input class="input" type="text" formControlName="titulo" placeholder="Ej. Reposicion laptops equipo soporte" />
-          </div>
+  @if (carritoSeleccionado(); as carrito) {
+    <!-- Avance de estado: un solo boton con el UNICO siguiente estado valido -->
+    @if (siguienteEstado() && menu.tienePermiso('carrito_compras', 'editar')) {
+      <div class="form-actions" style="margin: 16px 0;">
+        <button type="button" class="btn btn-accent" [disabled]="avanzando()" (click)="avanzar()">
+          {{ avanzando() ? 'Procesando...' : etiquetaAvance() }}
+        </button>
+      </div>
+    }
 
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Fecha Solicitud</label>
-            <input class="input" type="date" formControlName="fecha_solicitud" />
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-accent btn-sm" [disabled]="headerForm.invalid || guardandoHeader()">
-              {{ guardandoHeader() ? 'Guardando...' : (carritoSeleccionado() ? 'Guardar cambios' : 'Crear carrito') }}
-            </button>
-          </div>
-        </form>
-      }
-
-      @if (carritoSeleccionado(); as carrito) {
-        <!-- Avance de estado: un solo boton con el UNICO siguiente estado valido -->
-        @if (siguienteEstado() && menu.tienePermiso('carrito_compras', 'editar')) {
-          <div class="form-actions" style="margin-bottom: 20px;">
-            <button type="button" class="btn btn-accent" [disabled]="avanzando()" (click)="avanzar()">
-              {{ avanzando() ? 'Procesando...' : etiquetaAvance() }}
-            </button>
-          </div>
-        }
-
-        <!-- Formulario para agregar linea (solo en_construccion) -->
+    <!-- Lineas del carrito -->
+    <div style="margin-top: 16px;">
+      <div class="flex items-center gap-8" style="justify-content: space-between;">
+        <h3>Equipos en esta solicitud</h3>
         @if (puedeEditarLineas() && menu.tienePermiso('carrito_compras', 'crear')) {
-          <form [formGroup]="detalleForm" (ngSubmit)="guardarDetalle()" class="card" style="margin-bottom: 20px;">
-            <h3>Agregar Equipo</h3>
-
-            <div class="form-grid" style="margin-top: 10px;">
-              <div class="form-group">
-                <label>Categoria</label>
-                <select class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
-                  <option value="">Seleccionar...</option>
-                  @for (cat of categorias(); track cat.id) {
-                    <option [value]="cat.id">{{ cat.nombre }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Producto</label>
-                <select class="input" formControlName="producto_id" (change)="onProductoChange()">
-                  <option value="">Seleccionar...</option>
-                  @for (p of productosDeCategoria(); track p.id) {
-                    <option [value]="p.id">{{ p.nombre }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid" style="margin-top: 10px;">
-              <div class="form-group">
-                <label>Marca</label>
-                <input class="input" type="text" formControlName="marca" />
-              </div>
-              <div class="form-group">
-                <label>Modelo</label>
-                <input class="input" type="text" formControlName="modelo" />
-              </div>
-            </div>
-
-            <div class="form-grid" style="margin-top: 10px;">
-              <div class="form-group">
-                <label>Proveedor</label>
-                <select class="input" formControlName="proveedor_id">
-                  <option value="">Sin especificar</option>
-                  @for (p of proveedores(); track p.id) {
-                    <option [value]="p.id">{{ p.nombre }}</option>
-                  }
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Cantidad Propuesta</label>
-                <input class="input" type="number" min="1" formControlName="cantidad_propuesta" />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 10px;">
-              <label>URL del producto</label>
-              <input class="input" type="text" formControlName="url" placeholder="https://..." />
-            </div>
-
-            <div class="form-group" style="margin-top: 10px;">
-              <label>Observacion</label>
-              <textarea class="input" rows="2" formControlName="observacion"></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-accent btn-sm" [disabled]="detalleForm.invalid || guardandoDetalle()">
-                {{ guardandoDetalle() ? 'Guardando...' : '+ Agregar linea' }}
-              </button>
-            </div>
-          </form>
+          <button type="button" class="btn btn-accent btn-sm" (click)="abrirPopupLinea()">+ Agregar equipo</button>
         }
+      </div>
 
-        <!-- Lineas del carrito -->
-        <div>
-          <h3>Equipos en esta solicitud</h3>
-
-          @if (cargandoDetalles()) {
-            <div class="desc" style="padding: 16px 0;">Cargando lineas...</div>
-          } @else {
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-              @for (d of detalles(); track d.id) {
-                <div class="card" style="padding: 12px 14px;">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                    <div>
-                      <div style="font-size: 15px; font-weight: 700; color: var(--text-heading);">
-                        {{ d.marca }} {{ d.modelo }}
-                        @if (d.url) {
-                          <a [href]="d.url" target="_blank" rel="noopener" title="Abrir enlace" style="margin-left: 6px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-                          </a>
-                        }
-                      </div>
-                      <div class="desc" style="margin-top: 2px;">
-                        {{ d.categoria_nombre }} &middot; {{ d.producto_nombre }}
-                        @if (d.proveedor_nombre) { &middot; {{ d.proveedor_nombre }} }
-                      </div>
-                      @if (d.observacion && !puedeCargarAprobado()) {
-                        <div class="desc" style="font-style: italic; margin-top: 2px;">{{ d.observacion }}</div>
-                      }
-                    </div>
-
-                    @if (puedeEditarLineas() && menu.tienePermiso('carrito_compras', 'eliminar')) {
-                      <button type="button" class="btn-icon btn-icon-danger" (click)="eliminarDetalle(d)" title="Eliminar linea" aria-label="Eliminar linea">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                      </button>
+      @if (cargandoDetalles()) {
+        <div class="desc" style="padding: 16px 0;">Cargando lineas...</div>
+      } @else {
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          @for (d of detalles(); track d.id) {
+            <div class="card" style="padding: 12px 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                <div class="row-clickable" style="flex: 1;" (click)="puedeEditarLineas() && abrirPopupLinea(d)">
+                  <div style="font-size: 15px; font-weight: 700; color: var(--text-heading);">
+                    {{ d.marca }} {{ d.modelo }}
+                    @if (d.url) {
+                      <a [href]="d.url" target="_blank" rel="noopener" title="Abrir enlace" (click)="$event.stopPropagation()" style="margin-left: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                      </a>
                     }
                   </div>
-
-                  <div class="form-grid" style="margin-top: 10px;">
-                    <div class="form-group">
-                      <label style="font-size: 11px;">Cantidad Propuesta</label>
-                      <div>{{ d.cantidad_propuesta }}</div>
-                    </div>
-                    <div class="form-group">
-                      <label style="font-size: 11px;">Cantidad Aprobada</label>
-                      @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
-                        <input class="input" type="number" min="0" [value]="d.cantidad_aprobada ?? ''" (blur)="guardarCantidadAprobada(d, $any($event.target).value)" />
-                      } @else {
-                        <div>{{ d.cantidad_aprobada ?? '-' }}</div>
-                      }
-                    </div>
+                  <div class="desc" style="margin-top: 2px;">
+                    {{ d.categoria_nombre }} &middot; {{ d.producto_nombre }}
+                    @if (d.proveedor_nombre) { &middot; {{ d.proveedor_nombre }} }
                   </div>
-
-                  @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
-                    <div class="form-group" style="margin-top: 10px;">
-                      <label style="font-size: 11px;">Observacion</label>
-                      <textarea class="input" rows="2" [value]="d.observacion || ''" (blur)="guardarObservacionDetalle(d, $any($event.target).value)"></textarea>
-                    </div>
+                  @if (d.observacion && !puedeCargarAprobado()) {
+                    <div class="desc" style="font-style: italic; margin-top: 2px;">{{ d.observacion }}</div>
                   }
                 </div>
-              } @empty {
-                <div class="empty-state">No se han agregado equipos a esta solicitud.</div>
+
+                @if (puedeEditarLineas() && menu.tienePermiso('carrito_compras', 'eliminar')) {
+                  <button type="button" class="btn-icon btn-icon-danger" (click)="eliminarDetalle(d)" title="Eliminar linea" aria-label="Eliminar linea">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                }
+              </div>
+
+              <div class="form-grid" style="margin-top: 10px;">
+                <div class="form-group">
+                  <label style="font-size: 11px;">Cantidad Propuesta</label>
+                  <div>{{ d.cantidad_propuesta }}</div>
+                </div>
+                <div class="form-group">
+                  <label style="font-size: 11px;">Cantidad Aprobada</label>
+                  @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
+                    <input class="input" type="number" min="0" [value]="d.cantidad_aprobada ?? ''" (blur)="guardarCantidadAprobada(d, $any($event.target).value)" />
+                  } @else {
+                    <div>{{ d.cantidad_aprobada ?? '-' }}</div>
+                  }
+                </div>
+              </div>
+
+              @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
+                <div class="form-group" style="margin-top: 10px;">
+                  <label style="font-size: 11px;">Observacion</label>
+                  <textarea class="input" rows="2" [value]="d.observacion || ''" (blur)="guardarObservacionDetalle(d, $any($event.target).value)"></textarea>
+                </div>
               }
             </div>
+          } @empty {
+            <div class="empty-state">No se han agregado equipos a esta solicitud.</div>
           }
         </div>
       }
+    </div>
+  }
+</div>
+
+<!-- POPUP: agregar/editar una linea (equipo a comprar) -->
+@if (popupLineaAbierto()) {
+  <div class="modal-overlay" (click)="cerrarPopupLinea()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ lineaEdicion() ? 'Editar equipo' : 'Agregar equipo' }}</h2>
+        <button type="button" class="close" (click)="cerrarPopupLinea()">&times;</button>
+      </div>
+
+      <form [formGroup]="detalleForm" (ngSubmit)="guardarDetalle()">
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Categoria</label>
+            <select class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
+              <option value="">Seleccionar...</option>
+              @for (cat of categorias(); track cat.id) {
+                <option [value]="cat.id">{{ cat.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Producto</label>
+            <select class="input" formControlName="producto_id" (change)="onProductoChange()">
+              <option value="">Seleccionar...</option>
+              @for (p of productosDeCategoria(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Marca</label>
+            <input class="input" type="text" formControlName="marca" />
+          </div>
+          <div class="form-group">
+            <label>Modelo</label>
+            <input class="input" type="text" formControlName="modelo" />
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Proveedor</label>
+            <select class="input" formControlName="proveedor_id">
+              <option value="">Sin especificar</option>
+              @for (p of proveedores(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cantidad Propuesta</label>
+            <input class="input" type="number" min="1" formControlName="cantidad_propuesta" />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>URL del producto</label>
+          <input class="input" type="text" formControlName="url" placeholder="https://..." />
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Observacion</label>
+          <textarea class="input" rows="2" formControlName="observacion"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-accent btn-sm" [disabled]="detalleForm.invalid || guardandoDetalle()">
+            {{ guardandoDetalle() ? 'Guardando...' : (lineaEdicion() ? 'Guardar cambios' : '+ Agregar linea') }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 }

@@ -46,21 +46,65 @@ const CLASES_BADGE_ESTADO: Record<EstadoCarrito, string> = {
 export class CarritosComponent implements OnInit {
   etiquetasEstado = ETIQUETAS_ESTADO;
   clasesBadgeEstado = CLASES_BADGE_ESTADO;
+  estadosFiltro = ORDEN_ESTADOS;
 
   carritos = signal<Carrito[]>([]);
   categorias = signal<Categoria[]>([]);
   productos = signal<Producto[]>([]);
   proveedores = signal<Proveedor[]>([]);
 
-  busqueda = signal('');
   cargando = signal(false);
 
+  // -------------------------------------------------------------
+  // LISTA: filtros por columna (en el encabezado de la tabla)
+  // -------------------------------------------------------------
+
+  filtroTitulo = signal('');
+  filtroFechaSolicitud = signal('');
+  filtroEstado = signal('');
+  filtroFechaAprobacion = signal('');
+  filtroLineas = signal('');
+  filtroCantPropuesta = signal('');
+  filtroCantAprobada = signal('');
+  filtroCreadoPor = signal('');
+
+  hayFiltros = computed(() =>
+    !!(this.filtroTitulo() || this.filtroFechaSolicitud() || this.filtroEstado() || this.filtroFechaAprobacion() ||
+       this.filtroLineas() || this.filtroCantPropuesta() || this.filtroCantAprobada() || this.filtroCreadoPor())
+  );
+
+  limpiarFiltros(): void {
+    this.filtroTitulo.set('');
+    this.filtroFechaSolicitud.set('');
+    this.filtroEstado.set('');
+    this.filtroFechaAprobacion.set('');
+    this.filtroLineas.set('');
+    this.filtroCantPropuesta.set('');
+    this.filtroCantAprobada.set('');
+    this.filtroCreadoPor.set('');
+  }
+
   carritosFiltrados = computed(() => {
-    const q = this.busqueda().trim().toLowerCase();
-    if (!q) return this.carritos();
-    return this.carritos().filter((c) =>
-      [c.titulo, this.etiquetasEstado[c.estado], c.creado_por_nombre].some((v) => (v || '').toLowerCase().includes(q))
-    );
+    const t = this.filtroTitulo().trim().toLowerCase();
+    const fs = this.filtroFechaSolicitud().trim().toLowerCase();
+    const est = this.filtroEstado();
+    const fa = this.filtroFechaAprobacion().trim().toLowerCase();
+    const lin = this.filtroLineas().trim().toLowerCase();
+    const cp = this.filtroCantPropuesta().trim().toLowerCase();
+    const ca = this.filtroCantAprobada().trim().toLowerCase();
+    const cre = this.filtroCreadoPor().trim().toLowerCase();
+
+    return this.carritos().filter((c) => {
+      if (t && !c.titulo.toLowerCase().includes(t)) return false;
+      if (fs && !(c.fecha_solicitud || '').toLowerCase().includes(fs)) return false;
+      if (est && c.estado !== est) return false;
+      if (fa && !(c.fecha_aprobacion || '').toLowerCase().includes(fa)) return false;
+      if (lin && !String(c.detalles_count ?? 0).includes(lin)) return false;
+      if (cp && !String(c.cantidad_propuesta_total ?? 0).includes(cp)) return false;
+      if (ca && !String(c.cantidad_aprobada_total ?? 0).includes(ca)) return false;
+      if (cre && !(c.creado_por_nombre || '').toLowerCase().includes(cre)) return false;
+      return true;
+    });
   });
 
   constructor(
@@ -94,21 +138,24 @@ export class CarritosComponent implements OnInit {
   eliminarCarrito(c: Carrito): void {
     if (!confirm(`¿Eliminar el carrito "${c.titulo}"? Esta accion no se puede deshacer.`)) return;
     this.srv.eliminar(c.id).subscribe({
-      next: () => this.cargar(),
+      next: () => {
+        if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
+        this.cargar();
+      },
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar el carrito'),
     });
   }
 
   // -------------------------------------------------------------
-  // DRAWER: encabezado + lineas de un carrito
+  // DETALLE DE LA SOLICITUD -- seccion inline (siempre visible debajo de
+  // la lista, no un popup) que muestra el carrito elegido o el formulario
+  // de uno nuevo. Mismo patron que Equipos Asignados.
   // -------------------------------------------------------------
 
-  panelAbierto = signal(false);
   carritoSeleccionado = signal<Carrito | null>(null);
   detalles = signal<CarritoDetalle[]>([]);
   cargandoDetalles = signal(false);
   guardandoHeader = signal(false);
-  guardandoDetalle = signal(false);
   avanzando = signal(false);
 
   headerForm = this.fb.group({
@@ -139,22 +186,12 @@ export class CarritosComponent implements OnInit {
     this.carritoSeleccionado.set(null);
     this.detalles.set([]);
     this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO() });
-    this.resetDetalleForm();
-    this.panelAbierto.set(true);
   }
 
   abrirCarrito(c: Carrito): void {
-    this.panelAbierto.set(true);
     this.carritoSeleccionado.set(c);
     this.headerForm.reset({ titulo: c.titulo, fecha_solicitud: c.fecha_solicitud?.substring(0, 10) });
-    this.resetDetalleForm();
     this.cargarDetalles(c.id);
-  }
-
-  cerrarPanel(): void {
-    this.panelAbierto.set(false);
-    this.carritoSeleccionado.set(null);
-    this.detalles.set([]);
   }
 
   cargarDetalles(carritoId: string): void {
@@ -207,9 +244,13 @@ export class CarritosComponent implements OnInit {
   }
 
   // -------------------------------------------------------------
-  // LINEA DE DETALLE (categoria -> producto -> auto-completa marca/
-  // modelo, igual que Equipos Asignados)
+  // POPUP: agregar/editar una linea (equipo a comprar). Categoria ->
+  // producto -> auto-completa marca/modelo, igual que Equipos Asignados.
   // -------------------------------------------------------------
+
+  popupLineaAbierto = signal(false);
+  lineaEdicion = signal<CarritoDetalle | null>(null);
+  guardandoDetalle = signal(false);
 
   detalleForm = this.fb.group({
     categoria_id: ['', Validators.required],
@@ -229,11 +270,34 @@ export class CarritosComponent implements OnInit {
     return catId ? this.productos().filter((p) => p.categoria_id === catId) : [];
   });
 
-  resetDetalleForm(): void {
-    this.categoriaIdForm.set(null);
-    this.detalleForm.reset({
-      categoria_id: '', producto_id: '', marca: '', modelo: '', url: '', proveedor_id: '', cantidad_propuesta: 1, observacion: '',
-    });
+  abrirPopupLinea(linea?: CarritoDetalle): void {
+    if (linea) {
+      this.lineaEdicion.set(linea);
+      const catId = this.productos().find((p) => p.id === linea.producto_id)?.categoria_id ?? null;
+      this.categoriaIdForm.set(catId);
+      this.detalleForm.reset({
+        categoria_id: catId ? String(catId) : '',
+        producto_id: String(linea.producto_id),
+        marca: linea.marca,
+        modelo: linea.modelo,
+        url: linea.url || '',
+        proveedor_id: linea.proveedor_id || '',
+        cantidad_propuesta: linea.cantidad_propuesta,
+        observacion: linea.observacion || '',
+      });
+    } else {
+      this.lineaEdicion.set(null);
+      this.categoriaIdForm.set(null);
+      this.detalleForm.reset({
+        categoria_id: '', producto_id: '', marca: '', modelo: '', url: '', proveedor_id: '', cantidad_propuesta: 1, observacion: '',
+      });
+    }
+    this.popupLineaAbierto.set(true);
+  }
+
+  cerrarPopupLinea(): void {
+    this.popupLineaAbierto.set(false);
+    this.lineaEdicion.set(null);
   }
 
   onCategoriaChange(): void {
@@ -268,16 +332,18 @@ export class CarritosComponent implements OnInit {
       observacion: raw.observacion || null,
     };
 
-    this.srv.crearDetalle(carrito.id, data as any).subscribe({
+    const edicion = this.lineaEdicion();
+    const obs = edicion ? this.srv.actualizarDetalle(carrito.id, edicion.id, data as any) : this.srv.crearDetalle(carrito.id, data as any);
+    obs.subscribe({
       next: () => {
         this.guardandoDetalle.set(false);
-        this.resetDetalleForm();
+        this.cerrarPopupLinea();
         this.cargarDetalles(carrito.id);
         this.cargar();
       },
       error: (err) => {
         this.guardandoDetalle.set(false);
-        alert(err.error?.mensaje || 'Error al agregar la linea');
+        alert(err.error?.mensaje || 'Error al guardar la linea');
       },
     });
   }
