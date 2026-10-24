@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CarritosService } from '../../core/services/carritos.service';
 import { CategoriasService } from '../../core/services/categorias.service';
@@ -117,6 +118,7 @@ export class CarritosComponent implements OnInit {
     private productosSrv: ProductosService,
     private proveedoresSrv: ProveedoresService,
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     public menu: MenuService
   ) {}
 
@@ -125,6 +127,16 @@ export class CarritosComponent implements OnInit {
     this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data));
     this.productosSrv.listar().subscribe((data) => this.productos.set(data));
     this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
+
+    // Soporta abrir un carrito puntual via ?id=... -- usado por el link
+    // que se manda por correo (ver enviarPorCorreo).
+    const idParam = this.route.snapshot.queryParamMap.get('id');
+    if (idParam) {
+      this.srv.obtener(idParam).subscribe({
+        next: (c) => this.abrirCarrito(c),
+        error: () => {},
+      });
+    }
   }
 
   cargar(): void {
@@ -137,6 +149,16 @@ export class CarritosComponent implements OnInit {
 
   private hoyISO(): string {
     return new Date().toISOString().substring(0, 10);
+  }
+
+  // mailto solo admite abrir el cliente de correo local (mismo patron ya
+  // usado en Servicios y Proveedores). El link lleva de vuelta a este
+  // mismo carrito via ?id=... (ver ngOnInit).
+  enviarPorCorreo(c: Carrito): void {
+    const tipo = c.estado === 'en_revision' ? 'Revision' : c.estado === 'aprobada' ? 'Aprobacion' : 'Revision/Aprobacion';
+    const asunto = `Solicitud de ${tipo} - ID ${this.idCorto(c.id)}`;
+    const url = `${window.location.origin}/carrito-compras?id=${c.id}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(url)}`;
   }
 
   eliminarCarrito(c: Carrito): void {
