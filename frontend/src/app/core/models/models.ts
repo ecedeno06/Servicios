@@ -571,9 +571,8 @@ export interface Carrito {
   modificado_por_nombre?: string | null;
   created_at: string;
   updated_at: string;
-  detalles_count?: number;
   cantidad_propuesta_total?: number;
-  cantidad_aprobada_total?: number;
+  costo_estimado_total?: number;
   // Opcional: solo llega poblada cuando se pide obtenerPorId().
   detalles?: CarritoDetalle[];
 }

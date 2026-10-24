@@ -7,9 +7,8 @@ const SELECT_BASE = `
     c.*,
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre,
-    (select count(*)::int from carrito_detalles d where d.carrito_id = c.id) as detalles_count,
     (select coalesce(sum(d.cantidad_propuesta), 0)::int from carrito_detalles d where d.carrito_id = c.id) as cantidad_propuesta_total,
-    (select coalesce(sum(d.cantidad_aprobada), 0)::int from carrito_detalles d where d.carrito_id = c.id) as cantidad_aprobada_total
+    (select coalesce(sum(d.costo_estimado), 0)::numeric from carrito_detalles d where d.carrito_id = c.id) as costo_estimado_total
   from carritos c
   join usuarios uc on uc.id = c.creado_por
   left join usuarios um on um.id = c.modificado_por
