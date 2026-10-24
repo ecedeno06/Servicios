@@ -140,9 +140,27 @@ export class CarritosComponent implements OnInit {
     this.srv.eliminar(c.id).subscribe({
       next: () => {
         if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
-        this.cargar();
+        this.carritos.update((arr) => arr.filter((x) => x.id !== c.id));
       },
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar el carrito'),
+    });
+  }
+
+  // Refresca encabezado + lineas del carrito abierto (con sus totales ya
+  // recalculados por el backend) y actualiza su fila en la lista -- todo
+  // en una sola llamada y sin tocar cargando()/cargandoDetalles(), para
+  // que una edicion rapida (cantidad aprobada, agregar/borrar linea, etc.)
+  // no haga parpadear toda la pantalla como si fuera una carga inicial.
+  private refrescarCarritoActual(): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    this.srv.obtener(carrito.id).subscribe({
+      next: (actualizado) => {
+        this.carritoSeleccionado.set(actualizado);
+        this.detalles.set(actualizado.detalles ?? []);
+        this.carritos.update((arr) => arr.map((x) => (x.id === actualizado.id ? actualizado : x)));
+      },
+      error: () => {},
     });
   }
 
@@ -243,10 +261,12 @@ export class CarritosComponent implements OnInit {
       next: (c) => {
         this.guardandoHeader.set(false);
         this.carritoSeleccionado.set(c);
-        this.cargar();
         if (esNuevo) {
+          this.carritos.update((arr) => [c, ...arr]);
           this.cargarDetalles(c.id);
           this.cargarHistorico(c.id);
+        } else {
+          this.carritos.update((arr) => arr.map((x) => (x.id === c.id ? c : x)));
         }
       },
       error: (err) => {
@@ -268,7 +288,7 @@ export class CarritosComponent implements OnInit {
         this.avanzando.set(false);
         this.carritoSeleccionado.set(actualizado);
         this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
-        this.cargar();
+        this.carritos.update((arr) => arr.map((x) => (x.id === actualizado.id ? actualizado : x)));
         this.cargarHistorico(actualizado.id);
       },
       error: (err) => {
@@ -290,7 +310,7 @@ export class CarritosComponent implements OnInit {
         this.avanzando.set(false);
         this.carritoSeleccionado.set(actualizado);
         this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
-        this.cargar();
+        this.carritos.update((arr) => arr.map((x) => (x.id === actualizado.id ? actualizado : x)));
         this.cargarHistorico(actualizado.id);
       },
       error: (err) => {
@@ -398,8 +418,7 @@ export class CarritosComponent implements OnInit {
       next: () => {
         this.guardandoDetalle.set(false);
         this.cerrarPopupLinea();
-        this.cargarDetalles(carrito.id);
-        this.cargar();
+        this.refrescarCarritoActual();
       },
       error: (err) => {
         this.guardandoDetalle.set(false);
@@ -413,7 +432,7 @@ export class CarritosComponent implements OnInit {
     if (!carrito) return;
     const cantidad = valor === '' ? null : Number(valor);
     this.srv.actualizarDetalle(carrito.id, d.id, { cantidad_aprobada: cantidad } as any).subscribe({
-      next: () => { this.cargarDetalles(carrito.id); this.cargar(); },
+      next: () => this.refrescarCarritoActual(),
       error: (err) => alert(err.error?.mensaje || 'Error al guardar la cantidad aprobada'),
     });
   }
@@ -421,8 +440,10 @@ export class CarritosComponent implements OnInit {
   guardarObservacionDetalle(d: CarritoDetalle, valor: string): void {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
+    // La observacion no afecta ningun total -- se actualiza la linea en
+    // el propio array local con la respuesta, sin recargar nada.
     this.srv.actualizarDetalle(carrito.id, d.id, { observacion: valor || null } as any).subscribe({
-      next: () => this.cargarDetalles(carrito.id),
+      next: (actualizada) => this.detalles.update((arr) => arr.map((x) => (x.id === actualizada.id ? actualizada : x))),
       error: (err) => alert(err.error?.mensaje || 'Error al guardar la observacion'),
     });
   }
@@ -432,7 +453,7 @@ export class CarritosComponent implements OnInit {
     if (!carrito) return;
     if (!confirm('¿Eliminar esta linea del carrito?')) return;
     this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
-      next: () => { this.cargarDetalles(carrito.id); this.cargar(); },
+      next: () => this.refrescarCarritoActual(),
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar la linea'),
     });
   }
