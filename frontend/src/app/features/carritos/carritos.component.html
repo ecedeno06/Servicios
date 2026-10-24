@@ -185,6 +185,10 @@
                     <div>{{ d.cantidad_aprobada ?? '-' }}</div>
                   }
                 </div>
+                <div class="form-group">
+                  <label style="font-size: 11px;">Costo Estimado</label>
+                  <div>{{ d.costo_estimado != null ? (d.costo_estimado | currency:'USD':'symbol':'1.2-2') : '-' }}</div>
+                </div>
               </div>
 
               @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
@@ -261,9 +265,15 @@
           </div>
         </div>
 
-        <div class="form-group" style="margin-top: 10px;">
-          <label>URL del producto</label>
-          <input class="input" type="text" formControlName="url" placeholder="https://..." />
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>URL del producto</label>
+            <input class="input" type="text" formControlName="url" placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label>Costo Estimado (USD)</label>
+            <input class="input" type="number" min="0" step="0.01" formControlName="costo_estimado" placeholder="0.00" />
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 10px;">

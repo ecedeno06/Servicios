@@ -592,6 +592,7 @@ export interface CarritoDetalle {
   proveedor_nombre?: string | null;
   cantidad_propuesta: number;
   cantidad_aprobada?: number | null;
+  costo_estimado?: number | null;
   observacion?: string | null;
   creado_por: string;
   creado_por_nombre?: string;

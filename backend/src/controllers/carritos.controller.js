@@ -183,12 +183,15 @@ async function crearDetalle(req, res, next) {
       return res.status(400).json({ mensaje: 'Solo se pueden agregar lineas mientras el carrito esta "En Construccion"' });
     }
 
-    const { producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, observacion } = req.body;
+    const { producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, costo_estimado, observacion } = req.body;
     if (!producto_id || !marca || !marca.trim() || !modelo || !modelo.trim()) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
     }
     if (!cantidad_propuesta || Number(cantidad_propuesta) <= 0) {
       return res.status(400).json({ mensaje: 'La cantidad propuesta debe ser mayor a cero' });
+    }
+    if (costo_estimado !== undefined && costo_estimado !== null && Number(costo_estimado) < 0) {
+      return res.status(400).json({ mensaje: 'El costo estimado no puede ser negativo' });
     }
 
     const { rows: prod } = await pool.query('select id from productos where id = $1', [producto_id]);
@@ -204,8 +207,8 @@ async function crearDetalle(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into carrito_detalles
-         (carrito_id, producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, observacion, creado_por)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (carrito_id, producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, costo_estimado, observacion, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        returning id`,
       [
         req.params.id,
@@ -215,6 +218,7 @@ async function crearDetalle(req, res, next) {
         url ? url.trim() : null,
         proveedor_id || null,
         cantidad_propuesta,
+        costo_estimado ?? null,
         observacion ? observacion.trim() : null,
         req.usuario.id,
       ]
@@ -237,12 +241,15 @@ async function actualizarDetalle(req, res, next) {
     if (!det[0]) return res.status(404).json({ mensaje: 'Linea no encontrada' });
 
     if (carrito.estado === 'en_construccion') {
-      const { producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, observacion } = req.body;
+      const { producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, costo_estimado, observacion } = req.body;
       if (!producto_id || !marca || !marca.trim() || !modelo || !modelo.trim()) {
         return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
       }
       if (!cantidad_propuesta || Number(cantidad_propuesta) <= 0) {
         return res.status(400).json({ mensaje: 'La cantidad propuesta debe ser mayor a cero' });
+      }
+      if (costo_estimado !== undefined && costo_estimado !== null && Number(costo_estimado) < 0) {
+        return res.status(400).json({ mensaje: 'El costo estimado no puede ser negativo' });
       }
 
       const { rows: prod } = await pool.query('select id from productos where id = $1', [producto_id]);
@@ -259,8 +266,8 @@ async function actualizarDetalle(req, res, next) {
       await pool.query(
         `update carrito_detalles set
            producto_id = $1, marca = $2, modelo = $3, url = $4, proveedor_id = $5,
-           cantidad_propuesta = $6, observacion = $7, modificado_por = $8
-         where id = $9`,
+           cantidad_propuesta = $6, costo_estimado = $7, observacion = $8, modificado_por = $9
+         where id = $10`,
         [
           producto_id,
           marca.trim(),
@@ -268,6 +275,7 @@ async function actualizarDetalle(req, res, next) {
           url ? url.trim() : null,
           proveedor_id || null,
           cantidad_propuesta,
+          costo_estimado ?? null,
           observacion ? observacion.trim() : null,
           req.usuario.id,
           req.params.detalleId,

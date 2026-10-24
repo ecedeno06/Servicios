@@ -260,6 +260,7 @@ export class CarritosComponent implements OnInit {
     url: ['', Validators.pattern(/^https?:\/\/.+/)],
     proveedor_id: [''],
     cantidad_propuesta: [1, [Validators.required, Validators.min(1)]],
+    costo_estimado: ['', Validators.min(0)],
     observacion: [''],
   });
 
@@ -283,13 +284,14 @@ export class CarritosComponent implements OnInit {
         url: linea.url || '',
         proveedor_id: linea.proveedor_id || '',
         cantidad_propuesta: linea.cantidad_propuesta,
+        costo_estimado: linea.costo_estimado != null ? String(linea.costo_estimado) : '',
         observacion: linea.observacion || '',
       });
     } else {
       this.lineaEdicion.set(null);
       this.categoriaIdForm.set(null);
       this.detalleForm.reset({
-        categoria_id: '', producto_id: '', marca: '', modelo: '', url: '', proveedor_id: '', cantidad_propuesta: 1, observacion: '',
+        categoria_id: '', producto_id: '', marca: '', modelo: '', url: '', proveedor_id: '', cantidad_propuesta: 1, costo_estimado: '', observacion: '',
       });
     }
     this.popupLineaAbierto.set(true);
@@ -329,6 +331,7 @@ export class CarritosComponent implements OnInit {
       url: raw.url || null,
       proveedor_id: raw.proveedor_id || null,
       cantidad_propuesta: Number(raw.cantidad_propuesta),
+      costo_estimado: raw.costo_estimado === '' || raw.costo_estimado === null ? null : Number(raw.costo_estimado),
       observacion: raw.observacion || null,
     };
 
