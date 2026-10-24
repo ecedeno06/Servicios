@@ -564,6 +564,7 @@ export interface Carrito {
   titulo: string;
   fecha_solicitud: string;
   fecha_aprobacion?: string | null;
+  observacion?: string | null;
   estado: EstadoCarrito;
   creado_por: string;
   creado_por_nombre?: string;

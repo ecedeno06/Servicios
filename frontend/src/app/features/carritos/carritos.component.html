@@ -117,12 +117,29 @@
         </div>
       </div>
 
+      <div class="form-group" style="margin-top: 10px;">
+        <label>Observacion</label>
+        <textarea class="input" rows="2" formControlName="observacion" placeholder="Notas generales de la solicitud..."></textarea>
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-accent btn-sm" [disabled]="headerForm.invalid || guardandoHeader()">
           {{ guardandoHeader() ? 'Guardando...' : (carritoSeleccionado() ? 'Guardar cambios' : 'Crear carrito') }}
         </button>
       </div>
     </form>
+  }
+
+  <!-- Fuera de "En Construccion" el formulario de arriba se oculta (ya no
+       se puede editar) -- si hay observacion cargada, se sigue mostrando
+       aqui en solo lectura para que no desaparezca del detalle. -->
+  @if (carritoSeleccionado(); as carritoObs) {
+    @if (!puedeEditarEncabezado() && carritoObs.observacion) {
+      <div class="form-group" style="margin-top: 14px;">
+        <label>Observacion</label>
+        <div class="desc" style="white-space: pre-wrap;">{{ carritoObs.observacion }}</div>
+      </div>
+    }
   }
 
   @if (carritoSeleccionado(); as carrito) {

@@ -11,8 +11,8 @@ export class CarritosService {
 
   listar(): Observable<Carrito[]> { return this.http.get<Carrito[]>(this.base); }
   obtener(id: string): Observable<Carrito> { return this.http.get<Carrito>(`${this.base}/${id}`); }
-  crear(data: { titulo: string; fecha_solicitud?: string }): Observable<Carrito> { return this.http.post<Carrito>(this.base, data); }
-  actualizar(id: string, data: { titulo: string; fecha_solicitud?: string }): Observable<Carrito> {
+  crear(data: { titulo: string; fecha_solicitud?: string; observacion?: string | null }): Observable<Carrito> { return this.http.post<Carrito>(this.base, data); }
+  actualizar(id: string, data: { titulo: string; fecha_solicitud?: string; observacion?: string | null }): Observable<Carrito> {
     return this.http.put<Carrito>(`${this.base}/${id}`, data);
   }
   eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> {

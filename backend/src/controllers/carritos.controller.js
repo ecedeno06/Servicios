@@ -74,16 +74,16 @@ async function registrarMovimiento(carritoId, estadoAnterior, estadoNuevo, usuar
 
 async function crear(req, res, next) {
   try {
-    const { titulo, fecha_solicitud } = req.body;
+    const { titulo, fecha_solicitud, observacion } = req.body;
     if (!titulo || !titulo.trim()) {
       return res.status(400).json({ mensaje: 'El titulo es requerido' });
     }
 
     const { rows } = await pool.query(
-      `insert into carritos (empresa_id, titulo, fecha_solicitud, creado_por)
-       values ($1, $2, coalesce($3, current_date), $4)
+      `insert into carritos (empresa_id, titulo, fecha_solicitud, observacion, creado_por)
+       values ($1, $2, coalesce($3, current_date), $4, $5)
        returning id`,
-      [req.empresaId, titulo.trim(), fecha_solicitud || null, req.usuario.id]
+      [req.empresaId, titulo.trim(), fecha_solicitud || null, observacion ? observacion.trim() : null, req.usuario.id]
     );
     await registrarMovimiento(rows[0].id, null, 'en_construccion', req.usuario.id);
 
@@ -94,7 +94,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { titulo, fecha_solicitud } = req.body;
+    const { titulo, fecha_solicitud, observacion } = req.body;
     if (!titulo || !titulo.trim()) {
       return res.status(400).json({ mensaje: 'El titulo es requerido' });
     }
@@ -109,9 +109,9 @@ async function actualizar(req, res, next) {
     }
 
     await pool.query(
-      `update carritos set titulo = $1, fecha_solicitud = coalesce($2, fecha_solicitud), modificado_por = $3
-       where id = $4 and empresa_id = $5`,
-      [titulo.trim(), fecha_solicitud || null, req.usuario.id, req.params.id, req.empresaId]
+      `update carritos set titulo = $1, fecha_solicitud = coalesce($2, fecha_solicitud), observacion = $3, modificado_por = $4
+       where id = $5 and empresa_id = $6`,
+      [titulo.trim(), fecha_solicitud || null, observacion ? observacion.trim() : null, req.usuario.id, req.params.id, req.empresaId]
     );
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where c.id = $1`, [req.params.id]);

@@ -50,6 +50,7 @@ export interface CarritoPdfData {
   estadoColor: string; // hex, segun el estado
   fechaSolicitud: string; // ya formateada
   fechaAprobacion?: string | null; // ya formateada
+  observacion?: string | null;
   creadoPor?: string;
   actorUltimoEstado?: string | null; // quien registro el ultimo cambio de estado
   fechaUltimoEstado?: string | null; // ya formateada
@@ -156,8 +157,13 @@ export class CarritoPdfService {
             ],
           },
           layout: 'noBorders',
-          margin: [0, 0, 0, 14],
+          margin: [0, 0, 0, data.observacion ? 6 : 14],
         },
+
+        ...(data.observacion
+          ? [{ text: 'Observacion:', style: 'label', margin: [0, 0, 0, 2] as [number, number, number, number] },
+             { text: data.observacion, style: 'valor', margin: [0, 0, 0, 14] as [number, number, number, number] }]
+          : []),
 
         // Detalle de equipos
         { text: 'EQUIPOS DE LA SOLICITUD', style: 'subtitulo', margin: [0, 0, 0, 6] },

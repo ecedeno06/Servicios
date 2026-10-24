@@ -173,7 +173,8 @@ export class CarritosComponent implements OnInit {
     const tipo = c.estado === 'en_revision' ? 'Revision' : c.estado === 'aprobada' ? 'Aprobacion' : 'Revision/Aprobacion';
     const asunto = `Solicitud de ${tipo} - ID ${this.idCorto(c.id)}`;
     const url = `${window.location.origin}/carrito-compras?id=${c.id}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(url)}`;
+    const cuerpo = c.observacion ? `${url}\n\nObservacion: ${c.observacion}` : url;
+    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
   }
 
   eliminarCarrito(c: Carrito): void {
@@ -223,6 +224,7 @@ export class CarritosComponent implements OnInit {
   headerForm = this.fb.group({
     titulo: ['', Validators.required],
     fecha_solicitud: [this.hoyISO(), Validators.required],
+    observacion: [''],
   });
 
   siguienteEstado = computed<EstadoCarrito | null>(() => {
@@ -264,12 +266,12 @@ export class CarritosComponent implements OnInit {
     this.carritoSeleccionado.set(null);
     this.detalles.set([]);
     this.historico.set([]);
-    this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO() });
+    this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO(), observacion: '' });
   }
 
   abrirCarrito(c: Carrito): void {
     this.carritoSeleccionado.set(c);
-    this.headerForm.reset({ titulo: c.titulo, fecha_solicitud: c.fecha_solicitud?.substring(0, 10) });
+    this.headerForm.reset({ titulo: c.titulo, fecha_solicitud: c.fecha_solicitud?.substring(0, 10), observacion: c.observacion || '' });
     this.cargarDetalles(c.id);
     this.cargarHistorico(c.id);
   }
@@ -293,7 +295,7 @@ export class CarritosComponent implements OnInit {
   guardarHeader(): void {
     if (this.headerForm.invalid || this.guardandoHeader()) return;
     this.guardandoHeader.set(true);
-    const val = this.headerForm.getRawValue() as { titulo: string; fecha_solicitud: string };
+    const val = this.headerForm.getRawValue() as { titulo: string; fecha_solicitud: string; observacion: string };
     const actual = this.carritoSeleccionado();
 
     const esNuevo = !actual;
@@ -328,7 +330,7 @@ export class CarritosComponent implements OnInit {
       next: (actualizado) => {
         this.avanzando.set(false);
         this.carritoSeleccionado.set(actualizado);
-        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
+        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10), observacion: actualizado.observacion || '' });
         this.carritos.update((arr) => arr.map((x) => (x.id === actualizado.id ? actualizado : x)));
         this.cargarHistorico(actualizado.id);
       },
@@ -350,7 +352,7 @@ export class CarritosComponent implements OnInit {
       next: (actualizado) => {
         this.avanzando.set(false);
         this.carritoSeleccionado.set(actualizado);
-        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
+        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10), observacion: actualizado.observacion || '' });
         this.carritos.update((arr) => arr.map((x) => (x.id === actualizado.id ? actualizado : x)));
         this.cargarHistorico(actualizado.id);
       },
@@ -535,6 +537,7 @@ export class CarritosComponent implements OnInit {
       fechaSolicitud: formatearFecha(carrito.fecha_solicitud) || '-',
       fechaAprobacion: formatearFecha(carrito.fecha_aprobacion),
       creadoPor: carrito.creado_por_nombre,
+      observacion: carrito.observacion,
       actorUltimoEstado: ultimoMovimiento?.registrado_por_nombre || carrito.creado_por_nombre || null,
       fechaUltimoEstado: formatearFechaHora(ultimoMovimiento?.fecha_cambio) ?? formatearFechaHora(carrito.created_at),
       lineas: this.detalles().map((d) => ({
