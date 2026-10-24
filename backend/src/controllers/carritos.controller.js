@@ -8,7 +8,12 @@ const SELECT_BASE = `
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre,
     (select coalesce(sum(d.cantidad_propuesta), 0)::int from carrito_detalles d where d.carrito_id = c.id) as cantidad_propuesta_total,
-    (select coalesce(sum(d.costo_estimado), 0)::numeric from carrito_detalles d where d.carrito_id = c.id) as costo_estimado_total
+    -- Mientras no esta aprobada (o ya cerrada) el total se proyecta sobre
+    -- la cantidad PROPUESTA; una vez aprobada, sobre la cantidad
+    -- realmente APROBADA por linea -- pedido explicito.
+    (select coalesce(sum(
+       d.costo_estimado * (case when c.estado in ('aprobada', 'cerrada') then coalesce(d.cantidad_aprobada, 0) else d.cantidad_propuesta end)
+     ), 0)::numeric from carrito_detalles d where d.carrito_id = c.id) as costo_estimado_total
   from carritos c
   join usuarios uc on uc.id = c.creado_por
   left join usuarios um on um.id = c.modificado_por
