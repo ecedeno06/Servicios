@@ -1,6 +1,156 @@
 const { pool } = require('../config/db');
+const { enviarCorreo } = require('../utils/correo');
 
 const ORDEN_ESTADOS = ['en_construccion', 'en_revision', 'aprobada', 'cerrada'];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const ETIQUETAS_ESTADO = {
+  en_construccion: 'En Construccion',
+  en_revision: 'En Revision',
+  aprobada: 'Aprobada',
+  cerrada: 'Cerrada',
+};
+
+const COLOR_ESTADO = {
+  en_construccion: '#64748B',
+  en_revision: '#D97706',
+  aprobada: '#16A34A',
+  cerrada: '#64748B',
+};
+
+const PRIMARY = '#1F4E78';
+const LIGHT = '#D9E1F2';
+const GREY = '#EAEAEA';
+const GREY_TEXT = '#6B6B6B';
+
+function formatearMoneda(valor) {
+  return Number(valor ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatearFecha(fecha) {
+  if (!fecha) return null;
+  return new Date(fecha).toLocaleDateString('es', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatearFechaHora(fecha) {
+  if (!fecha) return null;
+  return new Date(fecha).toLocaleString('es', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function escapeHtml(texto) {
+  return String(texto ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function idCorto(id) {
+  return id.slice(0, 8).toUpperCase();
+}
+
+// Arma el mismo resumen visual que el PDF (encabezado con logo, barra de
+// titulo, datos, tabla de equipos, totales, historico) pero como HTML
+// incrustado en el cuerpo del correo -- los clientes de correo ignoran
+// <style>, asi que todo va con estilos inline y tablas.
+function construirHtmlCorreo({ empresa, carrito, detalles, historico, urlCarrito }) {
+  const estadoEtiqueta = ETIQUETAS_ESTADO[carrito.estado];
+  const estadoColor = COLOR_ESTADO[carrito.estado];
+  const ultimoMovimiento = historico[0];
+  const movimientosCronologicos = [...historico].reverse();
+
+  const filasLineas = detalles.map((d) => `
+    <tr>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.marca)} ${escapeHtml(d.modelo)}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.categoria_nombre || '-')}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.proveedor_nombre || '-')}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;text-align:center;">${d.cantidad_propuesta}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;text-align:center;">${d.cantidad_aprobada ?? '-'}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;text-align:right;">${d.costo_estimado != null ? formatearMoneda(d.costo_estimado) : '-'}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;text-align:right;font-weight:bold;background:${GREY};">${formatearMoneda((d.cantidad_aprobada ?? 0) * (d.costo_estimado ?? 0))}</td>
+    </tr>`).join('');
+
+  const filasMovimientos = movimientosCronologicos.map((h) => `
+    <tr>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${h.estado_anterior ? `${ETIQUETAS_ESTADO[h.estado_anterior]} -&gt; ${ETIQUETAS_ESTADO[h.estado_nuevo]}` : `Creado como ${ETIQUETAS_ESTADO[h.estado_nuevo]}`}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(h.registrado_por_nombre)}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${formatearFechaHora(h.fecha_cambio)}</td>
+    </tr>`).join('');
+
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:0 auto;color:#222;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+      <tr>
+        ${empresa?.logo ? `<td style="width:60px;"><img src="${empresa.logo}" width="50" height="50" style="object-fit:contain;" alt="" /></td>` : ''}
+        <td style="font-size:15px;font-weight:bold;color:${PRIMARY};vertical-align:middle;">${escapeHtml(empresa?.nombre || '')}</td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="10" cellspacing="0" style="background:${PRIMARY};margin-bottom:16px;">
+      <tr><td style="color:#fff;font-size:15px;font-weight:bold;text-align:center;">SOLICITUD DE COMPRA &middot; ID ${idCorto(carrito.id)}</td></tr>
+    </table>
+
+    <table width="100%" cellpadding="4" cellspacing="0" style="font-size:12.5px;margin-bottom:14px;">
+      <tr>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Titulo:</td>
+        <td colspan="3">${escapeHtml(carrito.titulo)}</td>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Estado:</td>
+        <td style="font-weight:bold;color:${estadoColor};white-space:nowrap;">${estadoEtiqueta}</td>
+      </tr>
+      <tr>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Fecha Solicitud:</td>
+        <td>${formatearFecha(carrito.fecha_solicitud) || '-'}</td>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Fecha Aprobacion:</td>
+        <td>${formatearFecha(carrito.fecha_aprobacion) || '-'}</td>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Creado por:</td>
+        <td>${escapeHtml(carrito.creado_por_nombre || '-')}</td>
+      </tr>
+      <tr>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Ultimo cambio por:</td>
+        <td>${escapeHtml(ultimoMovimiento?.registrado_por_nombre || carrito.creado_por_nombre || '-')}</td>
+        <td style="color:${GREY_TEXT};font-weight:bold;white-space:nowrap;">Fecha del cambio:</td>
+        <td colspan="3">${formatearFechaHora(ultimoMovimiento?.fecha_cambio || carrito.created_at) || '-'}</td>
+      </tr>
+    </table>
+
+    ${carrito.observacion ? `<p style="font-size:12.5px;margin:0 0 14px;"><strong style="color:${GREY_TEXT};">Observacion:</strong><br/>${escapeHtml(carrito.observacion)}</p>` : ''}
+
+    <h3 style="color:${PRIMARY};font-size:13px;margin:0 0 6px;">EQUIPOS DE LA SOLICITUD</h3>
+    ${detalles.length ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:14px;">
+      <tr style="background:${PRIMARY};">
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Equipo</th>
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Categoria</th>
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Proveedor</th>
+        <th style="padding:6px;color:#fff;font-size:11px;">Cant. Propuesta</th>
+        <th style="padding:6px;color:#fff;font-size:11px;">Cant. Aprobada</th>
+        <th style="padding:6px;color:#fff;font-size:11px;">Costo Unit.</th>
+        <th style="padding:6px;color:#fff;font-size:11px;">Total</th>
+      </tr>
+      ${filasLineas}
+    </table>` : `<p style="font-size:12.5px;font-style:italic;">No se agregaron equipos a esta solicitud.</p>`}
+
+    <table cellpadding="0" cellspacing="0" style="margin:0 0 16px auto;width:320px;">
+      <tr>
+        <td style="padding:6px;font-size:12px;font-weight:bold;color:${GREY_TEXT};text-align:right;">TOTAL COSTO ESTIMADO PROPUESTO</td>
+        <td style="padding:6px;font-size:12.5px;font-weight:bold;text-align:right;background:${LIGHT};">${formatearMoneda(carrito.costo_estimado_propuesto_total)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;font-size:12px;font-weight:bold;color:${GREY_TEXT};text-align:right;">TOTAL COSTO ESTIMADO APROBADO</td>
+        <td style="padding:6px;font-size:12.5px;font-weight:bold;text-align:right;background:${LIGHT};">${formatearMoneda(carrito.costo_estimado_aprobado_total)}</td>
+      </tr>
+    </table>
+
+    <h3 style="color:${PRIMARY};font-size:13px;margin:0 0 6px;">HISTORICO DE MOVIMIENTOS</h3>
+    ${historico.length ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px;">
+      <tr style="background:${PRIMARY};">
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Movimiento</th>
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Registrado por</th>
+        <th style="padding:6px;color:#fff;font-size:11px;text-align:left;">Fecha</th>
+      </tr>
+      ${filasMovimientos}
+    </table>` : `<p style="font-size:12.5px;font-style:italic;">Sin movimientos registrados.</p>`}
+
+    <p style="font-size:11px;color:${GREY_TEXT};">Ver esta solicitud en la aplicacion: <a href="${urlCarrito}">${urlCarrito}</a></p>
+  </div>`;
+}
 
 const SELECT_BASE = `
   select
@@ -226,6 +376,52 @@ async function listarHistorico(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// POST /:id/enviar-correo  { destinatario }
+// A diferencia del checklist (que manda un PDF ya armado por el
+// frontend), aqui todo el contenido sale de la BD -- se arma el mismo
+// resumen visual que el PDF pero como HTML incrustado en el cuerpo.
+async function enviarPorCorreoHtml(req, res, next) {
+  try {
+    const destinatario = String(req.body?.destinatario || '').trim();
+    if (!destinatario || !EMAIL_REGEX.test(destinatario)) {
+      return res.status(400).json({ mensaje: 'Ingresa un correo valido' });
+    }
+
+    const { rows: carritoRows } = await pool.query(
+      `${SELECT_BASE} where c.id = $1 and c.empresa_id = $2`,
+      [req.params.id, req.empresaId]
+    );
+    if (!carritoRows[0]) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
+    const carrito = carritoRows[0];
+
+    const { rows: detalles } = await pool.query(
+      `${SELECT_DETALLE} where d.carrito_id = $1 order by d.created_at asc`,
+      [req.params.id]
+    );
+    const { rows: historico } = await pool.query(
+      `select h.*, u.nombre as registrado_por_nombre
+       from historico_movimiento_carrito h
+       join usuarios u on u.id = h.registrado_por
+       where h.carrito_id = $1
+       order by h.fecha_cambio desc`,
+      [req.params.id]
+    );
+    const { rows: empresaRows } = await pool.query('select nombre, logo from empresas where id = $1', [req.empresaId]);
+
+    const urlCarrito = `${process.env.CORS_ORIGIN || 'http://localhost:4200'}/carrito-compras?id=${carrito.id}`;
+    const html = construirHtmlCorreo({ empresa: empresaRows[0], carrito, detalles, historico, urlCarrito });
+
+    await enviarCorreo({
+      destinatario,
+      asunto: `Solicitud de Compra - ID ${idCorto(carrito.id)}`,
+      texto: `Solicitud de compra "${carrito.titulo}". Verla en la aplicacion: ${urlCarrito}`,
+      html,
+    });
+
+    res.json({ ok: true, mensaje: 'Correo enviado correctamente' });
+  } catch (err) { next(err); }
+}
+
 // -------------------------------------------------------------
 // DETALLES (lineas de equipos a comprar)
 // -------------------------------------------------------------
@@ -431,6 +627,7 @@ module.exports = {
   avanzarEstado,
   retrocederEstado,
   listarHistorico,
+  enviarPorCorreoHtml,
   listarDetalles,
   crearDetalle,
   actualizarDetalle,

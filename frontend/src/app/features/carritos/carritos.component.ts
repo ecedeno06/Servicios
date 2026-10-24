@@ -166,15 +166,42 @@ export class CarritosComponent implements OnInit {
     return new Date().toISOString().substring(0, 10);
   }
 
-  // mailto solo admite abrir el cliente de correo local (mismo patron ya
-  // usado en Servicios y Proveedores). El link lleva de vuelta a este
-  // mismo carrito via ?id=... (ver ngOnInit).
-  enviarPorCorreo(c: Carrito): void {
-    const tipo = c.estado === 'en_revision' ? 'Revision' : c.estado === 'aprobada' ? 'Aprobacion' : 'Revision/Aprobacion';
-    const asunto = `Solicitud de ${tipo} - ID ${this.idCorto(c.id)}`;
-    const url = `${window.location.origin}/carrito-compras?id=${c.id}`;
-    const cuerpo = c.observacion ? `${url}\n\nObservacion: ${c.observacion}` : url;
-    window.location.href = `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+  // El correo ya no sale por mailto (texto plano) -- se manda de verdad
+  // desde el backend (Microsoft Graph) con el mismo resumen visual del
+  // PDF incrustado como HTML. Solo se pide a quien se le manda.
+  popupCorreoAbierto = signal(false);
+  carritoCorreoActual = signal<Carrito | null>(null);
+  enviandoCorreo = signal(false);
+  correoForm = this.fb.group({
+    destinatario: ['', [Validators.required, Validators.email]],
+  });
+
+  abrirPopupCorreo(c: Carrito): void {
+    this.carritoCorreoActual.set(c);
+    this.correoForm.reset({ destinatario: '' });
+    this.popupCorreoAbierto.set(true);
+  }
+
+  cerrarPopupCorreo(): void {
+    this.popupCorreoAbierto.set(false);
+    this.carritoCorreoActual.set(null);
+  }
+
+  confirmarEnvioCorreo(): void {
+    const c = this.carritoCorreoActual();
+    if (!c || this.correoForm.invalid || this.enviandoCorreo()) return;
+    this.enviandoCorreo.set(true);
+    this.srv.enviarPorCorreo(c.id, this.correoForm.getRawValue().destinatario!).subscribe({
+      next: () => {
+        this.enviandoCorreo.set(false);
+        this.cerrarPopupCorreo();
+        alert('Correo enviado correctamente.');
+      },
+      error: (err) => {
+        this.enviandoCorreo.set(false);
+        alert(err.error?.mensaje || 'No se pudo enviar el correo.');
+      },
+    });
   }
 
   eliminarCarrito(c: Carrito): void {

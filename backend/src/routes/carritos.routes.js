@@ -14,6 +14,7 @@ router.delete('/:id', requirePermiso('carrito_compras', 'eliminar'), ctrl.elimin
 router.post('/:id/avanzar', requirePermiso('carrito_compras', 'editar'), ctrl.avanzarEstado);
 router.post('/:id/retroceder', requirePermiso('carrito_compras', 'editar'), ctrl.retrocederEstado);
 router.get('/:id/historico', requirePermiso('carrito_compras', 'ver'), ctrl.listarHistorico);
+router.post('/:id/enviar-correo', requirePermiso('carrito_compras', 'ver'), ctrl.enviarPorCorreoHtml);
 
 // Lineas de detalle (equipos a comprar)
 router.get('/:id/detalles', requirePermiso('carrito_compras', 'ver'), ctrl.listarDetalles);

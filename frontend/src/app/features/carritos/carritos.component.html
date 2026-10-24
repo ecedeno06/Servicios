@@ -71,7 +71,7 @@
             <td>{{ c.creado_por_nombre }}</td>
             <td class="table-actions" (click)="$event.stopPropagation()">
               <div class="actions-inner">
-                <button type="button" class="btn-icon" title="Enviar por correo" aria-label="Enviar por correo" (click)="enviarPorCorreo(c)">
+                <button type="button" class="btn-icon" title="Enviar por correo" aria-label="Enviar por correo" (click)="abrirPopupCorreo(c)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
                 </button>
                 @if (menu.tienePermiso('carrito_compras', 'eliminar')) {
@@ -361,6 +361,32 @@
         <div class="form-actions">
           <button type="submit" class="btn btn-accent btn-sm" [disabled]="detalleForm.invalid || guardandoDetalle()">
             {{ guardandoDetalle() ? 'Guardando...' : (lineaEdicion() ? 'Guardar cambios' : '+ Agregar linea') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- POPUP: enviar la solicitud por correo (el backend arma el HTML y lo manda de verdad, no mailto) -->
+@if (popupCorreoAbierto()) {
+  <div class="modal-overlay" (click)="cerrarPopupCorreo()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Enviar por correo</h2>
+        <button type="button" class="close" (click)="cerrarPopupCorreo()">&times;</button>
+      </div>
+      <p class="desc" style="margin: 0 0 14px;">{{ carritoCorreoActual()?.titulo }}</p>
+
+      <form [formGroup]="correoForm" (ngSubmit)="confirmarEnvioCorreo()">
+        <div class="form-group">
+          <label>¿A que correo lo enviamos?</label>
+          <input class="input" type="email" formControlName="destinatario" placeholder="correo@empresa.com" autofocus />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-accent btn-sm" [disabled]="correoForm.invalid || enviandoCorreo()">
+            {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
           </button>
         </div>
       </form>
