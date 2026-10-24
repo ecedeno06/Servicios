@@ -24,6 +24,7 @@ import { RolesPermisosComponent } from './features/roles-permisos/roles-permisos
 import { ServiciosProveedoresComponent } from './features/servicios-proveedores/servicios-proveedores.component';
 import { EstadosServicioComponent } from './features/estados-servicio/estados-servicio.component';
 import { ChecklistComponent } from './features/checklist/checklist.component';
+import { CarritosComponent } from './features/carritos/carritos.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -46,6 +47,7 @@ export const routes: Routes = [
       { path: 'usuarios', component: UsuariosComponent, canActivate: [permisoGuard], data: { menu: 'usuarios' } },
       { path: 'equipos-asignados', component: EquiposAsignadosComponent, canActivate: [permisoGuard], data: { menu: 'equipos_asignados' } },
       { path: 'servicios-proveedores', component: ServiciosProveedoresComponent, canActivate: [permisoGuard], data: { menu: 'servicios_proveedores' } },
+      { path: 'carrito-compras', component: CarritosComponent, canActivate: [permisoGuard], data: { menu: 'carrito_compras' } },
       { path: 'auditoria-sesiones', component: AuditoriaSesionesComponent, canActivate: [permisoGuard], data: { menu: 'auditoria_sesiones' } },
       { path: 'empresas', component: EmpresasComponent, canActivate: [superAdminGuard] },
       { path: 'politica-password', component: PoliticaPasswordComponent, canActivate: [superAdminGuard] },

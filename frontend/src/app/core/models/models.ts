@@ -554,6 +554,53 @@ export interface FacturaServicioProveedor {
   updated_at?: string;
 }
 
+// CARRITO DE COMPRAS (solicitudes de compra de equipos). Estado
+// estrictamente secuencial -- ver avanzarEstado() en CarritosService.
+export type EstadoCarrito = 'en_construccion' | 'en_revision' | 'aprobada' | 'cerrada';
+
+export interface Carrito {
+  id: string;
+  empresa_id: string;
+  titulo: string;
+  fecha_solicitud: string;
+  fecha_aprobacion?: string | null;
+  estado: EstadoCarrito;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+  detalles_count?: number;
+  cantidad_propuesta_total?: number;
+  cantidad_aprobada_total?: number;
+  // Opcional: solo llega poblada cuando se pide obtenerPorId().
+  detalles?: CarritoDetalle[];
+}
+
+export interface CarritoDetalle {
+  id: string;
+  carrito_id: string;
+  producto_id: number;
+  producto_nombre?: string;
+  categoria_id?: number;
+  categoria_nombre?: string;
+  marca: string;
+  modelo: string;
+  url?: string | null;
+  proveedor_id?: string | null;
+  proveedor_nombre?: string | null;
+  cantidad_propuesta: number;
+  cantidad_aprobada?: number | null;
+  observacion?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Entrada de la bitacora de un incidente: nota libre, cambio de estado
 // y/o documento adjunto, cualquier combinacion, en un solo registro.
 export interface IncidenteNota {

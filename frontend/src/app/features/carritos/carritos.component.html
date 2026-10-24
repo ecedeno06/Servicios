@@ -1,0 +1,257 @@
+<div class="page-header">
+  <div>
+    <h1>Carrito de Compras</h1>
+    <div class="desc">Solicitudes de compra de equipos: desde que se arman hasta que quedan cerradas</div>
+  </div>
+  @if (menu.tienePermiso('carrito_compras', 'crear')) {
+    <button class="btn btn-accent" (click)="abrirNuevo()">+ Nuevo carrito</button>
+  }
+</div>
+
+<div class="page-header">
+  <div class="desc">{{ carritosFiltrados().length }} de {{ carritos().length }} carrito(s).</div>
+  <input
+    class="input"
+    style="max-width:280px;"
+    type="text"
+    placeholder="Buscar..."
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
+  />
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Titulo</th>
+        <th>Fecha Solicitud</th>
+        <th>Estado</th>
+        <th>Fecha Aprobacion</th>
+        <th style="text-align:center;">Lineas</th>
+        <th style="text-align:center;">Cant. Propuesta</th>
+        <th style="text-align:center;">Cant. Aprobada</th>
+        <th>Creado por</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (cargando()) {
+        <tr><td colspan="9" class="desc" style="padding:16px;">Cargando...</td></tr>
+      } @else {
+        @for (c of carritosFiltrados(); track c.id) {
+          <tr class="row-clickable" [class.row-selected]="carritoSeleccionado()?.id === c.id" (click)="abrirCarrito(c)">
+            <td>{{ c.titulo }}</td>
+            <td>{{ c.fecha_solicitud | date:'mediumDate':'UTC' }}</td>
+            <td><span class="badge" [class]="clasesBadgeEstado[c.estado]">{{ etiquetasEstado[c.estado] }}</span></td>
+            <td>{{ c.fecha_aprobacion ? (c.fecha_aprobacion | date:'mediumDate':'UTC') : '-' }}</td>
+            <td style="text-align:center;">{{ c.detalles_count ?? 0 }}</td>
+            <td style="text-align:center;">{{ c.cantidad_propuesta_total ?? 0 }}</td>
+            <td style="text-align:center;">{{ c.cantidad_aprobada_total ?? 0 }}</td>
+            <td>{{ c.creado_por_nombre }}</td>
+            <td class="table-actions" (click)="$event.stopPropagation()">
+              <div class="actions-inner">
+                @if (menu.tienePermiso('carrito_compras', 'eliminar')) {
+                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar carrito" aria-label="Eliminar carrito" (click)="eliminarCarrito(c)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9" class="empty-state">No hay carritos de compra registrados.</td></tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- DRAWER: encabezado + lineas de un carrito -->
+@if (panelAbierto()) {
+  <div class="overlay" (click)="cerrarPanel()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <div>
+          <h2>{{ carritoSeleccionado() ? carritoSeleccionado()!.titulo : 'Nuevo carrito' }}</h2>
+          @if (carritoSeleccionado()) {
+            <div class="desc">
+              <span class="badge" [class]="clasesBadgeEstado[carritoSeleccionado()!.estado]">{{ etiquetasEstado[carritoSeleccionado()!.estado] }}</span>
+            </div>
+          }
+        </div>
+        <button type="button" class="close" (click)="cerrarPanel()">&times;</button>
+      </div>
+
+      <!-- Encabezado: titulo / fecha de solicitud -->
+      @if (!carritoSeleccionado() || puedeEditarEncabezado()) {
+        <form [formGroup]="headerForm" (ngSubmit)="guardarHeader()" class="card" style="margin-bottom: 20px;">
+          <h3>{{ carritoSeleccionado() ? 'Datos de la solicitud' : 'Nueva solicitud de compra' }}</h3>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label>Titulo</label>
+            <input class="input" type="text" formControlName="titulo" placeholder="Ej. Reposicion laptops equipo soporte" />
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label>Fecha Solicitud</label>
+            <input class="input" type="date" formControlName="fecha_solicitud" />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-accent btn-sm" [disabled]="headerForm.invalid || guardandoHeader()">
+              {{ guardandoHeader() ? 'Guardando...' : (carritoSeleccionado() ? 'Guardar cambios' : 'Crear carrito') }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (carritoSeleccionado(); as carrito) {
+        <!-- Avance de estado: un solo boton con el UNICO siguiente estado valido -->
+        @if (siguienteEstado() && menu.tienePermiso('carrito_compras', 'editar')) {
+          <div class="form-actions" style="margin-bottom: 20px;">
+            <button type="button" class="btn btn-accent" [disabled]="avanzando()" (click)="avanzar()">
+              {{ avanzando() ? 'Procesando...' : etiquetaAvance() }}
+            </button>
+          </div>
+        }
+
+        <!-- Formulario para agregar linea (solo en_construccion) -->
+        @if (puedeEditarLineas() && menu.tienePermiso('carrito_compras', 'crear')) {
+          <form [formGroup]="detalleForm" (ngSubmit)="guardarDetalle()" class="card" style="margin-bottom: 20px;">
+            <h3>Agregar Equipo</h3>
+
+            <div class="form-grid" style="margin-top: 10px;">
+              <div class="form-group">
+                <label>Categoria</label>
+                <select class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
+                  <option value="">Seleccionar...</option>
+                  @for (cat of categorias(); track cat.id) {
+                    <option [value]="cat.id">{{ cat.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Producto</label>
+                <select class="input" formControlName="producto_id" (change)="onProductoChange()">
+                  <option value="">Seleccionar...</option>
+                  @for (p of productosDeCategoria(); track p.id) {
+                    <option [value]="p.id">{{ p.nombre }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 10px;">
+              <div class="form-group">
+                <label>Marca</label>
+                <input class="input" type="text" formControlName="marca" />
+              </div>
+              <div class="form-group">
+                <label>Modelo</label>
+                <input class="input" type="text" formControlName="modelo" />
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 10px;">
+              <div class="form-group">
+                <label>Proveedor</label>
+                <select class="input" formControlName="proveedor_id">
+                  <option value="">Sin especificar</option>
+                  @for (p of proveedores(); track p.id) {
+                    <option [value]="p.id">{{ p.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Cantidad Propuesta</label>
+                <input class="input" type="number" min="1" formControlName="cantidad_propuesta" />
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label>URL del producto</label>
+              <input class="input" type="text" formControlName="url" placeholder="https://..." />
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label>Observacion</label>
+              <textarea class="input" rows="2" formControlName="observacion"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-accent btn-sm" [disabled]="detalleForm.invalid || guardandoDetalle()">
+                {{ guardandoDetalle() ? 'Guardando...' : '+ Agregar linea' }}
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Lineas del carrito -->
+        <div>
+          <h3>Equipos en esta solicitud</h3>
+
+          @if (cargandoDetalles()) {
+            <div class="desc" style="padding: 16px 0;">Cargando lineas...</div>
+          } @else {
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+              @for (d of detalles(); track d.id) {
+                <div class="card" style="padding: 12px 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div>
+                      <div style="font-size: 15px; font-weight: 700; color: var(--text-heading);">
+                        {{ d.marca }} {{ d.modelo }}
+                        @if (d.url) {
+                          <a [href]="d.url" target="_blank" rel="noopener" title="Abrir enlace" style="margin-left: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                          </a>
+                        }
+                      </div>
+                      <div class="desc" style="margin-top: 2px;">
+                        {{ d.categoria_nombre }} &middot; {{ d.producto_nombre }}
+                        @if (d.proveedor_nombre) { &middot; {{ d.proveedor_nombre }} }
+                      </div>
+                      @if (d.observacion && !puedeCargarAprobado()) {
+                        <div class="desc" style="font-style: italic; margin-top: 2px;">{{ d.observacion }}</div>
+                      }
+                    </div>
+
+                    @if (puedeEditarLineas() && menu.tienePermiso('carrito_compras', 'eliminar')) {
+                      <button type="button" class="btn-icon btn-icon-danger" (click)="eliminarDetalle(d)" title="Eliminar linea" aria-label="Eliminar linea">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    }
+                  </div>
+
+                  <div class="form-grid" style="margin-top: 10px;">
+                    <div class="form-group">
+                      <label style="font-size: 11px;">Cantidad Propuesta</label>
+                      <div>{{ d.cantidad_propuesta }}</div>
+                    </div>
+                    <div class="form-group">
+                      <label style="font-size: 11px;">Cantidad Aprobada</label>
+                      @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
+                        <input class="input" type="number" min="0" [value]="d.cantidad_aprobada ?? ''" (blur)="guardarCantidadAprobada(d, $any($event.target).value)" />
+                      } @else {
+                        <div>{{ d.cantidad_aprobada ?? '-' }}</div>
+                      }
+                    </div>
+                  </div>
+
+                  @if (puedeCargarAprobado() && menu.tienePermiso('carrito_compras', 'editar')) {
+                    <div class="form-group" style="margin-top: 10px;">
+                      <label style="font-size: 11px;">Observacion</label>
+                      <textarea class="input" rows="2" [value]="d.observacion || ''" (blur)="guardarObservacionDetalle(d, $any($event.target).value)"></textarea>
+                    </div>
+                  }
+                </div>
+              } @empty {
+                <div class="empty-state">No se han agregado equipos a esta solicitud.</div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

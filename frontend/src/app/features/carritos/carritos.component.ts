@@ -1,0 +1,313 @@
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CarritosService } from '../../core/services/carritos.service';
+import { CategoriasService } from '../../core/services/categorias.service';
+import { ProductosService } from '../../core/services/productos.service';
+import { ProveedoresService } from '../../core/services/proveedores.service';
+import { MenuService } from '../../core/services/menu.service';
+import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, Producto, Proveedor } from '../../core/models/models';
+
+// Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
+// boton de avance que se muestra es el siguiente de esta lista respecto
+// al estado actual del carrito.
+const ORDEN_ESTADOS: EstadoCarrito[] = ['en_construccion', 'en_revision', 'aprobada', 'cerrada'];
+
+const ETIQUETAS_ESTADO: Record<EstadoCarrito, string> = {
+  en_construccion: 'En Construccion',
+  en_revision: 'En Revision',
+  aprobada: 'Aprobada',
+  cerrada: 'Cerrada',
+};
+
+const ETIQUETAS_AVANCE: Record<EstadoCarrito, string> = {
+  en_construccion: 'Enviar a Revision',
+  en_revision: 'Aprobar',
+  aprobada: 'Cerrar',
+  cerrada: '',
+};
+
+// Clases de badge ya existentes globalmente (ver styles.css) -- no se
+// inventan colores nuevos.
+const CLASES_BADGE_ESTADO: Record<EstadoCarrito, string> = {
+  en_construccion: 'badge-slate',
+  en_revision: 'badge-amber',
+  aprobada: 'badge-green',
+  cerrada: 'badge-slate',
+};
+
+@Component({
+  selector: 'app-carritos',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  templateUrl: './carritos.component.html',
+  styleUrl: './carritos.component.css',
+})
+export class CarritosComponent implements OnInit {
+  etiquetasEstado = ETIQUETAS_ESTADO;
+  clasesBadgeEstado = CLASES_BADGE_ESTADO;
+
+  carritos = signal<Carrito[]>([]);
+  categorias = signal<Categoria[]>([]);
+  productos = signal<Producto[]>([]);
+  proveedores = signal<Proveedor[]>([]);
+
+  busqueda = signal('');
+  cargando = signal(false);
+
+  carritosFiltrados = computed(() => {
+    const q = this.busqueda().trim().toLowerCase();
+    if (!q) return this.carritos();
+    return this.carritos().filter((c) =>
+      [c.titulo, this.etiquetasEstado[c.estado], c.creado_por_nombre].some((v) => (v || '').toLowerCase().includes(q))
+    );
+  });
+
+  constructor(
+    private srv: CarritosService,
+    private categoriasSrv: CategoriasService,
+    private productosSrv: ProductosService,
+    private proveedoresSrv: ProveedoresService,
+    private fb: FormBuilder,
+    public menu: MenuService
+  ) {}
+
+  ngOnInit(): void {
+    this.cargar();
+    this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data));
+    this.productosSrv.listar().subscribe((data) => this.productos.set(data));
+    this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
+  }
+
+  cargar(): void {
+    this.cargando.set(true);
+    this.srv.listar().subscribe({
+      next: (data) => { this.carritos.set(data); this.cargando.set(false); },
+      error: () => this.cargando.set(false),
+    });
+  }
+
+  private hoyISO(): string {
+    return new Date().toISOString().substring(0, 10);
+  }
+
+  eliminarCarrito(c: Carrito): void {
+    if (!confirm(`¿Eliminar el carrito "${c.titulo}"? Esta accion no se puede deshacer.`)) return;
+    this.srv.eliminar(c.id).subscribe({
+      next: () => this.cargar(),
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el carrito'),
+    });
+  }
+
+  // -------------------------------------------------------------
+  // DRAWER: encabezado + lineas de un carrito
+  // -------------------------------------------------------------
+
+  panelAbierto = signal(false);
+  carritoSeleccionado = signal<Carrito | null>(null);
+  detalles = signal<CarritoDetalle[]>([]);
+  cargandoDetalles = signal(false);
+  guardandoHeader = signal(false);
+  guardandoDetalle = signal(false);
+  avanzando = signal(false);
+
+  headerForm = this.fb.group({
+    titulo: ['', Validators.required],
+    fecha_solicitud: [this.hoyISO(), Validators.required],
+  });
+
+  siguienteEstado = computed<EstadoCarrito | null>(() => {
+    const c = this.carritoSeleccionado();
+    if (!c) return null;
+    return ORDEN_ESTADOS[ORDEN_ESTADOS.indexOf(c.estado) + 1] || null;
+  });
+
+  etiquetaAvance = computed(() => {
+    const c = this.carritoSeleccionado();
+    return c ? ETIQUETAS_AVANCE[c.estado] : '';
+  });
+
+  // Mientras esta en_construccion se puede editar todo libremente (crear/
+  // editar/borrar lineas, titulo, fecha); en en_revision solo se carga
+  // cantidad_aprobada/observacion por linea (ver controller); de ahi en
+  // adelante queda todo bloqueado.
+  puedeEditarEncabezado = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
+  puedeEditarLineas = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
+  puedeCargarAprobado = computed(() => this.carritoSeleccionado()?.estado === 'en_revision');
+
+  abrirNuevo(): void {
+    this.carritoSeleccionado.set(null);
+    this.detalles.set([]);
+    this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO() });
+    this.resetDetalleForm();
+    this.panelAbierto.set(true);
+  }
+
+  abrirCarrito(c: Carrito): void {
+    this.panelAbierto.set(true);
+    this.carritoSeleccionado.set(c);
+    this.headerForm.reset({ titulo: c.titulo, fecha_solicitud: c.fecha_solicitud?.substring(0, 10) });
+    this.resetDetalleForm();
+    this.cargarDetalles(c.id);
+  }
+
+  cerrarPanel(): void {
+    this.panelAbierto.set(false);
+    this.carritoSeleccionado.set(null);
+    this.detalles.set([]);
+  }
+
+  cargarDetalles(carritoId: string): void {
+    this.cargandoDetalles.set(true);
+    this.srv.listarDetalles(carritoId).subscribe({
+      next: (data) => { this.detalles.set(data); this.cargandoDetalles.set(false); },
+      error: () => this.cargandoDetalles.set(false),
+    });
+  }
+
+  guardarHeader(): void {
+    if (this.headerForm.invalid || this.guardandoHeader()) return;
+    this.guardandoHeader.set(true);
+    const val = this.headerForm.getRawValue() as { titulo: string; fecha_solicitud: string };
+    const actual = this.carritoSeleccionado();
+
+    const obs = actual ? this.srv.actualizar(actual.id, val) : this.srv.crear(val);
+    obs.subscribe({
+      next: (c) => {
+        this.guardandoHeader.set(false);
+        this.carritoSeleccionado.set(c);
+        this.cargar();
+      },
+      error: (err) => {
+        this.guardandoHeader.set(false);
+        alert(err.error?.mensaje || 'Error al guardar el carrito');
+      },
+    });
+  }
+
+  avanzar(): void {
+    const c = this.carritoSeleccionado();
+    const siguiente = this.siguienteEstado();
+    if (!c || !siguiente || this.avanzando()) return;
+    if (!confirm(`¿Pasar el carrito "${c.titulo}" a "${this.etiquetasEstado[siguiente]}"?`)) return;
+
+    this.avanzando.set(true);
+    this.srv.avanzarEstado(c.id, siguiente).subscribe({
+      next: (actualizado) => {
+        this.avanzando.set(false);
+        this.carritoSeleccionado.set(actualizado);
+        this.headerForm.reset({ titulo: actualizado.titulo, fecha_solicitud: actualizado.fecha_solicitud?.substring(0, 10) });
+        this.cargar();
+      },
+      error: (err) => {
+        this.avanzando.set(false);
+        alert(err.error?.mensaje || 'Error al avanzar de estado');
+      },
+    });
+  }
+
+  // -------------------------------------------------------------
+  // LINEA DE DETALLE (categoria -> producto -> auto-completa marca/
+  // modelo, igual que Equipos Asignados)
+  // -------------------------------------------------------------
+
+  detalleForm = this.fb.group({
+    categoria_id: ['', Validators.required],
+    producto_id: ['', Validators.required],
+    marca: ['', Validators.required],
+    modelo: ['', Validators.required],
+    url: ['', Validators.pattern(/^https?:\/\/.+/)],
+    proveedor_id: [''],
+    cantidad_propuesta: [1, [Validators.required, Validators.min(1)]],
+    observacion: [''],
+  });
+
+  private categoriaIdForm = signal<number | null>(null);
+
+  productosDeCategoria = computed(() => {
+    const catId = this.categoriaIdForm();
+    return catId ? this.productos().filter((p) => p.categoria_id === catId) : [];
+  });
+
+  resetDetalleForm(): void {
+    this.categoriaIdForm.set(null);
+    this.detalleForm.reset({
+      categoria_id: '', producto_id: '', marca: '', modelo: '', url: '', proveedor_id: '', cantidad_propuesta: 1, observacion: '',
+    });
+  }
+
+  onCategoriaChange(): void {
+    const catId = Number(this.detalleForm.get('categoria_id')?.value) || null;
+    this.categoriaIdForm.set(catId);
+    this.detalleForm.patchValue({ producto_id: '', marca: '', modelo: '' });
+  }
+
+  onProductoChange(): void {
+    const id = Number(this.detalleForm.get('producto_id')?.value);
+    const producto = this.productos().find((p) => p.id === id);
+    if (!producto) return;
+    const espacio = producto.nombre.indexOf(' ');
+    const marca = espacio === -1 ? producto.nombre : producto.nombre.slice(0, espacio);
+    const modelo = espacio === -1 ? '' : producto.nombre.slice(espacio + 1);
+    this.detalleForm.patchValue({ marca, modelo });
+  }
+
+  guardarDetalle(): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito || this.detalleForm.invalid || this.guardandoDetalle()) return;
+
+    this.guardandoDetalle.set(true);
+    const raw = this.detalleForm.getRawValue();
+    const data = {
+      producto_id: Number(raw.producto_id),
+      marca: raw.marca,
+      modelo: raw.modelo,
+      url: raw.url || null,
+      proveedor_id: raw.proveedor_id || null,
+      cantidad_propuesta: Number(raw.cantidad_propuesta),
+      observacion: raw.observacion || null,
+    };
+
+    this.srv.crearDetalle(carrito.id, data as any).subscribe({
+      next: () => {
+        this.guardandoDetalle.set(false);
+        this.resetDetalleForm();
+        this.cargarDetalles(carrito.id);
+        this.cargar();
+      },
+      error: (err) => {
+        this.guardandoDetalle.set(false);
+        alert(err.error?.mensaje || 'Error al agregar la linea');
+      },
+    });
+  }
+
+  guardarCantidadAprobada(d: CarritoDetalle, valor: string): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    const cantidad = valor === '' ? null : Number(valor);
+    this.srv.actualizarDetalle(carrito.id, d.id, { cantidad_aprobada: cantidad } as any).subscribe({
+      next: () => { this.cargarDetalles(carrito.id); this.cargar(); },
+      error: (err) => alert(err.error?.mensaje || 'Error al guardar la cantidad aprobada'),
+    });
+  }
+
+  guardarObservacionDetalle(d: CarritoDetalle, valor: string): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    this.srv.actualizarDetalle(carrito.id, d.id, { observacion: valor || null } as any).subscribe({
+      next: () => this.cargarDetalles(carrito.id),
+      error: (err) => alert(err.error?.mensaje || 'Error al guardar la observacion'),
+    });
+  }
+
+  eliminarDetalle(d: CarritoDetalle): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    if (!confirm('¿Eliminar esta linea del carrito?')) return;
+    this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
+      next: () => { this.cargarDetalles(carrito.id); this.cargar(); },
+      error: (err) => alert(err.error?.mensaje || 'Error al eliminar la linea'),
+    });
+  }
+}
