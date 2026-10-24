@@ -376,15 +376,34 @@ async function listarHistorico(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// POST /:id/enviar-correo  { destinatario }
+// GET /destinatarios -- usuarios de la empresa activa para elegir a quien
+// mandarle una solicitud por correo. Endpoint propio (no el de /usuarios)
+// para que baste el permiso de carrito_compras y no el de usuarios.
+async function listarDestinatarios(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      `select u.id, u.nombre, u.email
+       from usuarios u
+       join usuarios_empresas_rol uer on uer.usuario_id = u.id
+       where uer.empresa_id = $1 and u.activo = true
+       order by u.nombre`,
+      [req.empresaId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+// POST /:id/enviar-correo  { destinatarios: string[] }
 // A diferencia del checklist (que manda un PDF ya armado por el
 // frontend), aqui todo el contenido sale de la BD -- se arma el mismo
 // resumen visual que el PDF pero como HTML incrustado en el cuerpo.
 async function enviarPorCorreoHtml(req, res, next) {
   try {
-    const destinatario = String(req.body?.destinatario || '').trim();
-    if (!destinatario || !EMAIL_REGEX.test(destinatario)) {
-      return res.status(400).json({ mensaje: 'Ingresa un correo valido' });
+    const destinatarios = Array.isArray(req.body?.destinatarios)
+      ? req.body.destinatarios.map((d) => String(d || '').trim()).filter(Boolean)
+      : [];
+    if (!destinatarios.length || !destinatarios.every((d) => EMAIL_REGEX.test(d))) {
+      return res.status(400).json({ mensaje: 'Selecciona al menos un destinatario valido' });
     }
 
     const { rows: carritoRows } = await pool.query(
@@ -412,7 +431,7 @@ async function enviarPorCorreoHtml(req, res, next) {
     const html = construirHtmlCorreo({ empresa: empresaRows[0], carrito, detalles, historico, urlCarrito });
 
     await enviarCorreo({
-      destinatario,
+      destinatario: destinatarios,
       asunto: `Solicitud de Compra - ID ${idCorto(carrito.id)}`,
       texto: `Solicitud de compra "${carrito.titulo}". Verla en la aplicacion: ${urlCarrito}`,
       html,
@@ -628,6 +647,7 @@ module.exports = {
   retrocederEstado,
   listarHistorico,
   enviarPorCorreoHtml,
+  listarDestinatarios,
   listarDetalles,
   crearDetalle,
   actualizarDetalle,

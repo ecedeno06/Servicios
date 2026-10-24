@@ -27,8 +27,11 @@ export class CarritosService {
   listarHistorico(id: string): Observable<HistoricoMovimientoCarrito[]> {
     return this.http.get<HistoricoMovimientoCarrito[]>(`${this.base}/${id}/historico`);
   }
-  enviarPorCorreo(id: string, destinatario: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/enviar-correo`, { destinatario });
+  enviarPorCorreo(id: string, destinatarios: string[]): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/enviar-correo`, { destinatarios });
+  }
+  listarDestinatarios(): Observable<{ id: string; nombre: string; email: string }[]> {
+    return this.http.get<{ id: string; nombre: string; email: string }[]>(`${this.base}/destinatarios`);
   }
 
   // DETALLES (lineas de equipos a comprar)

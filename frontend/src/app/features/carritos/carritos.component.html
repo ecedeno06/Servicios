@@ -378,18 +378,36 @@
       </div>
       <p class="desc" style="margin: 0 0 14px;">{{ carritoCorreoActual()?.titulo }}</p>
 
-      <form [formGroup]="correoForm" (ngSubmit)="confirmarEnvioCorreo()">
-        <div class="form-group">
-          <label>¿A que correo lo enviamos?</label>
-          <input class="input" type="email" formControlName="destinatario" placeholder="correo@empresa.com" autofocus />
+      <div class="form-group">
+        <label>¿A quienes lo enviamos?</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="Buscar usuario..."
+          autofocus
+          [ngModel]="busquedaDestinatarios()"
+          (ngModelChange)="busquedaDestinatarios.set($event)"
+        />
+        <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-default); border-radius: 8px; padding: 8px; margin-top: 8px;">
+          @for (u of destinatariosFiltrados(); track u.id) {
+            <label class="flex items-center gap-8" style="padding: 5px 2px; cursor: pointer;">
+              <input type="checkbox" [checked]="destinatariosSeleccionados().has(u.email)" (change)="toggleDestinatario(u.email)" />
+              <span>{{ u.nombre }} <span class="text-muted text-sm">({{ u.email }})</span></span>
+            </label>
+          } @empty {
+            <div class="desc" style="padding: 8px 2px;">Sin resultados.</div>
+          }
         </div>
+        @if (destinatariosSeleccionados().size) {
+          <div class="desc text-sm" style="margin-top: 6px;">{{ destinatariosSeleccionados().size }} seleccionado(s)</div>
+        }
+      </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn btn-accent btn-sm" [disabled]="correoForm.invalid || enviandoCorreo()">
-            {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
-          </button>
-        </div>
-      </form>
+      <div class="form-actions">
+        <button type="button" class="btn btn-accent btn-sm" [disabled]="!destinatariosSeleccionados().size || enviandoCorreo()" (click)="confirmarEnvioCorreo()">
+          {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
+        </button>
+      </div>
     </div>
   </div>
 }

@@ -142,6 +142,7 @@ export class CarritosComponent implements OnInit {
     this.categoriasSrv.listar().subscribe((data) => this.categorias.set(data));
     this.productosSrv.listar().subscribe((data) => this.productos.set(data));
     this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
+    this.srv.listarDestinatarios().subscribe((data) => this.destinatariosDisponibles.set(data));
 
     // Soporta abrir un carrito puntual via ?id=... -- usado por el link
     // que se manda por correo (ver enviarPorCorreo).
@@ -168,17 +169,27 @@ export class CarritosComponent implements OnInit {
 
   // El correo ya no sale por mailto (texto plano) -- se manda de verdad
   // desde el backend (Microsoft Graph) con el mismo resumen visual del
-  // PDF incrustado como HTML. Solo se pide a quien se le manda.
+  // PDF incrustado como HTML, a uno o varios usuarios del sistema (de
+  // esta empresa) elegidos de una lista con buscador -- no texto libre.
   popupCorreoAbierto = signal(false);
   carritoCorreoActual = signal<Carrito | null>(null);
   enviandoCorreo = signal(false);
-  correoForm = this.fb.group({
-    destinatario: ['', [Validators.required, Validators.email]],
+  destinatariosDisponibles = signal<{ id: string; nombre: string; email: string }[]>([]);
+  destinatariosSeleccionados = signal<Set<string>>(new Set());
+  busquedaDestinatarios = signal('');
+
+  destinatariosFiltrados = computed(() => {
+    const q = this.busquedaDestinatarios().trim().toLowerCase();
+    if (!q) return this.destinatariosDisponibles();
+    return this.destinatariosDisponibles().filter(
+      (u) => u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
   });
 
   abrirPopupCorreo(c: Carrito): void {
     this.carritoCorreoActual.set(c);
-    this.correoForm.reset({ destinatario: '' });
+    this.destinatariosSeleccionados.set(new Set());
+    this.busquedaDestinatarios.set('');
     this.popupCorreoAbierto.set(true);
   }
 
@@ -187,11 +198,19 @@ export class CarritosComponent implements OnInit {
     this.carritoCorreoActual.set(null);
   }
 
+  toggleDestinatario(email: string): void {
+    const set = new Set(this.destinatariosSeleccionados());
+    if (set.has(email)) set.delete(email);
+    else set.add(email);
+    this.destinatariosSeleccionados.set(set);
+  }
+
   confirmarEnvioCorreo(): void {
     const c = this.carritoCorreoActual();
-    if (!c || this.correoForm.invalid || this.enviandoCorreo()) return;
+    const destinatarios = [...this.destinatariosSeleccionados()];
+    if (!c || !destinatarios.length || this.enviandoCorreo()) return;
     this.enviandoCorreo.set(true);
-    this.srv.enviarPorCorreo(c.id, this.correoForm.getRawValue().destinatario!).subscribe({
+    this.srv.enviarPorCorreo(c.id, destinatarios).subscribe({
       next: () => {
         this.enviandoCorreo.set(false);
         this.cerrarPopupCorreo();
