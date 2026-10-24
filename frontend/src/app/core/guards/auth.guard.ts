@@ -12,13 +12,16 @@ import { MenuService } from '../services/menu.service';
 // del hijo ya resolvio) y, para cualquier usuario que no fuera
 // super-admin, denegaria y redirigiria de vuelta a si mismo en un bucle
 // infinito que cuelga el navegador.
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const menu = inject(MenuService);
   const router = inject(Router);
 
   if (!auth.estaAutenticado()) {
-    router.navigate(['/login']);
+    // Se guarda la ruta original (con sus query params, ej. el ?id=... de
+    // un link de Carrito de Compras mandado por correo) para volver ahi
+    // mismo despues de iniciar sesion -- ver LoginComponent.
+    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
     return false;
   }
   if (menu.estaCargado()) return true;

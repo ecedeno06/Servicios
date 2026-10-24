@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { EmpresaSeleccionable } from '../../core/models/models';
 
@@ -54,7 +54,19 @@ export class LoginComponent {
   });
   verPassword = signal(false);
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
+  // Ruta a la que volver tras terminar de iniciar sesion (login directo,
+  // 2FA o seleccion de empresa) -- la guarda authGuard cuando redirige
+  // aqui por no tener sesion, ej. al abrir un link de Carrito de Compras
+  // mandado por correo. Si no hay returnUrl, se va al dashboard de siempre.
+  private returnUrl: string | null = null;
+
+  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router, route: ActivatedRoute) {
+    this.returnUrl = route.snapshot.queryParamMap.get('returnUrl');
+  }
+
+  private irDespuesDeLogin(): void {
+    this.router.navigateByUrl(this.returnUrl || '/dashboard');
+  }
 
   enviar() {
     if (this.form.invalid) return;
@@ -71,7 +83,7 @@ export class LoginComponent {
         } else if ('requiereSeleccionEmpresa' in res) {
           this.empresasParaElegir.set(res.empresas);
         } else {
-          this.router.navigate(['/dashboard']);
+          this.irDespuesDeLogin();
         }
       },
       error: (err) => {
@@ -92,7 +104,7 @@ export class LoginComponent {
           this.usuarioId2FA.set(null);
           this.empresasParaElegir.set(res.empresas);
         } else {
-          this.router.navigate(['/dashboard']);
+          this.irDespuesDeLogin();
         }
       },
       error: (err) => {
@@ -166,7 +178,7 @@ export class LoginComponent {
     this.cargando.set(true);
     this.error.set(null);
     this.auth.seleccionarEmpresa(empresaId).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => this.irDespuesDeLogin(),
       error: (err) => {
         this.cargando.set(false);
         this.error.set(err?.error?.mensaje || 'No se pudo seleccionar la empresa');
