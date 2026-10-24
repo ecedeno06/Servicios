@@ -564,15 +564,44 @@ export class EquiposAsignadosComponent implements OnInit {
   }
 
   // Solo super-admin (ver tambien el boton en la plantilla) -- borrar un
-  // movimiento rompe la trazabilidad del historico, por eso va mas alla
-  // del permiso normal de "eliminar" de equipos_asignados.
-  eliminarMovimientoHistorial(historialId: string): void {
+  // movimiento rompe la trazabilidad del historico, por eso ademas de ir
+  // mas alla del permiso normal de "eliminar" de equipos_asignados, pide
+  // confirmar la contrasena de la sesion actual (pedido explicito) en vez
+  // de un confirm() nativo.
+  historialAEliminar = signal<{ equipoId: string; historialId: string } | null>(null);
+  passwordEliminarHistorialForm = this.fb.group({ password: ['', Validators.required] });
+  eliminandoHistorial = signal(false);
+  errorEliminarHistorial = signal<string | null>(null);
+
+  pedirEliminarMovimientoHistorial(historialId: string): void {
     const equipo = this.seleccionado();
     if (!equipo) return;
-    if (!confirm('Eliminar este movimiento del historico? Esta accion no se puede deshacer.')) return;
-    this.srv.eliminarHistorial(equipo.id, historialId).subscribe({
-      next: () => this.cargarHistorial(equipo.id),
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el movimiento'),
+    this.passwordEliminarHistorialForm.reset();
+    this.errorEliminarHistorial.set(null);
+    this.historialAEliminar.set({ equipoId: equipo.id, historialId });
+  }
+
+  cancelarEliminarHistorial(): void {
+    if (this.eliminandoHistorial()) return;
+    this.historialAEliminar.set(null);
+  }
+
+  confirmarEliminarHistorial(): void {
+    const pendiente = this.historialAEliminar();
+    if (!pendiente || this.passwordEliminarHistorialForm.invalid) return;
+    const password = this.passwordEliminarHistorialForm.getRawValue().password!;
+    this.eliminandoHistorial.set(true);
+    this.errorEliminarHistorial.set(null);
+    this.srv.eliminarHistorial(pendiente.equipoId, pendiente.historialId, password).subscribe({
+      next: () => {
+        this.eliminandoHistorial.set(false);
+        this.historialAEliminar.set(null);
+        this.cargarHistorial(pendiente.equipoId);
+      },
+      error: (err) => {
+        this.eliminandoHistorial.set(false);
+        this.errorEliminarHistorial.set(err?.error?.mensaje || 'No se pudo eliminar el movimiento');
+      },
     });
   }
 

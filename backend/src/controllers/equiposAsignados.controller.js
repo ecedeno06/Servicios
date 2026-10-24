@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { enviarCorreo } = require('../utils/correo');
 
@@ -250,8 +251,24 @@ async function historial(req, res, next) {
 // Solo super-admin (ver routes.js) -- borrar un movimiento del historico
 // rompe la trazabilidad, asi que se restringe mas alla del permiso normal
 // de "eliminar" sobre equipos_asignados.
+// Ademas de ser super-admin, pide la contrasena de la sesion actual y la
+// verifica contra la BD -- pedido explicito, para que borrar un movimiento
+// del historico no sea un solo click accidental.
 async function eliminarHistorial(req, res, next) {
   try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ mensaje: 'La contrasena es requerida' });
+
+    const { rows: usuarioRows } = await pool.query(
+      'select password_hash from usuarios where id = $1',
+      [req.usuario.id]
+    );
+    // 403, no 401: el interceptor del frontend trata cualquier 401 como
+    // "sesion invalida" y cierra la sesion -- esto es solo una contrasena
+    // equivocada, no un token vencido.
+    const passwordOk = usuarioRows[0] && await bcrypt.compare(password, usuarioRows[0].password_hash);
+    if (!passwordOk) return res.status(403).json({ mensaje: 'Contrasena incorrecta' });
+
     const { rowCount } = await pool.query(
       `delete from equipos_historial h
        using equipos_asignados ea

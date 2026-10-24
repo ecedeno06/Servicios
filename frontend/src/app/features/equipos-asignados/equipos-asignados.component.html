@@ -575,7 +575,7 @@
               }
               <span class="text-muted text-sm">&middot; por {{ m.registrado_por_nombre }}</span>
               @if (auth.esSuperAdmin()) {
-                <button type="button" class="btn-icon btn-icon-danger" style="margin-left:auto;" title="Eliminar movimiento (solo super admin)" aria-label="Eliminar movimiento" (click)="eliminarMovimientoHistorial(m.id)">
+                <button type="button" class="btn-icon btn-icon-danger" style="margin-left:auto;" title="Eliminar movimiento (solo super admin)" aria-label="Eliminar movimiento" (click)="pedirEliminarMovimientoHistorial(m.id)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                 </button>
               }
@@ -587,6 +587,33 @@
         }
       </ul>
     }
+  </div>
+}
+
+@if (historialAEliminar()) {
+  <div class="modal-overlay" (click)="cancelarEliminarHistorial()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Eliminar movimiento</h2>
+        <button class="close" (click)="cancelarEliminarHistorial()">&times;</button>
+      </div>
+      <p class="text-sm">Esta accion no se puede deshacer. Confirma tu contraseña para continuar.</p>
+      <form [formGroup]="passwordEliminarHistorialForm" (ngSubmit)="confirmarEliminarHistorial()">
+        <div class="form-group mt-16">
+          <label>Contraseña *</label>
+          <input class="input" type="password" formControlName="password" autofocus />
+        </div>
+        @if (errorEliminarHistorial()) {
+          <div class="error-text mt-16">{{ errorEliminarHistorial() }}</div>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-danger" [disabled]="passwordEliminarHistorialForm.invalid || eliminandoHistorial()">
+            {{ eliminandoHistorial() ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+          <button type="button" class="btn btn-outline" (click)="cancelarEliminarHistorial()">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
 }
 

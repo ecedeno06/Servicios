@@ -14,8 +14,8 @@ export class EquiposAsignadosService {
   actualizar(id: string, data: any): Observable<EquipoAsignado> { return this.http.put<EquipoAsignado>(`${this.base}/${id}`, data); }
   eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
   historial(id: string): Observable<MovimientoEquipo[]> { return this.http.get<MovimientoEquipo[]>(`${this.base}/${id}/historial`); }
-  eliminarHistorial(id: string, historialId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/historial/${historialId}`);
+  eliminarHistorial(id: string, historialId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/historial/${historialId}`, { body: { password } });
   }
 
   // Cambio rapido de estado desde el boton-icono de la fila (sin abrir el
