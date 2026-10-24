@@ -413,6 +413,13 @@ async function enviarPorCorreoHtml(req, res, next) {
     if (!carritoRows[0]) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
     const carrito = carritoRows[0];
 
+    // Asunto y observacion se pueden ajustar solo para este envio -- no
+    // se guardan de vuelta en el carrito, son del correo nada mas.
+    const asuntoPersonalizado = typeof req.body?.asunto === 'string' ? req.body.asunto.trim() : '';
+    if (typeof req.body?.observacion === 'string') {
+      carrito.observacion = req.body.observacion.trim() || null;
+    }
+
     const { rows: detalles } = await pool.query(
       `${SELECT_DETALLE} where d.carrito_id = $1 order by d.created_at asc`,
       [req.params.id]
@@ -429,10 +436,11 @@ async function enviarPorCorreoHtml(req, res, next) {
 
     const urlCarrito = `${process.env.CORS_ORIGIN || 'http://localhost:4200'}/carrito-compras?id=${carrito.id}`;
     const html = construirHtmlCorreo({ empresa: empresaRows[0], carrito, detalles, historico, urlCarrito });
+    const asunto = asuntoPersonalizado || `Solicitud de Compra - ID ${idCorto(carrito.id)}`;
 
     await enviarCorreo({
       destinatario: destinatarios,
-      asunto: `Solicitud de Compra - ID ${idCorto(carrito.id)}`,
+      asunto,
       texto: `Solicitud de compra "${carrito.titulo}". Verla en la aplicacion: ${urlCarrito}`,
       html,
     });

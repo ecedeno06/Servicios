@@ -177,6 +177,13 @@ export class CarritosComponent implements OnInit {
   destinatariosDisponibles = signal<{ id: string; nombre: string; email: string }[]>([]);
   destinatariosSeleccionados = signal<Set<string>>(new Set());
   busquedaDestinatarios = signal('');
+  // Correos de gente que no es usuario del sistema -- texto libre,
+  // separado por coma/punto y coma/salto de linea.
+  correoExtraTexto = signal('');
+  correoAsunto = signal('');
+  // Precargada con la observacion del encabezado, pero editable solo
+  // para este envio -- no se guarda de vuelta en el carrito.
+  correoObservacion = signal('');
 
   destinatariosFiltrados = computed(() => {
     const q = this.busquedaDestinatarios().trim().toLowerCase();
@@ -186,10 +193,23 @@ export class CarritosComponent implements OnInit {
     );
   });
 
+  extraEmailsValidos = computed(() => {
+    const vistos = new Set<string>();
+    return this.correoExtraTexto()
+      .split(/[,;\n]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && !vistos.has(s) && vistos.add(s));
+  });
+
+  totalDestinatarios = computed(() => this.destinatariosSeleccionados().size + this.extraEmailsValidos().length);
+
   abrirPopupCorreo(c: Carrito): void {
     this.carritoCorreoActual.set(c);
     this.destinatariosSeleccionados.set(new Set());
     this.busquedaDestinatarios.set('');
+    this.correoExtraTexto.set('');
+    this.correoAsunto.set(`Solicitud de Compra - ID ${this.idCorto(c.id)}`);
+    this.correoObservacion.set(c.observacion || '');
     this.popupCorreoAbierto.set(true);
   }
 
@@ -207,10 +227,10 @@ export class CarritosComponent implements OnInit {
 
   confirmarEnvioCorreo(): void {
     const c = this.carritoCorreoActual();
-    const destinatarios = [...this.destinatariosSeleccionados()];
+    const destinatarios = [...new Set([...this.destinatariosSeleccionados(), ...this.extraEmailsValidos()])];
     if (!c || !destinatarios.length || this.enviandoCorreo()) return;
     this.enviandoCorreo.set(true);
-    this.srv.enviarPorCorreo(c.id, destinatarios).subscribe({
+    this.srv.enviarPorCorreo(c.id, destinatarios, this.correoAsunto(), this.correoObservacion()).subscribe({
       next: () => {
         this.enviandoCorreo.set(false);
         this.cerrarPopupCorreo();

@@ -27,8 +27,8 @@ export class CarritosService {
   listarHistorico(id: string): Observable<HistoricoMovimientoCarrito[]> {
     return this.http.get<HistoricoMovimientoCarrito[]>(`${this.base}/${id}/historico`);
   }
-  enviarPorCorreo(id: string, destinatarios: string[]): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/enviar-correo`, { destinatarios });
+  enviarPorCorreo(id: string, destinatarios: string[], asunto?: string, observacion?: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/enviar-correo`, { destinatarios, asunto, observacion });
   }
   listarDestinatarios(): Observable<{ id: string; nombre: string; email: string }[]> {
     return this.http.get<{ id: string; nombre: string; email: string }[]>(`${this.base}/destinatarios`);

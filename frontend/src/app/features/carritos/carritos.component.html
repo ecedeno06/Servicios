@@ -379,6 +379,11 @@
       <p class="desc" style="margin: 0 0 14px;">{{ carritoCorreoActual()?.titulo }}</p>
 
       <div class="form-group">
+        <label>Asunto</label>
+        <input class="input" type="text" [ngModel]="correoAsunto()" (ngModelChange)="correoAsunto.set($event)" [ngModelOptions]="{standalone: true}" />
+      </div>
+
+      <div class="form-group" style="margin-top: 10px;">
         <label>¿A quienes lo enviamos?</label>
         <input
           class="input"
@@ -387,6 +392,7 @@
           autofocus
           [ngModel]="busquedaDestinatarios()"
           (ngModelChange)="busquedaDestinatarios.set($event)"
+          [ngModelOptions]="{standalone: true}"
         />
         <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-default); border-radius: 8px; padding: 8px; margin-top: 8px;">
           @for (u of destinatariosFiltrados(); track u.id) {
@@ -398,13 +404,31 @@
             <div class="desc" style="padding: 8px 2px;">Sin resultados.</div>
           }
         </div>
-        @if (destinatariosSeleccionados().size) {
-          <div class="desc text-sm" style="margin-top: 6px;">{{ destinatariosSeleccionados().size }} seleccionado(s)</div>
-        }
+      </div>
+
+      <div class="form-group" style="margin-top: 10px;">
+        <label>Otros correos (no son usuarios del sistema)</label>
+        <input
+          class="input"
+          type="text"
+          placeholder="correo1@externo.com, correo2@externo.com"
+          [ngModel]="correoExtraTexto()"
+          (ngModelChange)="correoExtraTexto.set($event)"
+          [ngModelOptions]="{standalone: true}"
+        />
+      </div>
+
+      @if (totalDestinatarios()) {
+        <div class="desc text-sm" style="margin-top: 6px;">{{ totalDestinatarios() }} destinatario(s) en total</div>
+      }
+
+      <div class="form-group" style="margin-top: 10px;">
+        <label>Observacion</label>
+        <textarea class="input" rows="2" [ngModel]="correoObservacion()" (ngModelChange)="correoObservacion.set($event)" [ngModelOptions]="{standalone: true}"></textarea>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-accent btn-sm" [disabled]="!destinatariosSeleccionados().size || enviandoCorreo()" (click)="confirmarEnvioCorreo()">
+        <button type="button" class="btn btn-accent btn-sm" [disabled]="!totalDestinatarios() || enviandoCorreo()" (click)="confirmarEnvioCorreo()">
           {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
         </button>
       </div>
