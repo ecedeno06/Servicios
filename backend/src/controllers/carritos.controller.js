@@ -316,7 +316,18 @@ async function actualizarDetalle(req, res, next) {
     );
     if (!det[0]) return res.status(404).json({ mensaje: 'Linea no encontrada' });
 
-    if (carrito.estado === 'en_construccion') {
+    // Dos tipos de edicion sobre la misma linea: la edicion COMPLETA del
+    // equipo (producto/marca/modelo/etc, via el popup) solo mientras esta
+    // en_construccion; y la carga rapida de cantidad_aprobada/observacion
+    // (inline, en la tarjeta), permitida en cualquier estado anterior a
+    // "aprobada" -- se distinguen por si el body trae producto_id o no.
+    const esEdicionCompleta = req.body.producto_id !== undefined;
+
+    if (esEdicionCompleta) {
+      if (carrito.estado !== 'en_construccion') {
+        return res.status(400).json({ mensaje: 'Solo se puede editar el equipo completo mientras el carrito esta "En Construccion"' });
+      }
+
       const { producto_id, marca, modelo, url, proveedor_id, cantidad_propuesta, costo_estimado, observacion } = req.body;
       if (!producto_id || !marca || !marca.trim() || !modelo || !modelo.trim()) {
         return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
@@ -357,28 +368,37 @@ async function actualizarDetalle(req, res, next) {
           req.params.detalleId,
         ]
       );
-    } else if (carrito.estado === 'en_revision') {
-      // En revision solo se carga la cantidad aprobada y se puede ajustar
-      // la observacion -- el resto de la linea (que es lo que se pidio
-      // comprar) ya quedo fijo al salir de "en_construccion".
+    } else {
+      if (carrito.estado === 'aprobada' || carrito.estado === 'cerrada') {
+        return res.status(400).json({ mensaje: 'Las lineas de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+      }
+
       const { cantidad_aprobada, observacion } = req.body;
       if (cantidad_aprobada !== undefined && cantidad_aprobada !== null && Number(cantidad_aprobada) < 0) {
         return res.status(400).json({ mensaje: 'La cantidad aprobada no puede ser negativa' });
       }
 
+      // Solo se actualiza el campo que realmente llego en el body -- el
+      // inline de cantidad aprobada y el de observacion se guardan cada
+      // uno por separado (onBlur), as que uno no debe pisar al otro.
+      const campos = [];
+      const valores = [];
+      if ('cantidad_aprobada' in req.body) {
+        campos.push(`cantidad_aprobada = $${campos.length + 1}`);
+        valores.push(cantidad_aprobada ?? null);
+      }
+      if ('observacion' in req.body) {
+        campos.push(`observacion = $${campos.length + 1}`);
+        valores.push(observacion ? observacion.trim() : null);
+      }
+      campos.push(`modificado_por = $${campos.length + 1}`);
+      valores.push(req.usuario.id);
+      valores.push(req.params.detalleId);
+
       await pool.query(
-        `update carrito_detalles set
-           cantidad_aprobada = $1, observacion = $2, modificado_por = $3
-         where id = $4`,
-        [
-          cantidad_aprobada ?? null,
-          observacion !== undefined ? (observacion ? observacion.trim() : null) : null,
-          req.usuario.id,
-          req.params.detalleId,
-        ]
+        `update carrito_detalles set ${campos.join(', ')} where id = $${valores.length}`,
+        valores
       );
-    } else {
-      return res.status(400).json({ mensaje: 'Las lineas de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
     }
 
     const { rows: completo } = await pool.query(`${SELECT_DETALLE} where d.id = $1`, [req.params.detalleId]);

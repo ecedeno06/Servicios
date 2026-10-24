@@ -187,12 +187,19 @@ export class CarritosComponent implements OnInit {
   });
 
   // Mientras esta en_construccion se puede editar todo libremente (crear/
-  // editar/borrar lineas, titulo, fecha); en en_revision solo se carga
-  // cantidad_aprobada/observacion por linea (ver controller); de ahi en
-  // adelante queda todo bloqueado.
+  // editar/borrar lineas, titulo, fecha). La cantidad aprobada (y su
+  // observacion) se puede ir cargando/ajustando desde en_construccion y
+  // hasta en_revision -- una vez "aprobada" o "cerrada" queda fija.
   puedeEditarEncabezado = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
   puedeEditarLineas = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
-  puedeCargarAprobado = computed(() => this.carritoSeleccionado()?.estado === 'en_revision');
+  puedeCargarAprobado = computed(() => {
+    const estado = this.carritoSeleccionado()?.estado;
+    return estado === 'en_construccion' || estado === 'en_revision';
+  });
+
+  totalLinea(d: CarritoDetalle): number {
+    return (d.cantidad_aprobada ?? 0) * (d.costo_estimado ?? 0);
+  }
 
   abrirNuevo(): void {
     this.carritoSeleccionado.set(null);
