@@ -59,6 +59,7 @@ export class CarritosComponent implements OnInit {
   // LISTA: filtros por columna (en el encabezado de la tabla)
   // -------------------------------------------------------------
 
+  filtroId = signal('');
   filtroTitulo = signal('');
   filtroFechaSolicitud = signal('');
   filtroEstado = signal('');
@@ -68,11 +69,12 @@ export class CarritosComponent implements OnInit {
   filtroCreadoPor = signal('');
 
   hayFiltros = computed(() =>
-    !!(this.filtroTitulo() || this.filtroFechaSolicitud() || this.filtroEstado() || this.filtroFechaAprobacion() ||
+    !!(this.filtroId() || this.filtroTitulo() || this.filtroFechaSolicitud() || this.filtroEstado() || this.filtroFechaAprobacion() ||
        this.filtroCostoPropuesto() || this.filtroCostoAprobado() || this.filtroCreadoPor())
   );
 
   limpiarFiltros(): void {
+    this.filtroId.set('');
     this.filtroTitulo.set('');
     this.filtroFechaSolicitud.set('');
     this.filtroEstado.set('');
@@ -82,7 +84,12 @@ export class CarritosComponent implements OnInit {
     this.filtroCreadoPor.set('');
   }
 
+  idCorto(id: string): string {
+    return id.slice(0, 8).toUpperCase();
+  }
+
   carritosFiltrados = computed(() => {
+    const idf = this.filtroId().trim().toLowerCase();
     const t = this.filtroTitulo().trim().toLowerCase();
     const fs = this.filtroFechaSolicitud().trim().toLowerCase();
     const est = this.filtroEstado();
@@ -92,6 +99,7 @@ export class CarritosComponent implements OnInit {
     const cre = this.filtroCreadoPor().trim().toLowerCase();
 
     return this.carritos().filter((c) => {
+      if (idf && !this.idCorto(c.id).toLowerCase().includes(idf)) return false;
       if (t && !c.titulo.toLowerCase().includes(t)) return false;
       if (fs && !(c.fecha_solicitud || '').toLowerCase().includes(fs)) return false;
       if (est && c.estado !== est) return false;
