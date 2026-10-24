@@ -30,7 +30,13 @@
     <tbody>
       @for (i of itemsFiltrados(); track i.id) {
         <tr class="row-clickable" [class.row-selected]="itemSeleccionado()?.id === i.id" (click)="seleccionarItem(i)">
-          <td>{{ i.descripcion }}</td>
+          <td>
+            @if (i.url) {
+              <a [href]="i.url" target="_blank" rel="noopener" (click)="$event.stopPropagation()">{{ i.descripcion }}</a>
+            } @else {
+              {{ i.descripcion }}
+            }
+          </td>
           <!--
           <td>{{ i.observacion || '-' }}</td>
           -->
