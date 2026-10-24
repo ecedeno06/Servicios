@@ -7,7 +7,6 @@ const SELECT_BASE = `
     c.*,
     uc.nombre as creado_por_nombre,
     um.nombre as modificado_por_nombre,
-    (select coalesce(sum(d.cantidad_propuesta), 0)::int from carrito_detalles d where d.carrito_id = c.id) as cantidad_propuesta_total,
     -- Dos columnas independientes y siempre visibles (no una sola que
     -- cambia de significado segun el estado): una proyecta el costo sobre
     -- lo PROPUESTO, la otra sobre lo realmente APROBADO por linea.

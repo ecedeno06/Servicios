@@ -37,10 +37,6 @@
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroFechaAprobacion()" (ngModelChange)="filtroFechaAprobacion.set($event)" />
         </th>
         <th style="text-align:center;">
-          <span class="th-label">Cant. Propuesta</span>
-          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCantPropuesta()" (ngModelChange)="filtroCantPropuesta.set($event)" />
-        </th>
-        <th style="text-align:center;">
           <span class="th-label">Costo Estimado Propuesto</span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCostoPropuesto()" (ngModelChange)="filtroCostoPropuesto.set($event)" />
         </th>
@@ -57,7 +53,7 @@
     </thead>
     <tbody>
       @if (cargando()) {
-        <tr><td colspan="9" class="desc" style="padding:16px;">Cargando...</td></tr>
+        <tr><td colspan="8" class="desc" style="padding:16px;">Cargando...</td></tr>
       } @else {
         @for (c of carritosFiltrados(); track c.id) {
           <tr class="row-clickable" [class.row-selected]="carritoSeleccionado()?.id === c.id" (click)="abrirCarrito(c)">
@@ -65,7 +61,6 @@
             <td>{{ c.fecha_solicitud | date:'mediumDate':'UTC' }}</td>
             <td><span class="badge" [class]="clasesBadgeEstado[c.estado]">{{ etiquetasEstado[c.estado] }}</span></td>
             <td>{{ c.fecha_aprobacion ? (c.fecha_aprobacion | date:'mediumDate':'UTC') : '-' }}</td>
-            <td style="text-align:center;">{{ c.cantidad_propuesta_total ?? 0 }}</td>
             <td style="text-align:center;">{{ c.costo_estimado_propuesto_total ? (c.costo_estimado_propuesto_total | currency:'USD':'symbol':'1.2-2') : '-' }}</td>
             <td style="text-align:center;">{{ c.costo_estimado_aprobado_total ? (c.costo_estimado_aprobado_total | currency:'USD':'symbol':'1.2-2') : '-' }}</td>
             <td>{{ c.creado_por_nombre }}</td>
@@ -80,7 +75,7 @@
             </td>
           </tr>
         } @empty {
-          <tr><td colspan="9" class="empty-state">{{ hayFiltros() ? 'Ningun carrito coincide con los filtros.' : 'No hay carritos de compra registrados.' }}</td></tr>
+          <tr><td colspan="8" class="empty-state">{{ hayFiltros() ? 'Ningun carrito coincide con los filtros.' : 'No hay carritos de compra registrados.' }}</td></tr>
         }
       }
     </tbody>
