@@ -379,4 +379,8 @@ export class CarritosComponent implements OnInit {
       error: (err) => alert(err.error?.mensaje || 'Error al eliminar la linea'),
     });
   }
+
+  abrirUrlProducto(url: string): void {
+    window.open(url, '_blank', 'noopener');
+  }
 }
