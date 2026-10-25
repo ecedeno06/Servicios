@@ -103,4 +103,34 @@ async function eliminar(req, res, next) {
   }
 }
 
-module.exports = { registrarError, listar, eliminar };
+// POST /api/logs/registrar { nivel, mensaje, ruta? }
+// A diferencia de registrarError (solo la llama el error-handler global),
+// este endpoint lo llama ToastService desde el frontend cada vez que se
+// muestra un mensaje de exito -- asi quedan en el mismo historico tanto
+// los errores como las acciones que SI salieron bien (ej. "Correo enviado
+// correctamente"). Solo acepta niveles no destructivos: 'error'/
+// 'advertencia' solo los genera el backend via registrarError, nunca un
+// usuario desde este endpoint.
+async function registrarMensaje(req, res, next) {
+  try {
+    const { nivel, mensaje, ruta } = req.body;
+    if (!['exito', 'info'].includes(nivel)) {
+      return res.status(400).json({ mensaje: 'Nivel invalido' });
+    }
+    if (!mensaje || typeof mensaje !== 'string') {
+      return res.status(400).json({ mensaje: 'mensaje es requerido' });
+    }
+
+    await pool.query(
+      `insert into logs_errores (nivel, mensaje, ruta, empresa_id, usuario_id, ip_address)
+       values ($1, $2, $3, $4, $5, $6)`,
+      [nivel, mensaje.slice(0, 2000), ruta ? String(ruta).slice(0, 500) : null, req.usuario?.empresa_id || null, req.usuario?.id || null, req.ip]
+    );
+
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { registrarError, listar, eliminar, registrarMensaje };

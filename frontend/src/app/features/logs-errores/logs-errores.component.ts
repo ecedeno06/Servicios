@@ -219,7 +219,12 @@ export class LogsErroresComponent implements OnInit {
   }
 
   claseNivel(nivel: NivelLog): string {
-    return nivel === 'advertencia' ? 'badge-amber' : 'badge-red';
+    switch (nivel) {
+      case 'exito': return 'badge-green';
+      case 'advertencia': return 'badge-amber';
+      case 'info': return 'badge-slate';
+      default: return 'badge-red';
+    }
   }
 
   claseStatus(status: number | null): string {

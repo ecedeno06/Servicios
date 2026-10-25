@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { LogsService } from './logs.service';
 
 // Reemplaza alert() en toda la app por una notificacion "toast" propia,
 // apilable y auto-descartable -- mas profesional que el dialogo nativo
@@ -26,13 +27,22 @@ export class ToastService {
   private contador = 0;
   toasts = signal<Toast[]>([]);
 
+  constructor(private logsSrv: LogsService) {}
+
   private mostrar(tipo: TipoToast, mensaje: string): void {
     const id = ++this.contador;
     this.toasts.update((arr) => [...arr, { id, tipo, mensaje }]);
     setTimeout(() => this.cerrar(id), DURACION_MS[tipo]);
   }
 
-  exito(mensaje: string): void { this.mostrar('exito', mensaje); }
+  exito(mensaje: string): void {
+    this.mostrar('exito', mensaje);
+    // Ademas de mostrarse, un mensaje de exito queda en el historico de
+    // logs (igual que ya pasa con los errores, capturados del lado del
+    // backend) -- fire-and-forget: si falla el registro no debe afectar
+    // el toast que el usuario ya esta viendo.
+    this.logsSrv.registrar('exito', mensaje, location.pathname).subscribe({ error: () => {} });
+  }
   error(mensaje: string): void { this.mostrar('error', mensaje); }
   advertencia(mensaje: string): void { this.mostrar('advertencia', mensaje); }
   info(mensaje: string): void { this.mostrar('info', mensaje); }

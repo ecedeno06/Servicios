@@ -22,4 +22,11 @@ export class LogsService {
   eliminar(ids: string[]): Observable<{ eliminados: number }> {
     return this.http.post<{ eliminados: number }>(`${this.base}/eliminar`, { ids });
   }
+
+  // Cualquier usuario autenticado puede llamar esto (a diferencia de
+  // listar/eliminar, que son solo para super-admin) -- lo usa ToastService
+  // para que los mensajes de exito tambien queden en el historico.
+  registrar(nivel: 'exito' | 'info', mensaje: string, ruta?: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${this.base}/registrar`, { nivel, mensaje, ruta });
+  }
 }

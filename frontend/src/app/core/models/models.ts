@@ -104,7 +104,7 @@ export interface SesionAuditoria {
   activo: boolean;
 }
 
-export type NivelLog = 'error' | 'advertencia';
+export type NivelLog = 'error' | 'advertencia' | 'exito' | 'info';
 
 export interface LogError {
   id: string;
