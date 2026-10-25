@@ -1,11 +1,3 @@
-/* El boton de "eliminar seleccionados" solo aparece cuando hay seleccion,
-   asi que esta fila nunca debe top-alinearse con el titulo (align-items
-   por defecto de .page-header) -- se ve mas natural centrado contra todo
-   el bloque titulo+subtitulo. */
-.page-header {
-  align-items: center;
-}
-
 .log-detalle-pre {
   background: var(--bg-surface-muted);
   color: var(--text-body);

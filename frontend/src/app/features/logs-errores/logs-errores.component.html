@@ -47,18 +47,18 @@
 <div class="page-header mt-16">
   <div>
     <h2 style="margin:0;">Resultados</h2>
-    <div class="desc">{{ logsFiltrados().length }} de {{ logs().length }} registro(s) (maximo 500 por busqueda).</div>
-  </div>
-  <div class="flex items-center gap-8">
-    @if (hayFiltrosColumna()) {
-      <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
-    }
-    @if (totalSeleccionados() > 0) {
-      <button type="button" class="btn-icon btn-icon-danger" [disabled]="eliminando()" [title]="eliminando() ? 'Eliminando...' : 'Eliminar ' + totalSeleccionados() + ' log(s) seleccionado(s)'" (click)="eliminarSeleccionados()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        <span class="btn-icon-badge">{{ totalSeleccionados() }}</span>
-      </button>
-    }
+    <div class="desc flex items-center gap-8" style="flex-wrap:wrap;">
+      <span>{{ logsFiltrados().length }} de {{ logs().length }} registro(s) (maximo 500 por busqueda).</span>
+      @if (hayFiltrosColumna()) {
+        <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
+      }
+      @if (totalSeleccionados() > 0) {
+        <button type="button" class="btn-icon btn-icon-danger" [disabled]="eliminando()" [title]="eliminando() ? 'Eliminando...' : 'Eliminar ' + totalSeleccionados() + ' log(s) seleccionado(s)'" (click)="eliminarSeleccionados()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span class="btn-icon-badge">{{ totalSeleccionados() }}</span>
+        </button>
+      }
+    </div>
   </div>
 </div>
 
