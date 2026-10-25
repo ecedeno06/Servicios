@@ -3,6 +3,7 @@ import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LogsService } from '../../core/services/logs.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { LogError, NivelLog } from '../../core/models/models';
 
 function hoyISO(): string {
@@ -119,7 +120,7 @@ export class LogsErroresComponent implements OnInit {
     });
   });
 
-  constructor(private srv: LogsService, private toast: ToastService) {}
+  constructor(private srv: LogsService, private toast: ToastService, private confirmSrv: ConfirmService) {}
 
   ngOnInit(): void {
     this.buscar();
@@ -197,10 +198,11 @@ export class LogsErroresComponent implements OnInit {
     this.seleccionados.set(todosSeleccionados ? new Set() : new Set(idsVisibles));
   }
 
-  eliminarSeleccionados(): void {
+  async eliminarSeleccionados(): Promise<void> {
     const ids = Array.from(this.seleccionados());
     if (ids.length === 0) return;
-    if (!confirm(`Eliminar ${ids.length} log(s) seleccionado(s)? Esta accion no se puede deshacer.`)) return;
+    const ok = await this.confirmSrv.confirmar(`Eliminar ${ids.length} log(s) seleccionado(s)? Esta accion no se puede deshacer.`, { titulo: 'Eliminar logs' });
+    if (!ok) return;
 
     this.eliminando.set(true);
     this.srv.eliminar(ids).subscribe({

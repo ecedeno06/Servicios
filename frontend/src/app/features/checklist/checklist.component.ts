@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { ChecklistsService } from '../../core/services/checklists.service';
 import { ChecklistItem } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-checklist',
@@ -40,7 +41,8 @@ export class ChecklistComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private checklistsSrv: ChecklistsService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -75,10 +77,10 @@ export class ChecklistComponent implements OnInit {
     });
   }
 
-  eliminarItem(): void {
+  async eliminarItem(): Promise<void> {
     const actual = this.itemSeleccionado();
     if (!actual) return;
-    if (!confirm(`¿Eliminar "${actual.descripcion}"?`)) return;
+    if (!(await this.confirmSrv.confirmar(`¿Eliminar "${actual.descripcion}"?`))) return;
     this.checklistsSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoItem(); this.cargarItems(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),

@@ -5,6 +5,7 @@ import * as L from 'leaflet';
 import { AuditoriaService } from '../../core/services/auditoria.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MotivoSalida, SesionAuditoria } from '../../core/models/models';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 function hoyISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -135,7 +136,7 @@ export class AuditoriaSesionesComponent implements OnInit {
   hayEnCurso = computed(() => this.sesionesFiltradas().some((s) => s.motivo_salida === 'en_curso'));
   totalSeleccionadas = computed(() => this.seleccionadas().size);
 
-  constructor(private srv: AuditoriaService, public auth: AuthService) {}
+  constructor(private srv: AuditoriaService, public auth: AuthService, private confirmSrv: ConfirmService) {}
 
   ngOnInit(): void {
     this.buscar();
@@ -200,15 +201,15 @@ export class AuditoriaSesionesComponent implements OnInit {
     this.seleccionadas.set(todasSeleccionadas ? new Set() : new Set(seleccionables));
   }
 
-  cerrarSeleccionadas(): void {
+  async cerrarSeleccionadas(): Promise<void> {
     const ids = Array.from(this.seleccionadas());
     if (ids.length === 0) return;
-    if (!confirm(`Cerrar ${ids.length} sesion(es) activa(s)? El usuario debera iniciar sesion nuevamente.`)) return;
+    if (!(await this.confirmSrv.confirmar(`Cerrar ${ids.length} sesion(es) activa(s)? El usuario debera iniciar sesion nuevamente.`))) return;
     this.ejecutarCierre(ids);
   }
 
-  cerrarSesionUnica(s: SesionAuditoria): void {
-    if (!confirm(`Cerrar la sesion activa de ${s.usuario_nombre}?`)) return;
+  async cerrarSesionUnica(s: SesionAuditoria): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Cerrar la sesion activa de ${s.usuario_nombre}?`))) return;
     this.ejecutarCierre([s.id]);
   }
 
@@ -283,10 +284,10 @@ export class AuditoriaSesionesComponent implements OnInit {
     return String(this.auth.usuario()?.id) === String(s.usuario_id);
   }
 
-  bloquearAccesoUsuario(s: SesionAuditoria): void {
+  async bloquearAccesoUsuario(s: SesionAuditoria): Promise<void> {
     if (this.esPropiaCuenta(s)) return;
 
-    if (!confirm(`Bloquear el acceso de ${s.usuario_nombre}? No podra iniciar sesion hasta que lo reactives, y se cerraran todas sus sesiones activas ahora mismo.`)) {
+    if (!(await this.confirmSrv.confirmar(`Bloquear el acceso de ${s.usuario_nombre}? No podra iniciar sesion hasta que lo reactives, y se cerraran todas sus sesiones activas ahora mismo.`))) {
       return;
     }
 

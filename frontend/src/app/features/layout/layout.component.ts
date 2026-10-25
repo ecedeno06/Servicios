@@ -14,6 +14,8 @@ import { SelectorFotoComponent } from '../../core/components/selector-foto/selec
 import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
 import { AvisoInactividadComponent } from '../../core/components/aviso-inactividad/aviso-inactividad.component';
 import { ToastContainerComponent } from '../../core/components/toast-container/toast-container.component';
+import { ConfirmDialogComponent } from '../../core/components/confirm-dialog/confirm-dialog.component';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { SeguridadComponent } from '../seguridad/seguridad.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { NotificacionComentario, PoliticaPassword } from '../../core/models/models';
@@ -26,7 +28,7 @@ const INTERVALO_NOTIFICACIONES_MS = 60000;
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent, ToastContainerComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent, ToastContainerComponent, ConfirmDialogComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
@@ -95,7 +97,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     public theme: ThemeService,
     public inactividad: InactividadService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   get noLeidos() { return this.horasSrv.noLeidos; }
@@ -217,9 +220,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
     });
   }
 
-  eliminarFotoPerfil(): void {
+  async eliminarFotoPerfil(): Promise<void> {
     this.menuAbierto.set(false);
-    if (!confirm('Eliminar tu foto de perfil?')) return;
+    if (!(await this.confirmSrv.confirmar('Eliminar tu foto de perfil?'))) return;
     this.auth.actualizarAvatar(null).subscribe({
       next: () => {},
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),

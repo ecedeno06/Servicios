@@ -26,6 +26,7 @@ import {
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 const ESTADOS_FACTURA: { valor: EstadoFacturaServicio; etiqueta: string }[] = [
   { valor: 'pagada', etiqueta: 'Pagada' },
@@ -671,10 +672,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.imagenesServicioActual.update((arr) => [img, ...arr]);
   }
 
-  eliminarImagen(adjuntoId: string): void {
+  async eliminarImagen(adjuntoId: string): Promise<void> {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
-    if (!confirm('Eliminar este adjunto?')) return;
+    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId).subscribe({
       next: () => this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
@@ -894,10 +895,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  eliminarIncidente(inc: ServicioIncidente): void {
+  async eliminarIncidente(inc: ServicioIncidente): Promise<void> {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
-    if (!confirm('¿Eliminar este evento del registro?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar este evento del registro?'))) return;
     this.serviciosSrv.eliminarIncidente(servicio.id, inc.id).subscribe({
       next: () => {
         this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
@@ -943,11 +944,11 @@ export class ServiciosProveedoresComponent implements OnInit {
   guardandoAdjuntoIncidente = signal(false);
   errorArchivoAdjuntoIncidente = signal<string | null>(null);
 
-  eliminarAdjuntoIncidente(adjuntoId: string): void {
+  async eliminarAdjuntoIncidente(adjuntoId: string): Promise<void> {
     const servicio = this.servicioEdicion();
     const incidente = this.incidenteSeleccionado();
     if (!servicio || !incidente) return;
-    if (!confirm('Eliminar este adjunto?')) return;
+    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId).subscribe({
       next: () => this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
@@ -1151,11 +1152,11 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  eliminarNotaIncidente(nota: IncidenteNota): void {
+  async eliminarNotaIncidente(nota: IncidenteNota): Promise<void> {
     const servicio = this.servicioEdicion();
     const incidente = this.incidenteNotasSeleccionado();
     if (!servicio || !incidente) return;
-    if (!confirm('¿Eliminar esta entrada del histórico?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar esta entrada del histórico?'))) return;
     this.serviciosSrv.eliminarNotaIncidente(servicio.id, incidente.id, nota.id).subscribe({
       next: () => {
         this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id));
@@ -1210,10 +1211,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.serviciosSrv.listarAdjuntosFactura(servicio.id, f.id).subscribe((data) => this.adjuntosFacturaActual.set(data));
   }
 
-  eliminarAdjuntoFactura(adjuntoId: string, f: FacturaServicioProveedor): void {
+  async eliminarAdjuntoFactura(adjuntoId: string, f: FacturaServicioProveedor): Promise<void> {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
-    if (!confirm('Eliminar este adjunto?')) return;
+    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId).subscribe({
       next: () => this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
@@ -1290,6 +1291,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private auth: AuthService,
     private sanitizer: DomSanitizer,
     private toast: ToastService,
+    private confirmSrv: ConfirmService,
     public menu: MenuService
   ) {}
 
@@ -1382,13 +1384,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  eliminarSector(s: SectorProveedorItem): void {
+  async eliminarSector(s: SectorProveedorItem): Promise<void> {
     if (s.proveedores_count && s.proveedores_count > 0) {
       this.toast.error(`No se puede eliminar el sector "${s.nombre}" porque está asignado a ${s.proveedores_count} proveedor(es).`);
       return;
     }
 
-    if (!confirm(`¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await this.confirmSrv.confirmar(`¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`))) return;
 
     this.sectoresSrv.eliminar(s.id).subscribe({
       next: () => this.cargarDatos(),
@@ -1460,13 +1462,13 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  eliminarProveedor(p: Proveedor): void {
+  async eliminarProveedor(p: Proveedor): Promise<void> {
     if (p.servicios_count && p.servicios_count > 0) {
       this.toast.error(`No se puede eliminar el proveedor "${p.nombre}" porque tiene ${p.servicios_count} servicio(s) asociado(s).`);
       return;
     }
 
-    if (!confirm(`¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await this.confirmSrv.confirmar(`¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`))) return;
 
     this.proveedoresSrv.eliminar(p.id).subscribe({
       next: () => this.cargarDatos(),
@@ -1838,8 +1840,8 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  eliminarServicio(s: ServicioProveedor): void {
-    if (!confirm(`¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`)) return;
+  async eliminarServicio(s: ServicioProveedor): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`))) return;
 
     this.serviciosSrv.eliminar(s.id).subscribe({
       next: () => this.cargarDatos(),
@@ -1927,16 +1929,16 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
-  anularFactura(f: FacturaServicioProveedor): void {
-    if (!confirm('¿Marcar esta factura como anulada?')) return;
+  async anularFactura(f: FacturaServicioProveedor): Promise<void> {
+    if (!(await this.confirmSrv.confirmar('¿Marcar esta factura como anulada?'))) return;
     this.cambiarEstadoFactura(f, 'anulada');
   }
 
-  eliminarFactura(f: FacturaServicioProveedor): void {
+  async eliminarFactura(f: FacturaServicioProveedor): Promise<void> {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
 
-    if (!confirm('¿Eliminar esta factura del registro?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar esta factura del registro?'))) return;
 
     this.serviciosSrv.eliminarFactura(servicio.id, f.id).subscribe({
       next: () => {

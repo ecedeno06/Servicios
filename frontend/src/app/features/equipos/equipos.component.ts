@@ -5,6 +5,7 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Categoria, Procesador, Producto } from '../../core/models/models';
 
 type Pestana = 'categorias' | 'productos' | 'procesadores';
@@ -81,7 +82,8 @@ export class EquiposComponent implements OnInit {
     private categoriasSrv: CategoriasService,
     private productosSrv: ProductosService,
     private procesadoresSrv: ProcesadoresService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -124,10 +126,10 @@ export class EquiposComponent implements OnInit {
     });
   }
 
-  eliminarCategoria(): void {
+  async eliminarCategoria(): Promise<void> {
     const actual = this.categoriaSeleccionada();
     if (!actual) return;
-    if (!confirm(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`)) return;
+    if (!(await this.confirmSrv.confirmar(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`))) return;
     this.categoriasSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
@@ -175,10 +177,10 @@ export class EquiposComponent implements OnInit {
     window.open(url, '_blank', 'noopener');
   }
 
-  eliminarProducto(): void {
+  async eliminarProducto(): Promise<void> {
     const actual = this.productoSeleccionado();
     if (!actual) return;
-    if (!confirm(`Eliminar el producto "${actual.nombre}"?`)) return;
+    if (!(await this.confirmSrv.confirmar(`Eliminar el producto "${actual.nombre}"?`))) return;
     this.productosSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoProducto(); this.cargarProductos(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el producto'),
@@ -209,10 +211,10 @@ export class EquiposComponent implements OnInit {
     });
   }
 
-  eliminarProcesador(): void {
+  async eliminarProcesador(): Promise<void> {
     const actual = this.procesadorSeleccionado();
     if (!actual) return;
-    if (!confirm(`Eliminar el procesador "${actual.nombre}"?`)) return;
+    if (!(await this.confirmSrv.confirmar(`Eliminar el procesador "${actual.nombre}"?`))) return;
     this.procesadoresSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el procesador'),

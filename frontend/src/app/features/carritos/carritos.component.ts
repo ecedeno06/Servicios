@@ -10,6 +10,7 @@ import { MenuService } from '../../core/services/menu.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
@@ -136,7 +137,8 @@ export class CarritosComponent implements OnInit {
     private auth: AuthService,
     private pdfSrv: CarritoPdfService,
     private toast: ToastService,
-    public menu: MenuService
+    public menu: MenuService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -245,8 +247,8 @@ export class CarritosComponent implements OnInit {
     });
   }
 
-  eliminarCarrito(c: Carrito): void {
-    if (!confirm(`¿Eliminar el carrito "${c.titulo}"? Esta accion no se puede deshacer.`)) return;
+  async eliminarCarrito(c: Carrito): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`¿Eliminar el carrito "${c.titulo}"? Esta accion no se puede deshacer.`))) return;
     this.srv.eliminar(c.id).subscribe({
       next: () => {
         if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
@@ -387,11 +389,11 @@ export class CarritosComponent implements OnInit {
     });
   }
 
-  avanzar(): void {
+  async avanzar(): Promise<void> {
     const c = this.carritoSeleccionado();
     const siguiente = this.siguienteEstado();
     if (!c || !siguiente || this.avanzando()) return;
-    if (!confirm(`¿Pasar el carrito "${c.titulo}" a "${this.etiquetasEstado[siguiente]}"?`)) return;
+    if (!(await this.confirmSrv.confirmar(`¿Pasar el carrito "${c.titulo}" a "${this.etiquetasEstado[siguiente]}"?`))) return;
 
     this.avanzando.set(true);
     this.srv.avanzarEstado(c.id, siguiente).subscribe({
@@ -409,11 +411,11 @@ export class CarritosComponent implements OnInit {
     });
   }
 
-  retroceder(): void {
+  async retroceder(): Promise<void> {
     const c = this.carritoSeleccionado();
     const anterior = this.anteriorEstado();
     if (!c || !anterior || this.avanzando()) return;
-    if (!confirm(`¿Devolver el carrito "${c.titulo}" a "${this.etiquetasEstado[anterior]}"?`)) return;
+    if (!(await this.confirmSrv.confirmar(`¿Devolver el carrito "${c.titulo}" a "${this.etiquetasEstado[anterior]}"?`))) return;
 
     this.avanzando.set(true);
     this.srv.retrocederEstado(c.id, anterior).subscribe({
@@ -559,10 +561,10 @@ export class CarritosComponent implements OnInit {
     });
   }
 
-  eliminarDetalle(d: CarritoDetalle): void {
+  async eliminarDetalle(d: CarritoDetalle): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-    if (!confirm('¿Eliminar esta linea del carrito?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar esta linea del carrito?'))) return;
     this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
       next: () => this.refrescarCarritoActual(),
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la linea'),

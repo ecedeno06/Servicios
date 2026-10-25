@@ -1,0 +1,12 @@
+@if (confirmSrv.estado(); as c) {
+  <div class="modal-overlay confirm-overlay" (click)="confirmSrv.responder(false)">
+    <div class="modal-card confirm-card" (click)="$event.stopPropagation()">
+      <h2 class="confirm-titulo">{{ c.titulo }}</h2>
+      <p class="confirm-mensaje">{{ c.mensaje }}</p>
+      <div class="flex items-center gap-8" style="justify-content:flex-end; margin-top:20px;">
+        <button type="button" class="btn btn-outline" (click)="confirmSrv.responder(false)">{{ c.textoCancelar }}</button>
+        <button type="button" [class]="c.peligroso ? 'btn btn-danger' : 'btn btn-primary'" (click)="confirmSrv.responder(true)">{{ c.textoAceptar }}</button>
+      </div>
+    </div>
+  </div>
+}

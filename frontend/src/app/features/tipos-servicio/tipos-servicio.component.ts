@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
 import { MenuService } from '../../core/services/menu.service';
 import { TipoServicio } from '../../core/models/models';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-tipos-servicio',
@@ -23,7 +24,7 @@ export class TiposServicioComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService) {}
+  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService, private confirmSrv: ConfirmService) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.tipos.set(data)); }
@@ -40,8 +41,8 @@ export class TiposServicioComponent implements OnInit {
     req.subscribe(() => { this.cerrarPanel(); this.cargar(); });
   }
 
-  eliminar(t: TipoServicio): void {
-    if (!confirm(`Eliminar el tipo de servicio "${t.nombre}"?`)) return;
+  async eliminar(t: TipoServicio): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Eliminar el tipo de servicio "${t.nombre}"?`))) return;
     this.srv.eliminar(t.id).subscribe(() => this.cargar());
   }
 }

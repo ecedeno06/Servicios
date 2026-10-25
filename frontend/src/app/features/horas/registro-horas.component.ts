@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { RegistroHora, Contrato, ConsumoHoras, Comentario, ImagenServicioProveedor } from '../../core/models/models';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -165,7 +166,8 @@ export class RegistroHorasComponent implements OnInit {
     private pdfSrv: HojaServicioPdfService,
     public auth: AuthService,
     public menu: MenuService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -281,8 +283,8 @@ export class RegistroHorasComponent implements OnInit {
     });
   }
 
-  eliminar(r: RegistroHora): void {
-    if (!confirm('Eliminar este registro de horas?')) return;
+  async eliminar(r: RegistroHora): Promise<void> {
+    if (!(await this.confirmSrv.confirmar('Eliminar este registro de horas?'))) return;
     this.srv.eliminar(r.id).subscribe(() => this.cargar());
   }
 
@@ -407,10 +409,10 @@ export class RegistroHorasComponent implements OnInit {
     });
   }
 
-  eliminarAdjuntoComentario(comentarioId: string, adjuntoId: string): void {
+  async eliminarAdjuntoComentario(comentarioId: string, adjuntoId: string): Promise<void> {
     const registro = this.registroComentando();
     if (!registro) return;
-    if (!confirm('¿Eliminar este adjunto?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar este adjunto?'))) return;
     this.srv.eliminarAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
       next: () => this.comentariosDelRegistro.update((lista) =>
         lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))

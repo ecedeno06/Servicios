@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { EmpresasService, ClienteDeEmpresa } from '../../core/services/empresas.service';
 import { RolesService } from '../../core/services/roles.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol, RolCatalogo } from '../../core/models/models';
 
 @Component({
@@ -43,7 +44,7 @@ export class EmpresasComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService, private toast: ToastService) {}
+  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService, private toast: ToastService, private confirmSrv: ConfirmService) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -94,8 +95,8 @@ export class EmpresasComponent implements OnInit {
     });
   }
 
-  desasociarUsuario(empresaId: string, u: UsuarioDeEmpresa): void {
-    if (!confirm(`Quitar a "${u.nombre}" de esta empresa?`)) return;
+  async desasociarUsuario(empresaId: string, u: UsuarioDeEmpresa): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Quitar a "${u.nombre}" de esta empresa?`))) return;
     this.srv.desasociarUsuario(empresaId, u.id).subscribe({
       next: () => this.cargarUsuariosDeEmpresa(empresaId),
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
@@ -136,8 +137,8 @@ export class EmpresasComponent implements OnInit {
     });
   }
 
-  eliminar(e: Empresa): void {
-    if (!confirm(`Eliminar la empresa "${e.nombre}"?`)) return;
+  async eliminar(e: Empresa): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Eliminar la empresa "${e.nombre}"?`))) return;
     this.srv.eliminar(e.id).subscribe({
       next: () => this.cargar(),
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la empresa'),

@@ -7,6 +7,7 @@ import { PermisosCatalogoService } from '../../core/services/permisosCatalogo.se
 import { RolMenuPermisosService } from '../../core/services/rolMenuPermisos.service';
 import { MenuItem, Permiso, RolCatalogo } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 type Pestana = 'roles' | 'menus' | 'matriz';
 
@@ -54,7 +55,8 @@ export class RolesPermisosComponent implements OnInit {
     private menusSrv: MenusAdminService,
     private permisosSrv: PermisosCatalogoService,
     private matrizSrv: RolMenuPermisosService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -91,10 +93,10 @@ export class RolesPermisosComponent implements OnInit {
     });
   }
 
-  eliminarRol(): void {
+  async eliminarRol(): Promise<void> {
     const actual = this.rolSeleccionado();
     if (!actual) return;
-    if (!confirm(`Eliminar el rol "${actual.nombre}"? Esto falla si todavia hay usuarios con ese rol asignado.`)) return;
+    if (!(await this.confirmSrv.confirmar(`Eliminar el rol "${actual.nombre}"? Esto falla si todavia hay usuarios con ese rol asignado.`))) return;
     this.rolesSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoRol(); this.cargarRoles(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el rol'),

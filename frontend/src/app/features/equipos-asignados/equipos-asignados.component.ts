@@ -15,6 +15,7 @@ import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, Equ
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -396,7 +397,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private checklistsSrv: ChecklistsService,
     private checklistPdfSrv: ChecklistEquipoPdfService,
     public auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -626,10 +628,10 @@ export class EquiposAsignadosComponent implements OnInit {
     this.imagenesEquipoActual.update((arr) => [img, ...arr]);
   }
 
-  eliminarImagen(adjuntoId: string): void {
+  async eliminarImagen(adjuntoId: string): Promise<void> {
     const equipo = this.seleccionado();
     if (!equipo) return;
-    if (!confirm('Eliminar este adjunto?')) return;
+    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.srv.eliminarAdjunto(equipo.id, adjuntoId).subscribe({
       next: () => this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
@@ -987,11 +989,11 @@ export class EquiposAsignadosComponent implements OnInit {
     this.cargarChecklistEjecuciones();
   }
 
-  eliminarChecklistEjecucion(ejecucion: EquipoChecklistEjecucion, event: MouseEvent): void {
+  async eliminarChecklistEjecucion(ejecucion: EquipoChecklistEjecucion, event: MouseEvent): Promise<void> {
     event.stopPropagation();
     const equipo = this.checklistEquipoActual();
     if (!equipo) return;
-    if (!confirm('¿Eliminar este checklist?')) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar este checklist?'))) return;
     this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id).subscribe({
       next: () => this.cargarChecklistEjecuciones(),
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),

@@ -1,0 +1,21 @@
+/* Por encima de cualquier otro modal/drawer abierto (z-index 60) -- una
+   confirmacion puede dispararse desde adentro de otro popup (ej. eliminar
+   una linea dentro del detalle de un carrito). */
+.confirm-overlay {
+  z-index: 70;
+}
+
+.confirm-card {
+  max-width: 420px;
+}
+
+.confirm-titulo {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.confirm-mensaje {
+  margin: 0;
+  color: var(--text-body);
+  white-space: pre-line;
+}

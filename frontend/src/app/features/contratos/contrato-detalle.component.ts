@@ -7,6 +7,7 @@ import { TiposServicioService } from '../../core/services/tipos-servicio.service
 import { MenuService } from '../../core/services/menu.service';
 import { Contacto, ConsumoHoras, Contrato, Documento, TipoServicio } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-contrato-detalle',
@@ -45,7 +46,8 @@ export class ContratoDetalleComponent implements OnInit {
     private srv: ContratosService,
     private tiposSrv: TiposServicioService,
     public menu: MenuService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -118,8 +120,8 @@ export class ContratoDetalleComponent implements OnInit {
     });
   }
 
-  eliminarServicio(contratoServicioId: string): void {
-    if (!confirm('Quitar este servicio del contrato? Se perdera el historial de horas asociado.')) return;
+  async eliminarServicio(contratoServicioId: string): Promise<void> {
+    if (!(await this.confirmSrv.confirmar('Quitar este servicio del contrato? Se perdera el historial de horas asociado.'))) return;
     this.srv.eliminarServicio(this.contratoId, contratoServicioId).subscribe(() => this.cargar());
   }
 
@@ -151,10 +153,10 @@ export class ContratoDetalleComponent implements OnInit {
     });
   }
 
-  quitarDocumento(index: number): void {
+  async quitarDocumento(index: number): Promise<void> {
     const actuales = this.contrato()?.documentos ?? [];
     const doc = actuales[index];
-    if (!doc || !confirm(`Quitar el documento "${doc.nombre}"?`)) return;
+    if (!doc || !(await this.confirmSrv.confirmar(`Quitar el documento "${doc.nombre}"?`))) return;
     const documentos = actuales.filter((_, i) => i !== index);
     this.srv.actualizar(this.contratoId, { documentos }).subscribe(() => this.cargar());
   }

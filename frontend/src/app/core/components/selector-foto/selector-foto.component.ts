@@ -2,6 +2,7 @@ import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChil
 import { CommonModule } from '@angular/common';
 import { redimensionarImagen } from '../../utils/imagen.util';
 import { ToastService } from '../../services/toast.service';
+import { ConfirmService } from '../../services/confirm.service';
 
 // Boton de avatar (foto o iniciales) que al hacer clic abre un selector con
 // 3 formas de conseguir una imagen: camara, archivo del equipo, o pegar
@@ -43,7 +44,7 @@ export class SelectorFotoComponent implements OnDestroy {
   @ViewChild('videoFoto') videoFotoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('fileInputFoto') fileInputFotoRef?: ElementRef<HTMLInputElement>;
 
-  constructor(private toast: ToastService) {}
+  constructor(private toast: ToastService, private confirmSrv: ConfirmService) {}
 
   iniciales(): string {
     return (this.nombre || '')
@@ -142,8 +143,8 @@ export class SelectorFotoComponent implements OnDestroy {
     this.toast.advertencia('No se encontro ninguna imagen en el portapapeles.');
   }
 
-  eliminarFoto(): void {
-    if (!confirm('Eliminar esta foto?')) return;
+  async eliminarFoto(): Promise<void> {
+    if (!(await this.confirmSrv.confirmar('Eliminar esta foto?'))) return;
     this.fotoEliminada.emit();
     this.cerrarSelector();
   }

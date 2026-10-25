@@ -7,6 +7,7 @@ import { ClientesService } from '../../core/services/clientes.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-contratos',
@@ -106,7 +107,8 @@ export class ContratosComponent implements OnInit {
     private srv: ContratosService,
     private clientesSrv: ClientesService,
     public menu: MenuService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -149,8 +151,8 @@ export class ContratosComponent implements OnInit {
     });
   }
 
-  eliminar(c: Contrato): void {
-    if (!confirm(`Eliminar el contrato "${c.numero_contrato}"? Se eliminaran tambien sus horas y registros.`)) return;
+  async eliminar(c: Contrato): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Eliminar el contrato "${c.numero_contrato}"? Se eliminaran tambien sus horas y registros.`))) return;
     this.srv.eliminar(c.id).subscribe(() => this.cargar());
   }
 

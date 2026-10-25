@@ -9,6 +9,7 @@ import { RolesService } from '../../core/services/roles.service';
 import { Usuario, Cliente, Rol, PoliticaPassword, RolCatalogo } from '../../core/models/models';
 import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -46,7 +47,8 @@ export class UsuariosComponent implements OnInit {
     private politicaPasswordSrv: PoliticaPasswordService,
     private rolesSrv: RolesService,
     public auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmSrv: ConfirmService
   ) {}
 
   ngOnInit(): void {
@@ -129,16 +131,16 @@ export class UsuariosComponent implements OnInit {
     });
   }
 
-  eliminar(u: Usuario): void {
-    if (!confirm(`Quitar a "${u.nombre}" de esta empresa?`)) return;
+  async eliminar(u: Usuario): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Quitar a "${u.nombre}" de esta empresa?`))) return;
     this.srv.eliminar(u.id).subscribe({
       next: () => this.cargar(),
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
     });
   }
 
-  resetearPassword(u: Usuario): void {
-    if (!confirm(`Enviar un enlace para restablecer la contrasena a ${u.nombre} (${u.email})? Debera definir una nueva contrasena antes de poder usar el sistema.`)) return;
+  async resetearPassword(u: Usuario): Promise<void> {
+    if (!(await this.confirmSrv.confirmar(`Enviar un enlace para restablecer la contrasena a ${u.nombre} (${u.email})? Debera definir una nueva contrasena antes de poder usar el sistema.`))) return;
     this.reseteandoId.set(u.id);
     this.srv.resetearPassword(u.id).subscribe({
       next: (res) => {
