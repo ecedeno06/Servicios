@@ -104,6 +104,27 @@ export interface SesionAuditoria {
   activo: boolean;
 }
 
+export type NivelLog = 'error' | 'advertencia';
+
+export interface LogError {
+  id: string;
+  nivel: NivelLog;
+  mensaje: string;
+  stack: string | null;
+  codigo: string | null;
+  metodo_http: string | null;
+  ruta: string | null;
+  status_http: number | null;
+  empresa_id: string | null;
+  empresa_nombre: string | null;
+  usuario_id: string | null;
+  usuario_nombre: string | null;
+  usuario_email: string | null;
+  ip_address: string | null;
+  body: Record<string, unknown> | null;
+  created_at: string;
+}
+
 // Catalogo global de equipos (no depende de empresa_id) -- ids numericos
 // (serial), a diferencia del resto del sistema que usa uuid.
 export interface Categoria {

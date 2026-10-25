@@ -15,6 +15,7 @@ function itemsConfiguracion() {
       { id: 'roles_permisos', codigo: 'roles_permisos', nombre: 'Roles y permisos', ruta: '/roles-permisos', icono: 'roles_permisos', hijos: [] },
       { id: 'estados_servicio', codigo: 'estados_servicio', nombre: 'Estados de Servicio', ruta: '/estados-servicio', icono: 'estados_servicio', hijos: [] },
       { id: 'checklist', codigo: 'checklist', nombre: 'Checklist', ruta: '/checklist', icono: 'checklist', hijos: [] },
+      { id: 'logs_errores', codigo: 'logs_errores', nombre: 'Logs de errores', ruta: '/logs-errores', icono: 'logs_errores', hijos: [] },
     ],
   };
 }

@@ -25,6 +25,7 @@ import { ServiciosProveedoresComponent } from './features/servicios-proveedores/
 import { EstadosServicioComponent } from './features/estados-servicio/estados-servicio.component';
 import { ChecklistComponent } from './features/checklist/checklist.component';
 import { CarritosComponent } from './features/carritos/carritos.component';
+import { LogsErroresComponent } from './features/logs-errores/logs-errores.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -55,6 +56,7 @@ export const routes: Routes = [
       { path: 'roles-permisos', component: RolesPermisosComponent, canActivate: [superAdminGuard] },
       { path: 'estados-servicio', component: EstadosServicioComponent, canActivate: [superAdminGuard] },
       { path: 'checklist', component: ChecklistComponent, canActivate: [superAdminGuard] },
+      { path: 'logs-errores', component: LogsErroresComponent, canActivate: [superAdminGuard] },
     ],
   },
 

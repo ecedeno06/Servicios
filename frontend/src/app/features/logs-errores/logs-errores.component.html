@@ -1,0 +1,180 @@
+<div class="page-header">
+  <div>
+    <h1>Logs de errores</h1>
+    <div class="desc">Errores capturados por la aplicacion. Solo visible para super administradores.</div>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="auth-error mt-16">{{ error() }}</div>
+}
+
+<div class="card mt-16">
+  <div class="flex items-center gap-12" style="flex-wrap:wrap;">
+    <div class="form-group" style="min-width:160px;">
+      <label>Desde</label>
+      <input class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </div>
+    <div class="form-group" style="min-width:160px;">
+      <label>Hasta</label>
+      <input class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </div>
+    <div class="form-group" style="min-width:160px;">
+      <label>Nivel</label>
+      <select class="input" [ngModel]="nivelTexto()" (ngModelChange)="nivelTexto.set($event)">
+        <option value="">Todos</option>
+        <option value="error">Error</option>
+        <option value="advertencia">Advertencia</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1; min-width:180px;">
+      <label>Ruta</label>
+      <input class="input" type="text" [ngModel]="rutaTexto()" (ngModelChange)="rutaTexto.set($event)" placeholder="/api/..." />
+    </div>
+    <div class="form-group" style="flex:1; min-width:180px;">
+      <label>Mensaje</label>
+      <input class="input" type="text" [ngModel]="mensajeTexto()" (ngModelChange)="mensajeTexto.set($event)" placeholder="Texto del error..." />
+    </div>
+    <button type="button" class="btn btn-primary" (click)="buscar()" [disabled]="cargando()">
+      {{ cargando() ? 'Buscando...' : 'Buscar' }}
+    </button>
+  </div>
+</div>
+
+<div class="page-header mt-16">
+  <div>
+    <h2 style="margin:0;">Resultados</h2>
+    <div class="desc">{{ logsFiltrados().length }} de {{ logs().length }} registro(s) (maximo 500 por busqueda).</div>
+  </div>
+  <div class="flex items-center gap-8">
+    @if (hayFiltrosColumna()) {
+      <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
+    }
+  </div>
+</div>
+
+<div class="table-wrap table-wrap-compact">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('fecha')">Fecha <span class="orden-icono">{{ iconoOrden('fecha') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroFecha()" (ngModelChange)="filtroFecha.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('metodoRuta')">Metodo / Ruta <span class="orden-icono">{{ iconoOrden('metodoRuta') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroMetodoRuta()" (ngModelChange)="filtroMetodoRuta.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('mensaje')">Mensaje <span class="orden-icono">{{ iconoOrden('mensaje') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroMensaje()" (ngModelChange)="filtroMensaje.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('usuario')">Usuario <span class="orden-icono">{{ iconoOrden('usuario') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroUsuario()" (ngModelChange)="filtroUsuario.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('empresa')">Empresa <span class="orden-icono">{{ iconoOrden('empresa') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroEmpresa()" (ngModelChange)="filtroEmpresa.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('status')">Status <span class="orden-icono">{{ iconoOrden('status') }}</span></span>
+          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroStatus()" (ngModelChange)="filtroStatus.set($event)" />
+        </th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of logsOrdenados(); track l.id) {
+        <tr>
+          <td>{{ formatoFecha(l.created_at) }}</td>
+          <td>
+            <span class="badge" [class]="claseNivel(l.nivel)">{{ l.metodo_http || '-' }}</span>
+            <div class="text-muted text-sm">{{ l.ruta || '-' }}</div>
+          </td>
+          <td class="text-sm">{{ l.mensaje }}</td>
+          <td>
+            @if (l.usuario_nombre) {
+              <div>{{ l.usuario_nombre }}</div>
+              <div class="text-muted text-sm">{{ l.usuario_email }}</div>
+            } @else {
+              -
+            }
+          </td>
+          <td>{{ l.empresa_nombre || '-' }}</td>
+          <td><span class="badge" [class]="claseStatus(l.status_http)">{{ l.status_http ?? '-' }}</span></td>
+          <td class="table-actions">
+            <button type="button" class="btn-icon" title="Ver detalle" (click)="abrirDetalle(l)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              @if (cargando()) {
+                Cargando logs...
+              } @else if (buscado() && logs().length === 0) {
+                No se encontraron errores para el filtro seleccionado.
+              } @else if (logs().length > 0) {
+                Ningun resultado coincide con los filtros de columna.
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (logDetalle(); as l) {
+  <div class="modal-overlay" (click)="cerrarDetalle()">
+    <div class="modal-card" (click)="$event.stopPropagation()" style="max-width:720px; width:90vw; max-height:85vh; overflow-y:auto;">
+      <div class="drawer-header">
+        <h2>Detalle del error</h2>
+        <button class="close" (click)="cerrarDetalle()">&times;</button>
+      </div>
+      <div class="flex items-center gap-12" style="flex-wrap:wrap;">
+        <span class="badge" [class]="claseNivel(l.nivel)">{{ l.nivel }}</span>
+        <span class="badge" [class]="claseStatus(l.status_http)">{{ l.status_http ?? '-' }}</span>
+        <span class="text-muted text-sm">{{ formatoFecha(l.created_at) }}</span>
+      </div>
+      <div class="mt-16">
+        <strong>Mensaje</strong>
+        <p>{{ l.mensaje }}</p>
+      </div>
+      <div class="mt-16">
+        <strong>Peticion</strong>
+        <p class="text-sm">{{ l.metodo_http || '-' }} {{ l.ruta || '-' }}</p>
+      </div>
+      <div class="mt-16">
+        <strong>Usuario / Empresa</strong>
+        <p class="text-sm">
+          {{ l.usuario_nombre ? (l.usuario_nombre + ' (' + l.usuario_email + ')') : 'Sin usuario autenticado' }}
+          @if (l.empresa_nombre) { &mdash; {{ l.empresa_nombre }} }
+        </p>
+      </div>
+      <div class="mt-16">
+        <strong>IP</strong>
+        <p class="text-sm">{{ l.ip_address || '-' }}</p>
+      </div>
+      @if (l.codigo) {
+        <div class="mt-16">
+          <strong>Codigo</strong>
+          <p class="text-sm">{{ l.codigo }}</p>
+        </div>
+      }
+      <div class="mt-16">
+        <strong>Body de la peticion</strong>
+        <pre class="log-detalle-pre">{{ bodyFormateado(l) }}</pre>
+      </div>
+      @if (l.stack) {
+        <div class="mt-16">
+          <strong>Stack trace</strong>
+          <pre class="log-detalle-pre">{{ l.stack }}</pre>
+        </div>
+      }
+    </div>
+  </div>
+}

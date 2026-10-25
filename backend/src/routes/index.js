@@ -23,6 +23,7 @@ router.use('/estados-servicios-proveedores', require('./estadosServiciosProveedo
 router.use('/servicios-proveedores', require('./serviciosProveedores.routes'));
 router.use('/checklists', require('./checklists.routes'));
 router.use('/carritos', require('./carritos.routes'));
+router.use('/logs', require('./logs.routes'));
 router.use('/', require('./navegacion.routes'));
 
 
