@@ -25,6 +25,7 @@ async function cargarPdfMake(): Promise<any> {
 
 export interface CarritoPdfLinea {
   equipo: string; // "marca modelo"
+  url?: string | null; // link del producto -- si viene, "equipo" se muestra como link
   categoria?: string | null;
   proveedor?: string | null;
   cantidadPropuesta: number;
@@ -97,7 +98,9 @@ export class CarritoPdfService {
     }
 
     const filasLineas = data.lineas.map((l) => ([
-      { text: l.equipo, style: 'td' },
+      l.url
+        ? { text: l.equipo, style: 'td', link: l.url, color: PRIMARY, decoration: 'underline' }
+        : { text: l.equipo, style: 'td' },
       { text: l.categoria || '-', style: 'td' },
       { text: l.proveedor || '-', style: 'td' },
       { text: String(l.cantidadPropuesta), style: 'td', alignment: 'center' },

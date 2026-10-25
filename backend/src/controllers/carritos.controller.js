@@ -57,7 +57,7 @@ function construirHtmlCorreo({ empresa, carrito, detalles, historico, urlCarrito
 
   const filasLineas = detalles.map((d) => `
     <tr>
-      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.marca)} ${escapeHtml(d.modelo)}</td>
+      <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${d.url ? `<a href="${escapeHtml(d.url)}" style="color:${PRIMARY};text-decoration:underline;">${escapeHtml(d.marca)} ${escapeHtml(d.modelo)}</a>` : `${escapeHtml(d.marca)} ${escapeHtml(d.modelo)}`}</td>
       <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.categoria_nombre || '-')}</td>
       <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;">${escapeHtml(d.proveedor_nombre || '-')}</td>
       <td style="padding:6px;border-bottom:1px solid #B7B7B7;font-size:12px;text-align:center;">${d.cantidad_propuesta}</td>

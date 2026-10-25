@@ -608,6 +608,7 @@ export class CarritosComponent implements OnInit {
       fechaUltimoEstado: formatearFechaHora(ultimoMovimiento?.fecha_cambio) ?? formatearFechaHora(carrito.created_at),
       lineas: this.detalles().map((d) => ({
         equipo: `${d.marca} ${d.modelo}`,
+        url: d.url,
         categoria: d.categoria_nombre,
         proveedor: d.proveedor_nombre,
         cantidadPropuesta: d.cantidad_propuesta,
