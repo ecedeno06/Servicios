@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EstadosServiciosProveedoresService } from '../../core/services/estados-servicios-proveedores.service';
 import { EstadoServicioProveedorItem } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 const CLASES_BADGE: { valor: string; etiqueta: string }[] = [
   { valor: 'badge-green', etiqueta: 'Verde' },
@@ -41,7 +42,8 @@ export class EstadosServicioComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private estadosSrv: EstadosServiciosProveedoresService
+    private estadosSrv: EstadosServiciosProveedoresService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -72,7 +74,7 @@ export class EstadosServicioComponent implements OnInit {
     this.guardando.set(true);
     req.subscribe({
       next: () => { this.guardando.set(false); this.nuevoEstado(); this.cargarEstados(); },
-      error: (err) => { this.guardando.set(false); alert(err?.error?.mensaje || 'No se pudo guardar el estado'); },
+      error: (err) => { this.guardando.set(false); this.toast.error(err?.error?.mensaje || 'No se pudo guardar el estado'); },
     });
   }
 
@@ -82,7 +84,7 @@ export class EstadosServicioComponent implements OnInit {
     if (!confirm(`¿Eliminar el estado "${actual.nombre}"? Esto falla si todavia hay servicios con este estado.`)) return;
     this.estadosSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoEstado(); this.cargarEstados(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el estado'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el estado'),
     });
   }
 }

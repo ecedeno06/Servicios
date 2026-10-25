@@ -6,6 +6,7 @@ import { ContratosService } from '../../core/services/contratos.service';
 import { ClientesService } from '../../core/services/clientes.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-contratos',
@@ -104,7 +105,8 @@ export class ContratosComponent implements OnInit {
     private fb: FormBuilder,
     private srv: ContratosService,
     private clientesSrv: ClientesService,
-    public menu: MenuService
+    public menu: MenuService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -143,7 +145,7 @@ export class ContratosComponent implements OnInit {
       : this.srv.crear(this.form.getRawValue());
     peticion.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el contrato'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el contrato'),
     });
   }
 

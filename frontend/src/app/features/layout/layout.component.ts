@@ -13,9 +13,11 @@ import { InactividadService } from '../../core/services/inactividad.service';
 import { SelectorFotoComponent } from '../../core/components/selector-foto/selector-foto.component';
 import { PasswordChecklistComponent } from '../../core/components/password-checklist/password-checklist.component';
 import { AvisoInactividadComponent } from '../../core/components/aviso-inactividad/aviso-inactividad.component';
+import { ToastContainerComponent } from '../../core/components/toast-container/toast-container.component';
 import { SeguridadComponent } from '../seguridad/seguridad.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { NotificacionComentario, PoliticaPassword } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 const SIDEBAR_STORAGE_KEY = 'hs_sidebar_colapsado';
 const SESSION_START_KEY = 'hs_session_start_time';
@@ -24,7 +26,7 @@ const INTERVALO_NOTIFICACIONES_MS = 60000;
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent, ToastContainerComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
@@ -92,7 +94,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private politicaPasswordSrv: PoliticaPasswordService,
     private router: Router,
     public theme: ThemeService,
-    public inactividad: InactividadService
+    public inactividad: InactividadService,
+    private toast: ToastService
   ) {}
 
   get noLeidos() { return this.horasSrv.noLeidos; }
@@ -209,7 +212,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   onFotoPerfilCambiada(base64: string): void {
     this.auth.actualizarAvatar(base64).subscribe({
       next: () => {},
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo actualizar la foto de perfil'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo actualizar la foto de perfil'),
     });
   }
 
@@ -218,7 +221,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     if (!confirm('Eliminar tu foto de perfil?')) return;
     this.auth.actualizarAvatar(null).subscribe({
       next: () => {},
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
     });
   }
 
@@ -228,7 +231,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   onFotoPerfilEliminada(): void {
     this.auth.actualizarAvatar(null).subscribe({
       next: () => {},
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la foto de perfil'),
     });
   }
 
@@ -276,9 +279,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.auth.cambiarPassword(password_actual!, password_nueva!, pistaTexto).subscribe({
       next: () => {
         this.cerrarCambioPassword();
-        alert('Contrasena actualizada correctamente.');
+        this.toast.exito('Contrasena actualizada correctamente.');
       },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo cambiar la contrasena'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo cambiar la contrasena'),
     });
   }
 }

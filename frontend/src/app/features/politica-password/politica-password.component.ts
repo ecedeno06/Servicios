@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PoliticaPasswordService } from '../../core/services/politicaPassword.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-politica-password',
@@ -26,7 +27,7 @@ export class PoliticaPasswordComponent implements OnInit {
     pista_similitud_maxima_porcentaje: [70, [Validators.required, Validators.min(0), Validators.max(100)]],
   });
 
-  constructor(private fb: FormBuilder, private srv: PoliticaPasswordService) {}
+  constructor(private fb: FormBuilder, private srv: PoliticaPasswordService, private toast: ToastService) {}
 
   ngOnInit(): void {
     this.cargando.set(true);
@@ -55,11 +56,11 @@ export class PoliticaPasswordComponent implements OnInit {
     this.srv.actualizar(this.form.getRawValue() as any).subscribe({
       next: () => {
         this.guardando.set(false);
-        alert('Politica de password actualizada correctamente.');
+        this.toast.exito('Politica de password actualizada correctamente.');
       },
       error: (err) => {
         this.guardando.set(false);
-        alert(err?.error?.mensaje || 'No se pudo guardar la politica de password');
+        this.toast.error(err?.error?.mensaje || 'No se pudo guardar la politica de password');
       },
     });
   }

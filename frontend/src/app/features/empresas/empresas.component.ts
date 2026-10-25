@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { EmpresasService, ClienteDeEmpresa } from '../../core/services/empresas.service';
 import { RolesService } from '../../core/services/roles.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol, RolCatalogo } from '../../core/models/models';
 
 @Component({
@@ -42,7 +43,7 @@ export class EmpresasComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService) {}
+  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService, private toast: ToastService) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -89,7 +90,7 @@ export class EmpresasComponent implements OnInit {
         this.clienteParaAsociar = '';
         this.cargarUsuariosDeEmpresa(empresaId);
       },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo asociar el usuario'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo asociar el usuario'),
     });
   }
 
@@ -97,7 +98,7 @@ export class EmpresasComponent implements OnInit {
     if (!confirm(`Quitar a "${u.nombre}" de esta empresa?`)) return;
     this.srv.desasociarUsuario(empresaId, u.id).subscribe({
       next: () => this.cargarUsuariosDeEmpresa(empresaId),
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo quitar al usuario'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
     });
   }
 
@@ -109,7 +110,7 @@ export class EmpresasComponent implements OnInit {
     if (!archivo) return;
 
     if (!archivo.type.startsWith('image/')) {
-      alert('Selecciona un archivo de imagen valido.');
+      this.toast.advertencia('Selecciona un archivo de imagen valido.');
       return;
     }
 
@@ -131,7 +132,7 @@ export class EmpresasComponent implements OnInit {
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);
     req.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar la empresa'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar la empresa'),
     });
   }
 
@@ -139,7 +140,7 @@ export class EmpresasComponent implements OnInit {
     if (!confirm(`Eliminar la empresa "${e.nombre}"?`)) return;
     this.srv.eliminar(e.id).subscribe({
       next: () => this.cargar(),
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la empresa'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la empresa'),
     });
   }
 }

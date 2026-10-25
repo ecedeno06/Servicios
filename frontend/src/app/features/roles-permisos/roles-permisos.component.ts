@@ -6,6 +6,7 @@ import { MenusAdminService } from '../../core/services/menusAdmin.service';
 import { PermisosCatalogoService } from '../../core/services/permisosCatalogo.service';
 import { RolMenuPermisosService } from '../../core/services/rolMenuPermisos.service';
 import { MenuItem, Permiso, RolCatalogo } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 type Pestana = 'roles' | 'menus' | 'matriz';
 
@@ -52,7 +53,8 @@ export class RolesPermisosComponent implements OnInit {
     private rolesSrv: RolesService,
     private menusSrv: MenusAdminService,
     private permisosSrv: PermisosCatalogoService,
-    private matrizSrv: RolMenuPermisosService
+    private matrizSrv: RolMenuPermisosService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -85,7 +87,7 @@ export class RolesPermisosComponent implements OnInit {
     const req = actual ? this.rolesSrv.actualizar(actual.id, { nombre: nombre! }) : this.rolesSrv.crear({ codigo: codigo!, nombre: nombre! });
     req.subscribe({
       next: () => { this.nuevoRol(); this.cargarRoles(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el rol'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el rol'),
     });
   }
 
@@ -95,7 +97,7 @@ export class RolesPermisosComponent implements OnInit {
     if (!confirm(`Eliminar el rol "${actual.nombre}"? Esto falla si todavia hay usuarios con ese rol asignado.`)) return;
     this.rolesSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoRol(); this.cargarRoles(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el rol'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el rol'),
     });
   }
 
@@ -150,7 +152,7 @@ export class RolesPermisosComponent implements OnInit {
         });
     req.subscribe({
       next: () => { this.cancelarMenu(); this.cargarMenus(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el menu'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el menu'),
     });
   }
 
@@ -185,8 +187,8 @@ export class RolesPermisosComponent implements OnInit {
     });
     this.guardandoMatriz.set(true);
     this.matrizSrv.guardarDeRol(rolId, concesiones).subscribe({
-      next: () => { this.guardandoMatriz.set(false); alert('Matriz de permisos actualizada. Los usuarios con ese rol la veran reflejada la proxima vez que inicien sesion.'); },
-      error: (err) => { this.guardandoMatriz.set(false); alert(err?.error?.mensaje || 'No se pudo guardar la matriz'); },
+      next: () => { this.guardandoMatriz.set(false); this.toast.exito('Matriz de permisos actualizada. Los usuarios con ese rol la veran reflejada la proxima vez que inicien sesion.'); },
+      error: (err) => { this.guardandoMatriz.set(false); this.toast.error(err?.error?.mensaje || 'No se pudo guardar la matriz'); },
     });
   }
 }

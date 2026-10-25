@@ -8,6 +8,7 @@ import { PoliticaPasswordService } from '../../core/services/politicaPassword.se
 import { RolesService } from '../../core/services/roles.service';
 import { Usuario, Cliente, Rol, PoliticaPassword, RolCatalogo } from '../../core/models/models';
 import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -44,7 +45,8 @@ export class UsuariosComponent implements OnInit {
     private clientesSrv: ClientesService,
     private politicaPasswordSrv: PoliticaPasswordService,
     private rolesSrv: RolesService,
-    public auth: AuthService
+    public auth: AuthService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -123,7 +125,7 @@ export class UsuariosComponent implements OnInit {
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);
     req.subscribe({
       next: () => { this.cerrarPanel(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el usuario'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el usuario'),
     });
   }
 
@@ -131,7 +133,7 @@ export class UsuariosComponent implements OnInit {
     if (!confirm(`Quitar a "${u.nombre}" de esta empresa?`)) return;
     this.srv.eliminar(u.id).subscribe({
       next: () => this.cargar(),
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo quitar al usuario'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
     });
   }
 
@@ -141,11 +143,11 @@ export class UsuariosComponent implements OnInit {
     this.srv.resetearPassword(u.id).subscribe({
       next: (res) => {
         this.reseteandoId.set(null);
-        alert(res.mensaje);
+        this.toast.exito(res.mensaje);
       },
       error: (err) => {
         this.reseteandoId.set(null);
-        alert(err?.error?.mensaje || 'No se pudo enviar el enlace de restablecimiento');
+        this.toast.error(err?.error?.mensaje || 'No se pudo enviar el enlace de restablecimiento');
       },
     });
   }

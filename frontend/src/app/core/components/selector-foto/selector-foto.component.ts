@@ -1,6 +1,7 @@
 import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { redimensionarImagen } from '../../utils/imagen.util';
+import { ToastService } from '../../services/toast.service';
 
 // Boton de avatar (foto o iniciales) que al hacer clic abre un selector con
 // 3 formas de conseguir una imagen: camara, archivo del equipo, o pegar
@@ -42,6 +43,8 @@ export class SelectorFotoComponent implements OnDestroy {
   @ViewChild('videoFoto') videoFotoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('fileInputFoto') fileInputFotoRef?: ElementRef<HTMLInputElement>;
 
+  constructor(private toast: ToastService) {}
+
   iniciales(): string {
     return (this.nombre || '')
       .split(' ')
@@ -70,7 +73,7 @@ export class SelectorFotoComponent implements OnDestroy {
     const archivo = input.files?.[0];
     input.value = '';
     if (!archivo) return;
-    if (!archivo.type.startsWith('image/')) { alert('Selecciona un archivo de imagen valido.'); return; }
+    if (!archivo.type.startsWith('image/')) { this.toast.error('Selecciona un archivo de imagen valido.'); return; }
     redimensionarImagen(archivo, 300).then((base64) => this.emitirFoto(base64));
   }
 
@@ -88,7 +91,7 @@ export class SelectorFotoComponent implements OnDestroy {
         .then((dispositivos) => this.hayVariasCamaras.set(dispositivos.filter((d) => d.kind === 'videoinput').length > 1))
         .catch(() => this.hayVariasCamaras.set(false));
     } catch {
-      alert('No se pudo acceder a la camara. Revisa los permisos del navegador.');
+      this.toast.error('No se pudo acceder a la camara. Revisa los permisos del navegador.');
     }
   }
 
@@ -103,7 +106,7 @@ export class SelectorFotoComponent implements OnDestroy {
       this.camaraStream = stream;
       if (this.videoFotoRef) this.videoFotoRef.nativeElement.srcObject = stream;
     } catch {
-      alert('No se pudo cambiar de camara.');
+      this.toast.error('No se pudo cambiar de camara.');
     }
   }
 
@@ -136,7 +139,7 @@ export class SelectorFotoComponent implements OnDestroy {
         return;
       }
     }
-    alert('No se encontro ninguna imagen en el portapapeles.');
+    this.toast.advertencia('No se encontro ninguna imagen en el portapapeles.');
   }
 
   eliminarFoto(): void {

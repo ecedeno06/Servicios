@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, Procesador, Producto, Proveedor } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
+import { ToastService } from '../../core/services/toast.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -394,7 +395,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private checklistsSrv: ChecklistsService,
     private checklistPdfSrv: ChecklistEquipoPdfService,
-    public auth: AuthService
+    public auth: AuthService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -630,7 +632,7 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!confirm('Eliminar este adjunto?')) return;
     this.srv.eliminarAdjunto(equipo.id, adjuntoId).subscribe({
       next: () => this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
@@ -639,7 +641,7 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!equipo) return;
     this.srv.actualizarAdjunto(equipo.id, adjuntoId, { descripcion }).subscribe({
       next: (actualizado) => this.imagenesEquipoActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
     });
   }
 
@@ -793,7 +795,7 @@ export class EquiposAsignadosComponent implements OnInit {
     const req = actual ? this.srv.actualizar(actual.id, data) : this.srv.crear(data);
     req.subscribe({
       next: () => { this.nuevo(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el equipo'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el equipo'),
     });
   }
 
@@ -858,7 +860,7 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!pendiente) return;
     const { asignada_a, observacion } = this.formMovimiento.getRawValue();
     if (pendiente.estado === 'en_uso' && !asignada_a?.trim()) {
-      alert('Debes indicar a quien se asigna el equipo.');
+      this.toast.advertencia('Debes indicar a quien se asigna el equipo.');
       return;
     }
 
@@ -880,7 +882,7 @@ export class EquiposAsignadosComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoAccion.set(false);
-        alert(err?.error?.mensaje || 'No se pudo cambiar el estado');
+        this.toast.error(err?.error?.mensaje || 'No se pudo cambiar el estado');
       },
     });
   }
@@ -961,7 +963,7 @@ export class EquiposAsignadosComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoNuevoChecklist.set(false);
-        alert(err?.error?.mensaje || 'No se pudo crear el checklist');
+        this.toast.error(err?.error?.mensaje || 'No se pudo crear el checklist');
       },
     });
   }
@@ -992,7 +994,7 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!confirm('¿Eliminar este checklist?')) return;
     this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id).subscribe({
       next: () => this.cargarChecklistEjecuciones(),
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
     });
   }
 
@@ -1011,7 +1013,7 @@ export class EquiposAsignadosComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoChecklistItem.set(null);
-        alert(err?.error?.mensaje || 'No se pudo guardar el checklist');
+        this.toast.error(err?.error?.mensaje || 'No se pudo guardar el checklist');
       },
     });
   }
@@ -1062,7 +1064,7 @@ export class EquiposAsignadosComponent implements OnInit {
     const ventana = window.open('', '_blank') ?? undefined;
     this.checklistPdfSrv.generar(datos)
       .then((doc) => doc.open(undefined, ventana))
-      .catch(() => alert('No se pudo generar el PDF del checklist.'));
+      .catch(() => this.toast.error('No se pudo generar el PDF del checklist.'));
   }
 
   // mailto: no permite adjuntar un archivo -- por eso el envio real (con
@@ -1100,11 +1102,11 @@ export class EquiposAsignadosComponent implements OnInit {
       .then(() => {
         this.enviandoChecklistPorCorreo.set(false);
         this.mostrandoFormCorreoChecklist.set(false);
-        alert('Checklist enviado por correo.');
+        this.toast.exito('Checklist enviado por correo.');
       })
       .catch((err) => {
         this.enviandoChecklistPorCorreo.set(false);
-        alert(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
+        this.toast.error(err?.error?.mensaje || 'No se pudo enviar el checklist por correo.');
       });
   }
 }

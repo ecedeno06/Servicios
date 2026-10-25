@@ -9,6 +9,7 @@ import { ProveedoresService } from '../../core/services/proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
@@ -134,6 +135,7 @@ export class CarritosComponent implements OnInit {
     private datePipe: DatePipe,
     private auth: AuthService,
     private pdfSrv: CarritoPdfService,
+    private toast: ToastService,
     public menu: MenuService
   ) {}
 
@@ -234,11 +236,11 @@ export class CarritosComponent implements OnInit {
       next: () => {
         this.enviandoCorreo.set(false);
         this.cerrarPopupCorreo();
-        alert('Correo enviado correctamente.');
+        this.toast.exito('Correo enviado correctamente.');
       },
       error: (err) => {
         this.enviandoCorreo.set(false);
-        alert(err.error?.mensaje || 'No se pudo enviar el correo.');
+        this.toast.error(err.error?.mensaje || 'No se pudo enviar el correo.');
       },
     });
   }
@@ -250,7 +252,7 @@ export class CarritosComponent implements OnInit {
         if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
         this.carritos.update((arr) => arr.filter((x) => x.id !== c.id));
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el carrito'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar el carrito'),
     });
   }
 
@@ -380,7 +382,7 @@ export class CarritosComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoHeader.set(false);
-        alert(err.error?.mensaje || 'Error al guardar el carrito');
+        this.toast.error(err.error?.mensaje || 'Error al guardar el carrito');
       },
     });
   }
@@ -402,7 +404,7 @@ export class CarritosComponent implements OnInit {
       },
       error: (err) => {
         this.avanzando.set(false);
-        alert(err.error?.mensaje || 'Error al avanzar de estado');
+        this.toast.error(err.error?.mensaje || 'Error al avanzar de estado');
       },
     });
   }
@@ -424,7 +426,7 @@ export class CarritosComponent implements OnInit {
       },
       error: (err) => {
         this.avanzando.set(false);
-        alert(err.error?.mensaje || 'Error al devolver el estado');
+        this.toast.error(err.error?.mensaje || 'Error al devolver el estado');
       },
     });
   }
@@ -531,7 +533,7 @@ export class CarritosComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoDetalle.set(false);
-        alert(err.error?.mensaje || 'Error al guardar la linea');
+        this.toast.error(err.error?.mensaje || 'Error al guardar la linea');
       },
     });
   }
@@ -542,7 +544,7 @@ export class CarritosComponent implements OnInit {
     const cantidad = valor === '' ? null : Number(valor);
     this.srv.actualizarDetalle(carrito.id, d.id, { cantidad_aprobada: cantidad } as any).subscribe({
       next: () => this.refrescarCarritoActual(),
-      error: (err) => alert(err.error?.mensaje || 'Error al guardar la cantidad aprobada'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al guardar la cantidad aprobada'),
     });
   }
 
@@ -553,7 +555,7 @@ export class CarritosComponent implements OnInit {
     // el propio array local con la respuesta, sin recargar nada.
     this.srv.actualizarDetalle(carrito.id, d.id, { observacion: valor || null } as any).subscribe({
       next: (actualizada) => this.detalles.update((arr) => arr.map((x) => (x.id === actualizada.id ? actualizada : x))),
-      error: (err) => alert(err.error?.mensaje || 'Error al guardar la observacion'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al guardar la observacion'),
     });
   }
 
@@ -563,7 +565,7 @@ export class CarritosComponent implements OnInit {
     if (!confirm('¿Eliminar esta linea del carrito?')) return;
     this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
       next: () => this.refrescarCarritoActual(),
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar la linea'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la linea'),
     });
   }
 
@@ -631,6 +633,6 @@ export class CarritosComponent implements OnInit {
 
     this.pdfSrv.generar(data)
       .then((doc) => doc.open(undefined, ventana))
-      .catch(() => alert('No se pudo generar el PDF de la solicitud.'));
+      .catch(() => this.toast.error('No se pudo generar el PDF de la solicitud.'));
   }
 }

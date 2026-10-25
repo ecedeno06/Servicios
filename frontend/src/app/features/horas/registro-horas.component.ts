@@ -7,6 +7,7 @@ import { ContratosService } from '../../core/services/contratos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
+import { ToastService } from '../../core/services/toast.service';
 import { RegistroHora, Contrato, ConsumoHoras, Comentario, ImagenServicioProveedor } from '../../core/models/models';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -163,7 +164,8 @@ export class RegistroHorasComponent implements OnInit {
     private route: ActivatedRoute,
     private pdfSrv: HojaServicioPdfService,
     public auth: AuthService,
-    public menu: MenuService
+    public menu: MenuService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -346,7 +348,7 @@ export class RegistroHorasComponent implements OnInit {
           lista.map((r) => (r.id === registro.id ? { ...r, comentarios_count: (r.comentarios_count ?? 0) + 1 } : r))
         );
       },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo agregar el comentario'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo agregar el comentario'),
     });
   }
 
@@ -413,7 +415,7 @@ export class RegistroHorasComponent implements OnInit {
       next: () => this.comentariosDelRegistro.update((lista) =>
         lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
       ),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
@@ -424,7 +426,7 @@ export class RegistroHorasComponent implements OnInit {
   private abrirAdjuntoLazy(registroId: string, comentarioId: string, adjuntoId: string): void {
     this.srv.obtenerAdjuntoComentario(registroId, comentarioId, adjuntoId).subscribe({
       next: (completo) => this.abrirBase64(completo.imagen_base64),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo abrir el adjunto.'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo abrir el adjunto.'),
     });
   }
 
@@ -501,7 +503,7 @@ export class RegistroHorasComponent implements OnInit {
       }],
       observaciones: '',
     }).then((doc) => doc.open(undefined, ventana))
-      .catch(() => alert('No se pudo generar la hoja de servicio.'));
+      .catch(() => this.toast.error('No se pudo generar la hoja de servicio.'));
   }
 }
 

@@ -6,6 +6,7 @@ import { ContratosService } from '../../core/services/contratos.service';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Contacto, ConsumoHoras, Contrato, Documento, TipoServicio } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-contrato-detalle',
@@ -43,7 +44,8 @@ export class ContratoDetalleComponent implements OnInit {
     private route: ActivatedRoute,
     private srv: ContratosService,
     private tiposSrv: TiposServicioService,
-    public menu: MenuService
+    public menu: MenuService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -112,7 +114,7 @@ export class ContratoDetalleComponent implements OnInit {
         this.contactosArray.push(this.crearContactoGroup());
         this.cargar();
       },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo asignar el servicio'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo asignar el servicio'),
     });
   }
 
@@ -136,7 +138,7 @@ export class ContratoDetalleComponent implements OnInit {
     const { contactos } = this.contactosEditForm.getRawValue();
     this.srv.actualizarServicio(this.contratoId, contratoServicioId, { horas_contratadas: this.horasEdit, contactos: limpiarContactos(contactos) }).subscribe({
       next: () => { this.editandoServicio.set(null); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudieron actualizar las horas contratadas'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudieron actualizar las horas contratadas'),
     });
   }
 
@@ -145,7 +147,7 @@ export class ContratoDetalleComponent implements OnInit {
     const documentos = [...(this.contrato()?.documentos ?? []), this.docForm.getRawValue() as Documento];
     this.srv.actualizar(this.contratoId, { documentos }).subscribe({
       next: () => { this.panelDocAbierto.set(false); this.docForm.reset(); this.cargar(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo agregar el documento'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo agregar el documento'),
     });
   }
 

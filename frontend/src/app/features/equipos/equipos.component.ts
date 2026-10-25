@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Categoria, Procesador, Producto } from '../../core/models/models';
 
 type Pestana = 'categorias' | 'productos' | 'procesadores';
@@ -79,7 +80,8 @@ export class EquiposComponent implements OnInit {
     private fb: FormBuilder,
     private categoriasSrv: CategoriasService,
     private productosSrv: ProductosService,
-    private procesadoresSrv: ProcesadoresService
+    private procesadoresSrv: ProcesadoresService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -118,7 +120,7 @@ export class EquiposComponent implements OnInit {
     const req = actual ? this.categoriasSrv.actualizar(actual.id, data) : this.categoriasSrv.crear(data);
     req.subscribe({
       next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar la categoria'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar la categoria'),
     });
   }
 
@@ -128,7 +130,7 @@ export class EquiposComponent implements OnInit {
     if (!confirm(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`)) return;
     this.categoriasSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
     });
   }
 
@@ -165,7 +167,7 @@ export class EquiposComponent implements OnInit {
     const req = actual ? this.productosSrv.actualizar(actual.id, data) : this.productosSrv.crear(data);
     req.subscribe({
       next: () => { this.nuevoProducto(); this.cargarProductos(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el producto'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el producto'),
     });
   }
 
@@ -179,7 +181,7 @@ export class EquiposComponent implements OnInit {
     if (!confirm(`Eliminar el producto "${actual.nombre}"?`)) return;
     this.productosSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoProducto(); this.cargarProductos(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el producto'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el producto'),
     });
   }
 
@@ -203,7 +205,7 @@ export class EquiposComponent implements OnInit {
     const req = actual ? this.procesadoresSrv.actualizar(actual.id, data) : this.procesadoresSrv.crear(data);
     req.subscribe({
       next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo guardar el procesador'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el procesador'),
     });
   }
 
@@ -213,7 +215,7 @@ export class EquiposComponent implements OnInit {
     if (!confirm(`Eliminar el procesador "${actual.nombre}"?`)) return;
     this.procesadoresSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el procesador'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el procesador'),
     });
   }
 }

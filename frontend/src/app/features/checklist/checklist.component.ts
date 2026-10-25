@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChecklistsService } from '../../core/services/checklists.service';
 import { ChecklistItem } from '../../core/models/models';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-checklist',
@@ -38,7 +39,8 @@ export class ChecklistComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private checklistsSrv: ChecklistsService
+    private checklistsSrv: ChecklistsService,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -69,7 +71,7 @@ export class ChecklistComponent implements OnInit {
     this.guardando.set(true);
     req.subscribe({
       next: () => { this.guardando.set(false); this.nuevoItem(); this.cargarItems(); },
-      error: (err) => { this.guardando.set(false); alert(err?.error?.mensaje || 'No se pudo guardar el checklist'); },
+      error: (err) => { this.guardando.set(false); this.toast.error(err?.error?.mensaje || 'No se pudo guardar el checklist'); },
     });
   }
 
@@ -79,7 +81,7 @@ export class ChecklistComponent implements OnInit {
     if (!confirm(`¿Eliminar "${actual.descripcion}"?`)) return;
     this.checklistsSrv.eliminar(actual.id).subscribe({
       next: () => { this.nuevoItem(); this.cargarItems(); },
-      error: (err) => alert(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
     });
   }
 }

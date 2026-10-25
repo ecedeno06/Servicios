@@ -25,6 +25,7 @@ import {
 } from '../../core/models/models';
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
+import { ToastService } from '../../core/services/toast.service';
 
 const ESTADOS_FACTURA: { valor: EstadoFacturaServicio; etiqueta: string }[] = [
   { valor: 'pagada', etiqueta: 'Pagada' },
@@ -676,7 +677,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!confirm('Eliminar este adjunto?')) return;
     this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId).subscribe({
       next: () => this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
@@ -685,7 +686,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     this.serviciosSrv.actualizarAdjunto(servicio.id, adjuntoId, { descripcion }).subscribe({
       next: (actualizado) => this.imagenesServicioActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
     });
   }
 
@@ -888,7 +889,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoIncidente.set(false);
-        alert(err.error?.mensaje || 'Error al guardar el evento');
+        this.toast.error(err.error?.mensaje || 'Error al guardar el evento');
       },
     });
   }
@@ -903,7 +904,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar el evento'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar el evento'),
     });
   }
 
@@ -949,7 +950,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!confirm('Eliminar este adjunto?')) return;
     this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId).subscribe({
       next: () => this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
@@ -959,7 +960,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio || !incidente) return;
     this.serviciosSrv.actualizarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId, { descripcion }).subscribe({
       next: (actualizado) => this.adjuntosIncidenteActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
     });
   }
 
@@ -1165,7 +1166,7 @@ export class ServiciosProveedoresComponent implements OnInit {
           arr.map((i) => (i.id === incidente.id ? { ...i, notas_count: Math.max(0, (i.notas_count || 0) - 1) } : i))
         );
       },
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar la nota'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar la nota'),
     });
   }
 
@@ -1215,7 +1216,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!confirm('Eliminar este adjunto?')) return;
     this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId).subscribe({
       next: () => this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
 
@@ -1224,7 +1225,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     this.serviciosSrv.actualizarAdjuntoFactura(servicio.id, f.id, adjuntoId, { descripcion }).subscribe({
       next: (actualizado) => this.adjuntosFacturaActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
-      error: (err) => alert(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
     });
   }
 
@@ -1288,6 +1289,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private datePipe: DatePipe,
     private auth: AuthService,
     private sanitizer: DomSanitizer,
+    private toast: ToastService,
     public menu: MenuService
   ) {}
 
@@ -1375,14 +1377,14 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoSector.set(false);
-        alert(err.error?.mensaje || 'Error al guardar sector');
+        this.toast.error(err.error?.mensaje || 'Error al guardar sector');
       },
     });
   }
 
   eliminarSector(s: SectorProveedorItem): void {
     if (s.proveedores_count && s.proveedores_count > 0) {
-      alert(`No se puede eliminar el sector "${s.nombre}" porque está asignado a ${s.proveedores_count} proveedor(es).`);
+      this.toast.error(`No se puede eliminar el sector "${s.nombre}" porque está asignado a ${s.proveedores_count} proveedor(es).`);
       return;
     }
 
@@ -1390,7 +1392,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     this.sectoresSrv.eliminar(s.id).subscribe({
       next: () => this.cargarDatos(),
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar sector'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar sector'),
     });
   }
 
@@ -1453,14 +1455,14 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoProveedor.set(false);
-        alert(err.error?.mensaje || 'Error al guardar proveedor');
+        this.toast.error(err.error?.mensaje || 'Error al guardar proveedor');
       },
     });
   }
 
   eliminarProveedor(p: Proveedor): void {
     if (p.servicios_count && p.servicios_count > 0) {
-      alert(`No se puede eliminar el proveedor "${p.nombre}" porque tiene ${p.servicios_count} servicio(s) asociado(s).`);
+      this.toast.error(`No se puede eliminar el proveedor "${p.nombre}" porque tiene ${p.servicios_count} servicio(s) asociado(s).`);
       return;
     }
 
@@ -1468,7 +1470,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     this.proveedoresSrv.eliminar(p.id).subscribe({
       next: () => this.cargarDatos(),
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar proveedor'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar proveedor'),
     });
   }
 
@@ -1831,7 +1833,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoServicio.set(false);
-        alert(err.error?.mensaje || 'Error al guardar servicio');
+        this.toast.error(err.error?.mensaje || 'Error al guardar servicio');
       },
     });
   }
@@ -1841,7 +1843,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     this.serviciosSrv.eliminar(s.id).subscribe({
       next: () => this.cargarDatos(),
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar servicio'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar servicio'),
     });
   }
 
@@ -1907,7 +1909,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: (err) => {
         this.guardandoFactura.set(false);
-        alert(err.error?.mensaje || 'Error al registrar factura');
+        this.toast.error(err.error?.mensaje || 'Error al registrar factura');
       },
     });
   }
@@ -1921,7 +1923,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.cargarFacturas(servicio.id);
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al actualizar estado de factura'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al actualizar estado de factura'),
     });
   }
 
@@ -1941,7 +1943,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.cargarFacturas(servicio.id);
         this.cargarDatos();
       },
-      error: (err) => alert(err.error?.mensaje || 'Error al eliminar factura'),
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar factura'),
     });
   }
 
