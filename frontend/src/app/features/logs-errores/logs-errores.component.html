@@ -53,6 +53,12 @@
     @if (hayFiltrosColumna()) {
       <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
     }
+    @if (totalSeleccionados() > 0) {
+      <button type="button" class="btn-icon btn-icon-danger" [disabled]="eliminando()" [title]="eliminando() ? 'Eliminando...' : 'Eliminar ' + totalSeleccionados() + ' log(s) seleccionado(s)'" (click)="eliminarSeleccionados()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span class="btn-icon-badge">{{ totalSeleccionados() }}</span>
+      </button>
+    }
   </div>
 </div>
 
@@ -60,6 +66,9 @@
   <table class="data-table">
     <thead>
       <tr>
+        <th class="th-narrow">
+          <input type="checkbox" [checked]="todosVisiblesSeleccionados()" (change)="toggleSeleccionarTodos()" title="Seleccionar todos los resultados" />
+        </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('fecha')">Fecha <span class="orden-icono">{{ iconoOrden('fecha') }}</span></span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroFecha()" (ngModelChange)="filtroFecha.set($event)" />
@@ -90,6 +99,9 @@
     <tbody>
       @for (l of logsOrdenados(); track l.id) {
         <tr>
+          <td class="th-narrow">
+            <input type="checkbox" [checked]="estaSeleccionado(l.id)" (change)="toggleSeleccion(l.id)" />
+          </td>
           <td>{{ formatoFecha(l.created_at) }}</td>
           <td>
             <span class="badge" [class]="claseNivel(l.nivel)">{{ l.metodo_http || '-' }}</span>
@@ -114,7 +126,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="7">
+          <td colspan="8">
             <div class="empty-state">
               @if (cargando()) {
                 Cargando logs...

@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LogsService } from '../../core/services/logs.service';
+import { ToastService } from '../../core/services/toast.service';
 import { LogError, NivelLog } from '../../core/models/models';
 
 function hoyISO(): string {
@@ -34,6 +35,10 @@ export class LogsErroresComponent implements OnInit {
   mensajeTexto = signal('');
 
   logDetalle = signal<LogError | null>(null);
+
+  seleccionados = signal<Set<string>>(new Set());
+  eliminando = signal(false);
+  totalSeleccionados = computed(() => this.seleccionados().size);
 
   // Filtros por columna (coincidencia parcial, sin distinguir mayusculas),
   // aplicados en el cliente sobre lo ya cargado del servidor -- mismo
@@ -114,7 +119,7 @@ export class LogsErroresComponent implements OnInit {
     });
   });
 
-  constructor(private srv: LogsService) {}
+  constructor(private srv: LogsService, private toast: ToastService) {}
 
   ngOnInit(): void {
     this.buscar();
@@ -146,6 +151,7 @@ export class LogsErroresComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
     this.limpiarFiltrosColumna();
+    this.seleccionados.set(new Set());
 
     this.srv
       .listar({
@@ -167,6 +173,47 @@ export class LogsErroresComponent implements OnInit {
           this.cargando.set(false);
         },
       });
+  }
+
+  estaSeleccionado(id: string): boolean {
+    return this.seleccionados().has(id);
+  }
+
+  todosVisiblesSeleccionados(): boolean {
+    const ids = this.logsOrdenados().map((l) => l.id);
+    return ids.length > 0 && ids.every((id) => this.estaSeleccionado(id));
+  }
+
+  toggleSeleccion(id: string): void {
+    const actuales = new Set(this.seleccionados());
+    if (actuales.has(id)) actuales.delete(id);
+    else actuales.add(id);
+    this.seleccionados.set(actuales);
+  }
+
+  toggleSeleccionarTodos(): void {
+    const idsVisibles = this.logsOrdenados().map((l) => l.id);
+    const todosSeleccionados = idsVisibles.length > 0 && idsVisibles.every((id) => this.seleccionados().has(id));
+    this.seleccionados.set(todosSeleccionados ? new Set() : new Set(idsVisibles));
+  }
+
+  eliminarSeleccionados(): void {
+    const ids = Array.from(this.seleccionados());
+    if (ids.length === 0) return;
+    if (!confirm(`Eliminar ${ids.length} log(s) seleccionado(s)? Esta accion no se puede deshacer.`)) return;
+
+    this.eliminando.set(true);
+    this.srv.eliminar(ids).subscribe({
+      next: (res) => {
+        this.eliminando.set(false);
+        this.toast.exito(`Se eliminaron ${res.eliminados} log(s).`);
+        this.buscar();
+      },
+      error: (err) => {
+        this.eliminando.set(false);
+        this.toast.error(err?.error?.mensaje || 'No se pudieron eliminar los logs seleccionados.');
+      },
+    });
   }
 
   claseNivel(nivel: NivelLog): string {

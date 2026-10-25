@@ -18,4 +18,8 @@ export class LogsService {
     if (filtros.mensaje) params['mensaje'] = filtros.mensaje;
     return this.http.get<LogError[]>(this.base, { params });
   }
+
+  eliminar(ids: string[]): Observable<{ eliminados: number }> {
+    return this.http.post<{ eliminados: number }>(`${this.base}/eliminar`, { ids });
+  }
 }

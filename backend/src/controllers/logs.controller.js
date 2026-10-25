@@ -89,4 +89,18 @@ async function listar(req, res, next) {
   }
 }
 
-module.exports = { registrarError, listar };
+// POST /api/logs/eliminar { ids: string[] }
+async function eliminar(req, res, next) {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ mensaje: 'Debes indicar al menos un log' });
+    }
+    const { rowCount } = await pool.query('delete from logs_errores where id = any($1::uuid[])', [ids]);
+    res.json({ eliminados: rowCount });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { registrarError, listar, eliminar };
