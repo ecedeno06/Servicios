@@ -38,6 +38,9 @@
     <button type="button" class="btn btn-primary" (click)="buscar()" [disabled]="cargando()">
       {{ cargando() ? 'Buscando...' : 'Buscar' }}
     </button>
+    <button type="button" class="btn btn-outline" (click)="verTodoElHistorico()" [disabled]="cargando()" title="Quita el filtro de fecha y trae todo el historico (hasta 500 registros)">
+      Ver todo el historico
+    </button>
   </div>
 </div>
 

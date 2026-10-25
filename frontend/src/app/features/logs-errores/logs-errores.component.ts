@@ -133,6 +133,15 @@ export class LogsErroresComponent implements OnInit {
     return formatDate(iso, 'dd/MM/yyyy HH:mm:ss', 'en-US');
   }
 
+  // Desde/Hasta vacios -> el backend no aplica limite de fecha (ver
+  // LogsService.listar/logs.controller.js listar), asi que esto trae todo
+  // el historico (hasta el tope de 500 filas por busqueda).
+  verTodoElHistorico(): void {
+    this.desde.set('');
+    this.hasta.set('');
+    this.buscar();
+  }
+
   buscar(): void {
     this.cargando.set(true);
     this.error.set(null);
