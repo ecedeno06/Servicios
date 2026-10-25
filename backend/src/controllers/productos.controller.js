@@ -15,31 +15,32 @@ async function listar(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { categoria_id, nombre, aplica_checklist, observacion, url } = req.body;
+    const { categoria_id, nombre, aplica_checklist, observacion, url, precio_referencia } = req.body;
     if (!categoria_id || !nombre) return res.status(400).json({ mensaje: 'categoria_id y nombre son requeridos' });
     const { rows } = await pool.query(
-      'insert into productos (categoria_id, nombre, aplica_checklist, observacion, url) values ($1, $2, $3, $4, $5) returning *',
-      [categoria_id, nombre, !!aplica_checklist, observacion?.trim() || null, url?.trim() || null]
+      'insert into productos (categoria_id, nombre, aplica_checklist, observacion, url, precio_referencia) values ($1, $2, $3, $4, $5, $6) returning *',
+      [categoria_id, nombre, !!aplica_checklist, observacion?.trim() || null, url?.trim() || null, precio_referencia || precio_referencia === 0 ? precio_referencia : null]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
 }
 
-// observacion/url se asignan directo (no coalesce) -- son opcionales y el
-// formulario siempre manda el valor completo, incluido vacio cuando se
-// quiere borrar lo que ya estaba guardado.
+// observacion/url/precio_referencia se asignan directo (no coalesce) -- son
+// opcionales y el formulario siempre manda el valor completo, incluido
+// vacio cuando se quiere borrar lo que ya estaba guardado.
 async function actualizar(req, res, next) {
   try {
-    const { categoria_id, nombre, aplica_checklist, observacion, url } = req.body;
+    const { categoria_id, nombre, aplica_checklist, observacion, url, precio_referencia } = req.body;
     const { rows } = await pool.query(
       `update productos set
          categoria_id = coalesce($1, categoria_id),
          nombre = coalesce($2, nombre),
          aplica_checklist = coalesce($3, aplica_checklist),
          observacion = $4,
-         url = $5
-       where id = $6 returning *`,
-      [categoria_id, nombre, aplica_checklist, observacion?.trim() || null, url?.trim() || null, req.params.id]
+         url = $5,
+         precio_referencia = $6
+       where id = $7 returning *`,
+      [categoria_id, nombre, aplica_checklist, observacion?.trim() || null, url?.trim() || null, precio_referencia || precio_referencia === 0 ? precio_referencia : null, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ mensaje: 'Producto no encontrado' });
     res.json(rows[0]);

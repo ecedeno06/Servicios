@@ -48,6 +48,7 @@ export class EquiposComponent implements OnInit {
     aplica_checklist: [false],
     observacion: [''],
     url: ['', Validators.pattern(/^https?:\/\/.+/)],
+    precio_referencia: ['', Validators.min(0)],
   });
 
   hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre() || this.filtroProductoChecklist()));
@@ -147,12 +148,13 @@ export class EquiposComponent implements OnInit {
       aplica_checklist: !!p.aplica_checklist,
       observacion: p.observacion ?? '',
       url: p.url ?? '',
+      precio_referencia: p.precio_referencia != null ? String(p.precio_referencia) : '',
     });
   }
 
   nuevoProducto(): void {
     this.productoSeleccionado.set(null);
-    this.formProducto.reset({ categoria_id: '', nombre: '', aplica_checklist: false, observacion: '', url: '' });
+    this.formProducto.reset({ categoria_id: '', nombre: '', aplica_checklist: false, observacion: '', url: '', precio_referencia: '' });
   }
 
   guardarProducto(): void {
@@ -164,6 +166,7 @@ export class EquiposComponent implements OnInit {
       aplica_checklist: !!raw.aplica_checklist,
       observacion: raw.observacion?.trim() || '',
       url: raw.url?.trim() || '',
+      precio_referencia: raw.precio_referencia !== '' && raw.precio_referencia != null ? Number(raw.precio_referencia) : null,
     };
     const actual = this.productoSeleccionado();
     const req = actual ? this.productosSrv.actualizar(actual.id, data) : this.productosSrv.crear(data);

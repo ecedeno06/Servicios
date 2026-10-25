@@ -10,7 +10,7 @@ export class ProductosService {
   constructor(private http: HttpClient) {}
 
   listar(): Observable<Producto[]> { return this.http.get<Producto[]>(this.base); }
-  crear(data: { categoria_id: number; nombre: string; aplica_checklist?: boolean; observacion?: string; url?: string }): Observable<Producto> { return this.http.post<Producto>(this.base, data); }
-  actualizar(id: number, data: { categoria_id?: number; nombre?: string; aplica_checklist?: boolean; observacion?: string; url?: string }): Observable<Producto> { return this.http.put<Producto>(`${this.base}/${id}`, data); }
+  crear(data: { categoria_id: number; nombre: string; aplica_checklist?: boolean; observacion?: string; url?: string; precio_referencia?: number | null }): Observable<Producto> { return this.http.post<Producto>(this.base, data); }
+  actualizar(id: number, data: { categoria_id?: number; nombre?: string; aplica_checklist?: boolean; observacion?: string; url?: string; precio_referencia?: number | null }): Observable<Producto> { return this.http.put<Producto>(`${this.base}/${id}`, data); }
   eliminar(id: number): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
 }

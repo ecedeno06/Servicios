@@ -140,6 +140,7 @@ export interface Producto {
   aplica_checklist?: boolean;
   observacion?: string | null;
   url?: string | null;
+  precio_referencia?: number | null;
 }
 
 export interface Procesador {
