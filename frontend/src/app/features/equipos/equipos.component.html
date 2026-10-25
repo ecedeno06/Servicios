@@ -59,7 +59,10 @@
 @if (pestanaActiva() === 'productos') {
   <div class="page-header mt-16">
     <div class="desc">{{ productosFiltrados().length }} de {{ productos().length }} producto(s). Haz clic en una fila para editarla.</div>
-    @if (hayFiltrosProducto()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosProducto()">Limpiar filtros</button> }
+    <div class="flex items-center gap-8">
+      @if (hayFiltrosProducto()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltrosProducto()">Limpiar filtros</button> }
+      <button class="btn btn-accent btn-sm" (click)="nuevoProducto()">+ Nuevo producto</button>
+    </div>
   </div>
 
   <div class="table-wrap table-wrap-compact">
