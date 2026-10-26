@@ -318,18 +318,23 @@ export class CarritosComponent implements OnInit {
   });
 
   // Mientras esta en_construccion se puede editar todo libremente (crear/
-  // editar/borrar lineas, titulo, fecha). La cantidad aprobada (y su
-  // observacion) se puede ir cargando/ajustando desde en_construccion y
-  // hasta en_revision -- una vez "aprobada" o "cerrada" queda fija.
+  // editar/borrar lineas, titulo, fecha), pero la cantidad aprobada todavia
+  // no aplica -- recien se carga/ajusta una vez que la solicitud entra en
+  // en_revision. Una vez "aprobada" o "cerrada" queda fija.
   puedeEditarEncabezado = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
   puedeEditarLineas = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
-  puedeCargarAprobado = computed(() => {
-    const estado = this.carritoSeleccionado()?.estado;
-    return estado === 'en_construccion' || estado === 'en_revision';
-  });
+  puedeCargarAprobado = computed(() => this.carritoSeleccionado()?.estado === 'en_revision');
+
+  // En construccion todavia no hay cantidad aprobada -- el total se
+  // proyecta con la cantidad propuesta. Desde en_revision en adelante usa
+  // la cantidad aprobada (0 si todavia no se cargo).
+  etiquetaTotalLinea(): string {
+    return this.carritoSeleccionado()?.estado === 'en_construccion' ? 'Total (Propuesta x Costo)' : 'Total (Aprobada x Costo)';
+  }
 
   totalLinea(d: CarritoDetalle): number {
-    return (d.cantidad_aprobada ?? 0) * (d.costo_estimado ?? 0);
+    const cantidad = this.carritoSeleccionado()?.estado === 'en_construccion' ? d.cantidad_propuesta : (d.cantidad_aprobada ?? 0);
+    return cantidad * (d.costo_estimado ?? 0);
   }
 
   abrirNuevo(): void {

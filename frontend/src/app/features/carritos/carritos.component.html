@@ -225,7 +225,7 @@
                   <div>{{ d.costo_estimado != null ? (d.costo_estimado | currency:'USD':'symbol':'1.2-2') : '-' }}</div>
                 </div>
                 <div class="form-group">
-                  <label style="font-size: 11px;">Total (Aprobada x Costo)</label>
+                  <label style="font-size: 11px;">{{ etiquetaTotalLinea() }}</label>
                   <div>{{ totalLinea(d) ? (totalLinea(d) | currency:'USD':'symbol':'1.2-2') : '-' }}</div>
                 </div>
               </div>
