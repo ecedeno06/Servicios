@@ -75,7 +75,7 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
                 </button>
                 @if (menu.tienePermiso('carrito_compras', 'eliminar')) {
-                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar carrito" aria-label="Eliminar carrito" (click)="eliminarCarrito(c)">
+                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar carrito" aria-label="Eliminar carrito" (click)="pedirEliminarCarrito(c)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 }
@@ -431,6 +431,33 @@
           {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
         </button>
       </div>
+    </div>
+  </div>
+}
+
+@if (carritoAEliminar(); as c) {
+  <div class="modal-overlay" (click)="cancelarEliminarCarrito()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Eliminar carrito</h2>
+        <button class="close" (click)="cancelarEliminarCarrito()">&times;</button>
+      </div>
+      <p class="text-sm">Eliminar el carrito "{{ c.titulo }}"? Esta accion no se puede deshacer. Confirma tu contraseña para continuar.</p>
+      <form [formGroup]="passwordEliminarCarritoForm" (ngSubmit)="confirmarEliminarCarrito()">
+        <div class="form-group mt-16">
+          <label>Contraseña *</label>
+          <input class="input" type="password" formControlName="password" autofocus />
+        </div>
+        @if (errorEliminarCarrito()) {
+          <div class="error-text mt-16">{{ errorEliminarCarrito() }}</div>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-danger" [disabled]="passwordEliminarCarritoForm.invalid || eliminandoCarrito()">
+            {{ eliminandoCarrito() ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+          <button type="button" class="btn btn-outline" (click)="cancelarEliminarCarrito()">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 }

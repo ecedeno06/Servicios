@@ -15,8 +15,8 @@ export class CarritosService {
   actualizar(id: string, data: { titulo: string; fecha_solicitud?: string; observacion?: string | null }): Observable<Carrito> {
     return this.http.put<Carrito>(`${this.base}/${id}`, data);
   }
-  eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`);
+  eliminar(id: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`, { body: { password } });
   }
   avanzarEstado(id: string, estado: EstadoCarrito): Observable<Carrito> {
     return this.http.post<Carrito>(`${this.base}/${id}/avanzar`, { estado });
