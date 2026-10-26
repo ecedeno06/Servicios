@@ -45,6 +45,10 @@ export class RolesPermisosComponent implements OnInit {
   // ---------- Matriz ----------
   rolMatrizId = signal<number | null>(null);
   concedidos = signal<Set<string>>(new Set());
+  // Foto de lo que ya estaba concedido al cargar el rol -- para poder armar
+  // un detalle de que cambio exactamente al guardar (ver guardarMatriz()),
+  // en vez de solo avisar "matriz actualizada" sin decir que se toco.
+  concedidosOriginal = signal<Set<string>>(new Set());
   guardandoMatriz = signal(false);
 
   rolMatrizActivo = computed(() => this.roles().find((r) => r.id === this.rolMatrizId()) ?? null);
@@ -162,9 +166,11 @@ export class RolesPermisosComponent implements OnInit {
   onCambiarRolMatriz(valor: string): void {
     const rolId = Number(valor) || null;
     this.rolMatrizId.set(rolId);
-    if (!rolId) { this.concedidos.set(new Set()); return; }
+    if (!rolId) { this.concedidos.set(new Set()); this.concedidosOriginal.set(new Set()); return; }
     this.matrizSrv.obtenerDeRol(rolId).subscribe((data) => {
-      this.concedidos.set(new Set(data.map((c) => `${c.menu_id}-${c.permiso_id}`)));
+      const set = new Set(data.map((c) => `${c.menu_id}-${c.permiso_id}`));
+      this.concedidos.set(set);
+      this.concedidosOriginal.set(new Set(set));
     });
   }
 
@@ -180,6 +186,33 @@ export class RolesPermisosComponent implements OnInit {
     this.concedidos.set(set);
   }
 
+  // Arma "Menu (permiso), Menu (permiso)" a partir de claves "menuId-permisoId",
+  // resolviendo los nombres contra los catalogos ya cargados para la tabla.
+  private describirClaves(claves: string[]): string {
+    return claves
+      .map((clave) => {
+        const [menuId, permisoId] = clave.split('-').map(Number);
+        const menu = this.menusPlano().find((m) => Number(m.id) === menuId);
+        const permiso = this.permisosCatalogo().find((p) => p.id === permisoId);
+        return `${menu?.nombre ?? 'Menu'} (${permiso?.nombre ?? 'permiso'})`;
+      })
+      .join(', ');
+  }
+
+  private describirCambiosMatriz(): string {
+    const antes = this.concedidosOriginal();
+    const despues = this.concedidos();
+    const otorgados = [...despues].filter((c) => !antes.has(c));
+    const revocados = [...antes].filter((c) => !despues.has(c));
+
+    if (!otorgados.length && !revocados.length) return 'Sin cambios en los permisos.';
+
+    const partes: string[] = [];
+    if (otorgados.length) partes.push(`Otorgado: ${this.describirClaves(otorgados)}`);
+    if (revocados.length) partes.push(`Revocado: ${this.describirClaves(revocados)}`);
+    return partes.join('. ') + '.';
+  }
+
   guardarMatriz(): void {
     const rolId = this.rolMatrizId();
     if (!rolId) return;
@@ -187,9 +220,15 @@ export class RolesPermisosComponent implements OnInit {
       const [menuId, permisoId] = clave.split('-').map(Number);
       return { menuId, permisoId };
     });
+    const rolNombre = this.rolMatrizActivo()?.nombre ?? '';
+    const detalle = this.describirCambiosMatriz();
     this.guardandoMatriz.set(true);
     this.matrizSrv.guardarDeRol(rolId, concesiones).subscribe({
-      next: () => { this.guardandoMatriz.set(false); this.toast.exito('Matriz de permisos actualizada. Los usuarios con ese rol la veran reflejada la proxima vez que inicien sesion.'); },
+      next: () => {
+        this.guardandoMatriz.set(false);
+        this.concedidosOriginal.set(new Set(this.concedidos()));
+        this.toast.exito(`Matriz de permisos de "${rolNombre}" actualizada. ${detalle} Los usuarios con ese rol la veran reflejada la proxima vez que inicien sesion.`);
+      },
       error: (err) => { this.guardandoMatriz.set(false); this.toast.error(err?.error?.mensaje || 'No se pudo guardar la matriz'); },
     });
   }
