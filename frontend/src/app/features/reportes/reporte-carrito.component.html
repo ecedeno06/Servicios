@@ -1,0 +1,133 @@
+<div class="page-header">
+  <div>
+    <h1>Reporte de carrito de compras</h1>
+    <div class="desc">Ordenes de solicitud de compra por periodo y estado, con sus totales y el detalle de equipos</div>
+  </div>
+</div>
+
+<div class="card">
+  <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Desde *</label>
+        <input class="input" type="date" formControlName="fechaInicio" />
+      </div>
+      <div class="form-group">
+        <label>Hasta *</label>
+        <input class="input" type="date" formControlName="fechaFin" />
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select class="input" formControlName="estado">
+          <option value="">Todos los estados</option>
+          @for (e of estados; track e) { <option [value]="e">{{ etiquetasEstado[e] }}</option> }
+        </select>
+      </div>
+    </div>
+
+    @if (errorBuscar()) {
+      <div class="error-text mt-16">{{ errorBuscar() }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
+        {{ cargando() ? 'Buscando...' : 'Buscar' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+@if (buscado()) {
+  <div class="page-header mt-16">
+    <div>
+      <h2 style="margin:0;">Resultados</h2>
+      <div class="desc">{{ filasFiltradas().length }} de {{ cabeceras().length }} orden(es) &middot; {{ totalSeleccionadas() }} seleccionada(s) para exportar</div>
+    </div>
+    <div class="flex items-center gap-8">
+      @if (hayFiltrosColumna()) {
+        <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
+      }
+      @if (errorPdf()) { <span class="error-text">{{ errorPdf() }}</span> }
+      @if (errorExcel()) { <span class="error-text">{{ errorExcel() }}</span> }
+      <button type="button" class="btn btn-outline" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
+        {{ generandoExcel() ? 'Generando...' : 'Descargar Excel' }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
+        {{ generandoPdf() ? 'Generando...' : 'Imprimir PDF' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap table-wrap-compact">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="th-narrow">
+            <input type="checkbox" [checked]="todasSeleccionadas()" (change)="toggleSeleccionarTodas()" title="Seleccionar todas" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('id')">ID <span class="orden-icono">{{ iconoOrden('id') }}</span></span>
+            <app-multi-select-filter [valores]="valoresId()" [seleccionados]="filtroId()" (seleccionadosChange)="filtroId.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('titulo')">Titulo <span class="orden-icono">{{ iconoOrden('titulo') }}</span></span>
+            <app-multi-select-filter [valores]="valoresTitulo()" [seleccionados]="filtroTitulo()" (seleccionadosChange)="filtroTitulo.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('fechaSolicitud')">Fecha Solicitud <span class="orden-icono">{{ iconoOrden('fechaSolicitud') }}</span></span>
+            <app-multi-select-filter [valores]="valoresFechaSolicitud()" [seleccionados]="filtroFechaSolicitud()" [formatoValor]="formatoFecha" (seleccionadosChange)="filtroFechaSolicitud.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></span>
+            <app-multi-select-filter [valores]="valoresEstadoCol()" [seleccionados]="filtroEstadoCol()" [formatoValor]="formatoEstado" (seleccionadosChange)="filtroEstadoCol.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('fechaAprobacion')">Fecha Aprobacion <span class="orden-icono">{{ iconoOrden('fechaAprobacion') }}</span></span>
+            <app-multi-select-filter [valores]="valoresFechaAprobacion()" [seleccionados]="filtroFechaAprobacion()" [formatoValor]="formatoFecha" (seleccionadosChange)="filtroFechaAprobacion.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('costoPropuesto')">Costo Estimado Propuesto <span class="orden-icono">{{ iconoOrden('costoPropuesto') }}</span></span>
+            <app-multi-select-filter [valores]="valoresCostoPropuesto()" [seleccionados]="filtroCostoPropuesto()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroCostoPropuesto.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('costoAprobado')">Costo Total Aprobado <span class="orden-icono">{{ iconoOrden('costoAprobado') }}</span></span>
+            <app-multi-select-filter [valores]="valoresCostoAprobado()" [seleccionados]="filtroCostoAprobado()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroCostoAprobado.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('creadoPor')">Creado por <span class="orden-icono">{{ iconoOrden('creadoPor') }}</span></span>
+            <app-multi-select-filter [valores]="valoresCreadoPor()" [seleccionados]="filtroCreadoPor()" (seleccionadosChange)="filtroCreadoPor.set($event)" />
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of filasFiltradas(); track c.id) {
+          <tr>
+            <td class="th-narrow">
+              <input type="checkbox" [checked]="seleccionadas().has(c.id)" (change)="toggleSeleccion(c.id)" />
+            </td>
+            <td style="font-family: monospace;">{{ idCorto(c.id) }}</td>
+            <td>{{ c.titulo }}</td>
+            <td>{{ c.fecha_solicitud | date:'dd/MM/yyyy' }}</td>
+            <td><span class="badge" [class]="clasesBadgeEstado[c.estado]">{{ etiquetasEstado[c.estado] }}</span></td>
+            <td>{{ c.fecha_aprobacion ? (c.fecha_aprobacion | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>{{ c.costo_estimado_propuesto_total | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ c.costo_estimado_aprobado_total | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td>{{ c.creado_por_nombre || '-' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="9"><div class="empty-state">{{ hayFiltrosColumna() ? 'Ninguna orden coincide con los filtros de columna.' : 'Ninguna orden coincide con el filtro seleccionado.' }}</div></td></tr>
+        }
+      </tbody>
+      @if (filasFiltradas().length > 0) {
+        <tfoot>
+          <tr>
+            <td colspan="6" style="text-align:right; font-weight:600;">Totales</td>
+            <td style="font-weight:600;">{{ totalCostoPropuesto() | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td style="font-weight:600;">{{ totalCostoAprobado() | currency:'USD':'symbol':'1.2-2' }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  </div>
+}

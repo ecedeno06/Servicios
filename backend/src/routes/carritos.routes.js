@@ -7,8 +7,9 @@ router.use(requireEmpresa);
 
 // Carritos
 router.get('/', requirePermiso('carrito_compras', 'ver'), ctrl.listar);
-// Antes de "/:id" -- si no, Express interpreta "destinatarios" como el :id.
+// Antes de "/:id" -- si no, Express interpreta "destinatarios"/"reporte" como el :id.
 router.get('/destinatarios', requirePermiso('carrito_compras', 'ver'), ctrl.listarDestinatarios);
+router.get('/reporte', requirePermiso('carrito_compras', 'ver'), ctrl.reporte);
 router.get('/:id', requirePermiso('carrito_compras', 'ver'), ctrl.obtenerPorId);
 router.post('/', requirePermiso('carrito_compras', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('carrito_compras', 'editar'), ctrl.actualizar);

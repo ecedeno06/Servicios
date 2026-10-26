@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Carrito, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito } from '../models/models';
+import { Carrito, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class CarritosService {
@@ -32,6 +32,14 @@ export class CarritosService {
   }
   listarDestinatarios(): Observable<{ id: string; nombre: string; email: string }[]> {
     return this.http.get<{ id: string; nombre: string; email: string }[]>(`${this.base}/destinatarios`);
+  }
+
+  reporte(desde?: string, hasta?: string, estado?: string): Observable<ReporteCarritoResponse> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    if (estado) params = params.set('estado', estado);
+    return this.http.get<ReporteCarritoResponse>(`${this.base}/reporte`, { params });
   }
 
   // DETALLES (lineas de equipos a comprar)

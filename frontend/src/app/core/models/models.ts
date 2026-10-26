@@ -637,6 +637,42 @@ export interface HistoricoMovimientoCarrito {
   fecha_cambio: string;
 }
 
+// Reporte de Carrito de Compras: una fila por carrito (con sus totales ya
+// agregados por el backend, igual que el listado de Carritos) mas un
+// arreglo de lineas de detalle aparte -- cada linea referencia a su
+// carrito (carrito_id/carrito_titulo) para que el PDF/Excel pueda mostrar
+// el detalle de equipos sin perder a que orden de solicitud pertenece.
+export interface ReporteCarritoCabecera {
+  id: string;
+  titulo: string;
+  fecha_solicitud: string;
+  fecha_aprobacion: string | null;
+  estado: EstadoCarrito;
+  creado_por_nombre?: string;
+  costo_estimado_propuesto_total: number;
+  costo_estimado_aprobado_total: number;
+}
+
+export interface ReporteCarritoDetalleItem {
+  id: string;
+  carrito_id: string;
+  carrito_titulo: string;
+  carrito_estado: EstadoCarrito;
+  carrito_fecha_solicitud: string;
+  categoria_nombre: string | null;
+  marca: string;
+  modelo: string;
+  proveedor_nombre: string | null;
+  cantidad_propuesta: number;
+  cantidad_aprobada: number | null;
+  costo_estimado: number | null;
+}
+
+export interface ReporteCarritoResponse {
+  cabeceras: ReporteCarritoCabecera[];
+  detalles: ReporteCarritoDetalleItem[];
+}
+
 // Entrada de la bitacora de un incidente: nota libre, cambio de estado
 // y/o documento adjunto, cualquier combinacion, en un solo registro.
 export interface IncidenteNota {

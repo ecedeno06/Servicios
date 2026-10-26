@@ -195,6 +195,56 @@ async function listar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/carritos/reporte?desde=&hasta=&estado=
+// Dos arreglos en una sola respuesta: "cabeceras" (una fila por carrito,
+// con sus totales, para la tabla en pantalla) y "detalles" (una fila por
+// linea de equipo, con el carrito al que pertenece) -- para que el
+// PDF/Excel pueda mostrar el detalle de equipos sin perder de que orden
+// de solicitud viene cada uno.
+async function reporte(req, res, next) {
+  try {
+    const { desde, hasta, estado } = req.query;
+    const valores = [req.empresaId, desde || null, hasta || null, estado || null];
+    const condiciones = `
+      where c.empresa_id = $1
+        and ($2::date is null or c.fecha_solicitud >= $2::date)
+        and ($3::date is null or c.fecha_solicitud <= $3::date)
+        and ($4::text is null or c.estado = $4::text)
+    `;
+
+    const { rows: cabeceras } = await pool.query(
+      `${SELECT_BASE} ${condiciones} order by c.fecha_solicitud desc`,
+      valores
+    );
+
+    const { rows: detalles } = await pool.query(
+      `select
+         cd.id,
+         cd.carrito_id,
+         c.titulo as carrito_titulo,
+         c.estado as carrito_estado,
+         c.fecha_solicitud as carrito_fecha_solicitud,
+         cat.nombre as categoria_nombre,
+         cd.marca,
+         cd.modelo,
+         prov.nombre as proveedor_nombre,
+         cd.cantidad_propuesta,
+         cd.cantidad_aprobada,
+         cd.costo_estimado
+       from carrito_detalles cd
+       join carritos c on c.id = cd.carrito_id
+       left join productos p on p.id = cd.producto_id
+       left join categorias cat on cat.id = p.categoria_id
+       left join proveedores prov on prov.id = cd.proveedor_id
+       ${condiciones}
+       order by c.fecha_solicitud desc, cd.created_at asc`,
+      valores
+    );
+
+    res.json({ cabeceras, detalles });
+  } catch (err) { next(err); }
+}
+
 async function obtenerPorId(req, res, next) {
   try {
     const { rows } = await pool.query(
@@ -664,6 +714,7 @@ async function eliminarDetalle(req, res, next) {
 
 module.exports = {
   listar,
+  reporte,
   obtenerPorId,
   crear,
   actualizar,

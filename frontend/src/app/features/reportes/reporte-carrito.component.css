@@ -1,0 +1,6 @@
+/* Encabezados de columna: nombre ordenable (click alterna asc/desc) y el
+   filtro de esa columna, apilados dentro del mismo th -- mismo patron que
+   Reporte de Servicios / Equipos asignados / Auditoria de sesiones. */
+.th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
