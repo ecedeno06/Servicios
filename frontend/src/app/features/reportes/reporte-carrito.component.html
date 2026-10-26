@@ -7,33 +7,33 @@
 
 <div class="card">
   <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
-    <div class="form-grid">
-      <div class="form-group">
+    <div class="reporte-carrito-filtros-fila">
+      <div class="form-group reporte-carrito-campo-filtro">
         <label>Desde *</label>
         <input class="input" type="date" formControlName="fechaInicio" />
       </div>
-      <div class="form-group">
+      <div class="form-group reporte-carrito-campo-filtro">
         <label>Hasta *</label>
         <input class="input" type="date" formControlName="fechaFin" />
       </div>
-      <div class="form-group">
+      <div class="form-group reporte-carrito-campo-filtro">
         <label>Estado</label>
         <select class="input" formControlName="estado">
           <option value="">Todos los estados</option>
           @for (e of estados; track e) { <option [value]="e">{{ etiquetasEstado[e] }}</option> }
         </select>
       </div>
+
+      <div class="form-actions reporte-carrito-boton-buscar">
+        <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
+          {{ cargando() ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
     </div>
 
     @if (errorBuscar()) {
       <div class="error-text mt-16">{{ errorBuscar() }}</div>
     }
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
-        {{ cargando() ? 'Buscando...' : 'Buscar' }}
-      </button>
-    </div>
   </form>
 </div>
 

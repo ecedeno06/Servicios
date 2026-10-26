@@ -4,3 +4,26 @@
 .th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
 .th-sortable:hover { color: var(--teal-600); }
 .orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+/* El boton "Buscar" queda siempre en la misma fila que los campos de
+   filtro. A diferencia de .form-grid (CSS grid con columnas de minimo
+   220px, que envuelve a una segunda fila interna en pantallas angostas
+   y terminaba empujando el boton hacia abajo), aca los campos son items
+   flex normales con un piso mucho menor (130px) -- se achican antes de
+   envolver, asi que el boton nunca queda en una fila aparte. */
+.reporte-carrito-filtros-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.reporte-carrito-campo-filtro {
+  flex: 1 1 130px;
+  min-width: 130px;
+}
+
+.reporte-carrito-boton-buscar {
+  margin: 0;
+  flex-shrink: 0;
+}
