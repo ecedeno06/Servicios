@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatCurrency } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
@@ -41,6 +41,10 @@ export class EquiposComponent implements OnInit {
   filtroProductoCategoria = signal('');
   filtroProductoNombre = signal('');
   filtroProductoChecklist = signal<'' | 'si' | 'no'>('');
+  filtroProductoPrecio = signal('');
+
+  columnaOrdenProducto = signal<'precio' | null>(null);
+  direccionOrdenProducto = signal<'asc' | 'desc'>('asc');
 
   formProducto = this.fb.group({
     categoria_id: ['', Validators.required],
@@ -51,18 +55,56 @@ export class EquiposComponent implements OnInit {
     precio_referencia: ['', Validators.min(0)],
   });
 
-  hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre() || this.filtroProductoChecklist()));
+  hayFiltrosProducto = computed(() => !!(this.filtroProductoCategoria() || this.filtroProductoNombre() || this.filtroProductoChecklist() || this.filtroProductoPrecio()));
+
+  // precio_referencia llega como string desde Postgres (columna numeric).
+  formatoPrecio(valor: number | string | null | undefined): string {
+    return valor != null ? formatCurrency(Number(valor), 'en-US', '$') : '-';
+  }
 
   productosFiltrados = computed(() => {
     const fCat = this.filtroProductoCategoria().trim().toLowerCase();
     const fNombre = this.filtroProductoNombre().trim().toLowerCase();
     const fChecklist = this.filtroProductoChecklist();
+    const fPrecio = this.filtroProductoPrecio().trim().toLowerCase();
     return this.productos().filter((p) => {
       if (fCat && !(p.categoria_nombre ?? '').toLowerCase().includes(fCat)) return false;
       if (fNombre && !p.nombre.toLowerCase().includes(fNombre)) return false;
       if (fChecklist === 'si' && !p.aplica_checklist) return false;
       if (fChecklist === 'no' && p.aplica_checklist) return false;
+      if (fPrecio && !this.formatoPrecio(p.precio_referencia).toLowerCase().includes(fPrecio)) return false;
       return true;
+    });
+  });
+
+  ordenarPorProducto(columna: 'precio'): void {
+    if (this.columnaOrdenProducto() === columna) {
+      this.direccionOrdenProducto.set(this.direccionOrdenProducto() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.columnaOrdenProducto.set(columna);
+      this.direccionOrdenProducto.set('asc');
+    }
+  }
+
+  iconoOrdenProducto(columna: string): string {
+    if (this.columnaOrdenProducto() !== columna) return '';
+    return this.direccionOrdenProducto() === 'asc' ? '▲' : '▼';
+  }
+
+  productosOrdenados = computed(() => {
+    const columna = this.columnaOrdenProducto();
+    const filtrados = this.productosFiltrados();
+    if (!columna) return filtrados;
+    const signo = this.direccionOrdenProducto() === 'asc' ? 1 : -1;
+    return [...filtrados].sort((a, b) => {
+      // precio_referencia llega como string desde Postgres (columna
+      // numeric) -- hay que convertir a Number antes de comparar, si no
+      // "199.99" < "49.50" ordena como texto, no como numero.
+      const va = a.precio_referencia != null ? Number(a.precio_referencia) : -1;
+      const vb = b.precio_referencia != null ? Number(b.precio_referencia) : -1;
+      if (va < vb) return -1 * signo;
+      if (va > vb) return 1 * signo;
+      return 0;
     });
   });
 
@@ -101,6 +143,7 @@ export class EquiposComponent implements OnInit {
     this.filtroProductoCategoria.set('');
     this.filtroProductoNombre.set('');
     this.filtroProductoChecklist.set('');
+    this.filtroProductoPrecio.set('');
   }
 
   // ---------- Categorias: mantenimiento ----------

@@ -78,6 +78,10 @@
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoNombre()" (ngModelChange)="filtroProductoNombre.set($event)" />
           </th>
           <th>
+            <span class="th-sortable" (click)="ordenarPorProducto('precio')">Precio de Referencia <span class="orden-icono">{{ iconoOrdenProducto('precio') }}</span></span>
+            <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoPrecio()" (ngModelChange)="filtroProductoPrecio.set($event)" />
+          </th>
+          <th>
             <span class="th-label">Checklist</span>
             <select class="input input-th-filtro" [ngModel]="filtroProductoChecklist()" (ngModelChange)="filtroProductoChecklist.set($event)">
               <option value="">Todos</option>
@@ -88,7 +92,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (p of productosFiltrados(); track p.id) {
+        @for (p of productosOrdenados(); track p.id) {
           <tr class="row-clickable" [class.row-selected]="productoSeleccionado()?.id === p.id" (click)="seleccionarProducto(p)">
             <td>{{ p.categoria_nombre }}</td>
             <td>
@@ -98,10 +102,11 @@
                 {{ p.nombre }}
               }
             </td>
+            <td>{{ formatoPrecio(p.precio_referencia) }}</td>
             <td>{{ p.aplica_checklist ? 'Si' : 'No' }}</td>
           </tr>
         } @empty {
-          <tr><td colspan="3"><div class="empty-state">{{ hayFiltrosProducto() ? 'Ningun producto coincide con los filtros.' : 'No hay productos registrados.' }}</div></td></tr>
+          <tr><td colspan="4"><div class="empty-state">{{ hayFiltrosProducto() ? 'Ningun producto coincide con los filtros.' : 'No hay productos registrados.' }}</div></td></tr>
         }
       </tbody>
     </table>
