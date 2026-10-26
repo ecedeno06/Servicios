@@ -70,11 +70,11 @@
       <thead>
         <tr>
           <th>
-            <span class="th-label">Categoria</span>
+            <span class="th-sortable" (click)="ordenarPorProducto('categoria')">Categoria <span class="orden-icono">{{ iconoOrdenProducto('categoria') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoCategoria()" (ngModelChange)="filtroProductoCategoria.set($event)" />
           </th>
           <th>
-            <span class="th-label">Producto</span>
+            <span class="th-sortable" (click)="ordenarPorProducto('producto')">Producto <span class="orden-icono">{{ iconoOrdenProducto('producto') }}</span></span>
             <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroProductoNombre()" (ngModelChange)="filtroProductoNombre.set($event)" />
           </th>
           <th>

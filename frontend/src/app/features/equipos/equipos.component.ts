@@ -43,7 +43,7 @@ export class EquiposComponent implements OnInit {
   filtroProductoChecklist = signal<'' | 'si' | 'no'>('');
   filtroProductoPrecio = signal('');
 
-  columnaOrdenProducto = signal<'precio' | null>(null);
+  columnaOrdenProducto = signal<'categoria' | 'producto' | 'precio' | null>(null);
   direccionOrdenProducto = signal<'asc' | 'desc'>('asc');
 
   formProducto = this.fb.group({
@@ -77,7 +77,7 @@ export class EquiposComponent implements OnInit {
     });
   });
 
-  ordenarPorProducto(columna: 'precio'): void {
+  ordenarPorProducto(columna: 'categoria' | 'producto' | 'precio'): void {
     if (this.columnaOrdenProducto() === columna) {
       this.direccionOrdenProducto.set(this.direccionOrdenProducto() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -91,17 +91,25 @@ export class EquiposComponent implements OnInit {
     return this.direccionOrdenProducto() === 'asc' ? '▲' : '▼';
   }
 
+  private valorOrdenProducto(p: Producto, columna: 'categoria' | 'producto' | 'precio'): string | number {
+    switch (columna) {
+      case 'categoria': return (p.categoria_nombre ?? '').toLowerCase();
+      case 'producto': return p.nombre.toLowerCase();
+      // precio_referencia llega como string desde Postgres (columna
+      // numeric) -- hay que convertir a Number antes de comparar, si no
+      // "199.99" < "49.50" ordena como texto, no como numero.
+      case 'precio': return p.precio_referencia != null ? Number(p.precio_referencia) : -1;
+    }
+  }
+
   productosOrdenados = computed(() => {
     const columna = this.columnaOrdenProducto();
     const filtrados = this.productosFiltrados();
     if (!columna) return filtrados;
     const signo = this.direccionOrdenProducto() === 'asc' ? 1 : -1;
     return [...filtrados].sort((a, b) => {
-      // precio_referencia llega como string desde Postgres (columna
-      // numeric) -- hay que convertir a Number antes de comparar, si no
-      // "199.99" < "49.50" ordena como texto, no como numero.
-      const va = a.precio_referencia != null ? Number(a.precio_referencia) : -1;
-      const vb = b.precio_referencia != null ? Number(b.precio_referencia) : -1;
+      const va = this.valorOrdenProducto(a, columna);
+      const vb = this.valorOrdenProducto(b, columna);
       if (va < vb) return -1 * signo;
       if (va > vb) return 1 * signo;
       return 0;
