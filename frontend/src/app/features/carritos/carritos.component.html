@@ -92,21 +92,33 @@
 
 <!-- DETALLE DE LA SOLICITUD -- seccion fija debajo de la lista (no popup), igual que Equipos Asignados -->
 <div class="card mt-16">
-  <div class="flex items-center gap-8" style="justify-content: space-between;">
-    <h2>
-      @if (carritoSeleccionado(); as carritoTitulo) {
-        {{ carritoTitulo.titulo | uppercase }} <span class="text-muted" style="font-family: monospace; font-weight: 400;">· {{ idCorto(carritoTitulo.id) }}</span>
-      } @else {
-        Nueva solicitud de compra
-      }
-    </h2>
-    @if (carritoSeleccionado(); as carrito) {
+  @if (carritoSeleccionado(); as carrito) {
+    <div class="flex items-center gap-8" style="justify-content: space-between;">
+      <h2>
+        {{ carrito.titulo | uppercase }} <span class="text-muted" style="font-family: monospace; font-weight: 400;">· {{ idCorto(carrito.id) }}</span>
+      </h2>
       <div class="flex items-center gap-8">
         <span class="badge" [class]="clasesBadgeEstado[carrito.estado]">{{ etiquetasEstado[carrito.estado] }}</span>
         <button type="button" class="btn btn-outline btn-sm" (click)="generarPdf()">Generar PDF</button>
       </div>
-    }
-  </div>
+    </div>
+
+    <div class="carrito-stepper">
+      @for (e of estadosFiltro; track e; let i = $index) {
+        <div class="carrito-stepper-paso" [class.completado]="indiceEstado(e) < indiceEstado(carrito.estado)" [class.actual]="e === carrito.estado">
+          <div class="carrito-stepper-circulo">{{ i + 1 }}</div>
+          <div class="carrito-stepper-label">{{ etiquetasEstado[e] }}</div>
+        </div>
+        @if (i < estadosFiltro.length - 1) {
+          <div class="carrito-stepper-linea" [class.completado]="indiceEstado(e) < indiceEstado(carrito.estado)"></div>
+        }
+      }
+    </div>
+  } @else {
+    <div class="flex items-center gap-8" style="justify-content: space-between;">
+      <h2>Nueva solicitud de compra</h2>
+    </div>
+  }
 
   <!-- Encabezado: titulo / fecha de solicitud -->
   @if (!carritoSeleccionado() || puedeEditarEncabezado()) {

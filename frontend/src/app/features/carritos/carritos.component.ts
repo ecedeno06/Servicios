@@ -326,6 +326,12 @@ export class CarritosComponent implements OnInit {
     observacion: [''],
   });
 
+  // Usado por el stepper visual del encabezado para saber que pasos ya
+  // quedaron atras (completados) vs el actual vs los que faltan.
+  indiceEstado(e: EstadoCarrito): number {
+    return ORDEN_ESTADOS.indexOf(e);
+  }
+
   siguienteEstado = computed<EstadoCarrito | null>(() => {
     const c = this.carritoSeleccionado();
     if (!c) return null;

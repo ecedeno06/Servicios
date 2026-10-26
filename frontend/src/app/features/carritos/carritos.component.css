@@ -14,3 +14,71 @@
   align-items: center;
   height: 100%;
 }
+
+/* Stepper visual del ciclo de vida del carrito (en_construccion -> en_revision
+   -> aprobada -> cerrada) -- igual logica de "completado/actual" que ya usa
+   el badge de estado, solo que mostrando las 4 etapas de una vez. */
+.carrito-stepper {
+  display: flex;
+  align-items: flex-start;
+  margin: 18px 0 4px;
+}
+
+.carrito-stepper-paso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 90px;
+}
+
+.carrito-stepper-circulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.carrito-stepper-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.carrito-stepper-paso.completado .carrito-stepper-circulo,
+.carrito-stepper-paso.actual .carrito-stepper-circulo {
+  border-color: var(--teal-600);
+  background: var(--teal-600);
+  color: white;
+}
+
+.carrito-stepper-paso.completado .carrito-stepper-label,
+.carrito-stepper-paso.actual .carrito-stepper-label {
+  color: var(--text-heading);
+}
+
+.carrito-stepper-paso.actual .carrito-stepper-circulo {
+  box-shadow: 0 0 0 3px var(--teal-100);
+}
+
+.carrito-stepper-linea {
+  flex: 1;
+  height: 2px;
+  background: var(--border-default);
+  margin-top: 15px;
+  transition: background 0.2s ease;
+}
+
+.carrito-stepper-linea.completado {
+  background: var(--teal-600);
+}
