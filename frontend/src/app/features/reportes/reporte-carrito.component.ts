@@ -67,14 +67,14 @@ export class ReporteCarritoComponent implements OnInit {
   filtroTitulo = signal<Set<string>>(new Set());
   filtroFechaSolicitud = signal<Set<string>>(new Set());
   filtroEstadoCol = signal<Set<string>>(new Set());
-  filtroFechaAprobacion = signal<Set<string>>(new Set());
+  filtroAprobadoPor = signal<Set<string>>(new Set());
   filtroCostoPropuesto = signal<Set<string>>(new Set());
   filtroCostoAprobado = signal<Set<string>>(new Set());
   filtroCreadoPor = signal<Set<string>>(new Set());
 
   hayFiltrosColumna = computed(() => !!(
     this.filtroId().size || this.filtroTitulo().size || this.filtroFechaSolicitud().size ||
-    this.filtroEstadoCol().size || this.filtroFechaAprobacion().size ||
+    this.filtroEstadoCol().size || this.filtroAprobadoPor().size ||
     this.filtroCostoPropuesto().size || this.filtroCostoAprobado().size || this.filtroCreadoPor().size
   ));
 
@@ -83,7 +83,7 @@ export class ReporteCarritoComponent implements OnInit {
     this.filtroTitulo.set(new Set());
     this.filtroFechaSolicitud.set(new Set());
     this.filtroEstadoCol.set(new Set());
-    this.filtroFechaAprobacion.set(new Set());
+    this.filtroAprobadoPor.set(new Set());
     this.filtroCostoPropuesto.set(new Set());
     this.filtroCostoAprobado.set(new Set());
     this.filtroCreadoPor.set(new Set());
@@ -115,7 +115,7 @@ export class ReporteCarritoComponent implements OnInit {
   valoresTitulo = computed(() => this.valoresUnicos(this.cabeceras().map((c) => c.titulo)));
   valoresFechaSolicitud = computed(() => this.valoresUnicos(this.cabeceras().map((c) => c.fecha_solicitud?.substring(0, 10))).sort());
   valoresEstadoCol = computed(() => this.valoresUnicos(this.cabeceras().map((c) => c.estado)));
-  valoresFechaAprobacion = computed(() => this.valoresUnicos(this.cabeceras().map((c) => c.fecha_aprobacion?.substring(0, 10) || '-')).sort());
+  valoresAprobadoPor = computed(() => this.valoresUnicos(this.cabeceras().map((c) => c.aprobado_por_nombre)));
   valoresCostoPropuesto = computed(() =>
     this.valoresUnicos(this.cabeceras().map((c) => String(c.costo_estimado_propuesto_total))).sort((a, b) => Number(a) - Number(b))
   );
@@ -148,7 +148,7 @@ export class ReporteCarritoComponent implements OnInit {
       case 'titulo': return c.titulo.toLowerCase();
       case 'fechaSolicitud': return c.fecha_solicitud ?? '';
       case 'estado': return c.estado;
-      case 'fechaAprobacion': return c.fecha_aprobacion ?? '';
+      case 'aprobadoPor': return (c.aprobado_por_nombre ?? '').toLowerCase();
       case 'costoPropuesto': return Number(c.costo_estimado_propuesto_total ?? 0);
       case 'costoAprobado': return Number(c.costo_estimado_aprobado_total ?? 0);
       case 'creadoPor': return (c.creado_por_nombre ?? '').toLowerCase();
@@ -161,7 +161,7 @@ export class ReporteCarritoComponent implements OnInit {
     const fTitulo = this.filtroTitulo();
     const fFechaSolicitud = this.filtroFechaSolicitud();
     const fEstado = this.filtroEstadoCol();
-    const fFechaAprobacion = this.filtroFechaAprobacion();
+    const fAprobadoPor = this.filtroAprobadoPor();
     const fCostoPropuesto = this.filtroCostoPropuesto();
     const fCostoAprobado = this.filtroCostoAprobado();
     const fCreadoPor = this.filtroCreadoPor();
@@ -171,7 +171,7 @@ export class ReporteCarritoComponent implements OnInit {
       if (fTitulo.size && !fTitulo.has(c.titulo)) return false;
       if (fFechaSolicitud.size && !fFechaSolicitud.has(c.fecha_solicitud?.substring(0, 10))) return false;
       if (fEstado.size && !fEstado.has(c.estado)) return false;
-      if (fFechaAprobacion.size && !fFechaAprobacion.has(c.fecha_aprobacion?.substring(0, 10) || '-')) return false;
+      if (fAprobadoPor.size && !fAprobadoPor.has(c.aprobado_por_nombre ?? '')) return false;
       if (fCostoPropuesto.size && !fCostoPropuesto.has(String(c.costo_estimado_propuesto_total))) return false;
       if (fCostoAprobado.size && !fCostoAprobado.has(String(c.costo_estimado_aprobado_total))) return false;
       if (fCreadoPor.size && !fCreadoPor.has(c.creado_por_nombre ?? '')) return false;

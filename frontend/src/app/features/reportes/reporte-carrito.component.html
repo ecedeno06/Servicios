@@ -82,8 +82,8 @@
             <app-multi-select-filter [valores]="valoresEstadoCol()" [seleccionados]="filtroEstadoCol()" [formatoValor]="formatoEstado" (seleccionadosChange)="filtroEstadoCol.set($event)" />
           </th>
           <th>
-            <span class="th-sortable" (click)="ordenarPor('fechaAprobacion')">Fecha Aprobacion <span class="orden-icono">{{ iconoOrden('fechaAprobacion') }}</span></span>
-            <app-multi-select-filter [valores]="valoresFechaAprobacion()" [seleccionados]="filtroFechaAprobacion()" [formatoValor]="formatoFecha" (seleccionadosChange)="filtroFechaAprobacion.set($event)" />
+            <span class="th-sortable" (click)="ordenarPor('aprobadoPor')">Aprobado por <span class="orden-icono">{{ iconoOrden('aprobadoPor') }}</span></span>
+            <app-multi-select-filter [valores]="valoresAprobadoPor()" [seleccionados]="filtroAprobadoPor()" (seleccionadosChange)="filtroAprobadoPor.set($event)" />
           </th>
           <th>
             <span class="th-sortable" (click)="ordenarPor('costoPropuesto')">Costo Estimado Propuesto <span class="orden-icono">{{ iconoOrden('costoPropuesto') }}</span></span>
@@ -109,7 +109,7 @@
             <td>{{ c.titulo }}</td>
             <td>{{ c.fecha_solicitud | date:'dd/MM/yyyy' }}</td>
             <td><span class="badge" [class]="clasesBadgeEstado[c.estado]">{{ etiquetasEstado[c.estado] }}</span></td>
-            <td>{{ c.fecha_aprobacion ? (c.fecha_aprobacion | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>{{ c.aprobado_por_nombre || '-' }}</td>
             <td>{{ c.costo_estimado_propuesto_total | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ c.costo_estimado_aprobado_total | currency:'USD':'symbol':'1.2-2' }}</td>
             <td>{{ c.creado_por_nombre || '-' }}</td>

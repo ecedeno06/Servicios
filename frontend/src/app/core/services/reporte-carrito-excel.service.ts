@@ -26,7 +26,7 @@ function formatearFecha(iso: string | null | undefined): string {
   return `${dia}/${mes}/${anio}`;
 }
 
-const COLUMNAS_ORDENES = 7; // ID, Titulo, Fecha Solicitud, Estado, Fecha Aprobacion, Costo Propuesto, Costo Aprobado
+const COLUMNAS_ORDENES = 7; // ID, Titulo, Fecha Solicitud, Estado, Aprobado por, Costo Propuesto, Costo Aprobado
 const COLUMNAS_DETALLE = 7; // Orden, Categoria, Marca/Modelo, Proveedor, Cant. Propuesta, Cant. Aprobada, Costo Estimado
 
 function tituloYFiltro(hoja: any, titulo: string, filtro: FiltroReporteCarrito, empresa: { nombre?: string | null } | undefined, totalColumnas: number): void {
@@ -77,14 +77,14 @@ export class ReporteCarritoExcelService {
       { key: 'titulo', width: 30 },
       { key: 'fechaSolicitud', width: 16 },
       { key: 'estado', width: 16 },
-      { key: 'fechaAprobacion', width: 16 },
+      { key: 'aprobadoPor', width: 24 },
       { key: 'costoPropuesto', width: 18 },
       { key: 'costoAprobado', width: 18 },
     ];
 
     tituloYFiltro(hojaOrdenes, 'REPORTE DE CARRITO DE COMPRAS', filtro, empresa, COLUMNAS_ORDENES);
 
-    const encabezadoOrdenes = hojaOrdenes.addRow(['ID', 'Titulo', 'Fecha Solicitud', 'Estado', 'Fecha Aprobacion', 'Costo Propuesto (USD)', 'Costo Aprobado (USD)']);
+    const encabezadoOrdenes = hojaOrdenes.addRow(['ID', 'Titulo', 'Fecha Solicitud', 'Estado', 'Aprobado por', 'Costo Propuesto (USD)', 'Costo Aprobado (USD)']);
     estilarEncabezado(encabezadoOrdenes);
 
     cabeceras.forEach((c) => {
@@ -93,7 +93,7 @@ export class ReporteCarritoExcelService {
         titulo: c.titulo,
         fechaSolicitud: formatearFecha(c.fecha_solicitud),
         estado: c.estado,
-        fechaAprobacion: formatearFecha(c.fecha_aprobacion),
+        aprobadoPor: c.aprobado_por_nombre || '-',
         costoPropuesto: Number(c.costo_estimado_propuesto_total ?? 0),
         costoAprobado: Number(c.costo_estimado_aprobado_total ?? 0),
       });

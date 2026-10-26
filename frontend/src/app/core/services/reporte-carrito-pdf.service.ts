@@ -73,7 +73,7 @@ export class ReporteCarritoPdfService {
       { text: c.titulo, style: 'td' },
       { text: formatearFecha(c.fecha_solicitud), style: 'td' },
       { text: c.estado, style: 'td' },
-      { text: formatearFecha(c.fecha_aprobacion), style: 'td' },
+      { text: c.aprobado_por_nombre || '-', style: 'td' },
       { text: formatearMoneda(c.costo_estimado_propuesto_total), style: 'td', alignment: 'right' },
       { text: formatearMoneda(c.costo_estimado_aprobado_total), style: 'tdBold', fillColor: GREY, alignment: 'right' },
     ]));
@@ -128,7 +128,7 @@ export class ReporteCarritoPdfService {
                 { text: 'Titulo', style: 'th' },
                 { text: 'Fecha Solicitud', style: 'th' },
                 { text: 'Estado', style: 'th' },
-                { text: 'Fecha Aprobacion', style: 'th' },
+                { text: 'Aprobado por', style: 'th' },
                 { text: 'Costo Propuesto', style: 'th' },
                 { text: 'Costo Aprobado', style: 'th' },
               ],

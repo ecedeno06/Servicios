@@ -649,6 +649,7 @@ export interface ReporteCarritoCabecera {
   fecha_aprobacion: string | null;
   estado: EstadoCarrito;
   creado_por_nombre?: string;
+  aprobado_por_nombre?: string | null;
   costo_estimado_propuesto_total: number;
   costo_estimado_aprobado_total: number;
 }

@@ -213,7 +213,25 @@ async function reporte(req, res, next) {
     `;
 
     const { rows: cabeceras } = await pool.query(
-      `${SELECT_BASE} ${condiciones} order by c.fecha_solicitud desc`,
+      `select
+         c.*,
+         uc.nombre as creado_por_nombre,
+         um.nombre as modificado_por_nombre,
+         (select coalesce(sum(d.costo_estimado * d.cantidad_propuesta), 0)::numeric from carrito_detalles d where d.carrito_id = c.id) as costo_estimado_propuesto_total,
+         (select coalesce(sum(d.costo_estimado * coalesce(d.cantidad_aprobada, 0)), 0)::numeric from carrito_detalles d where d.carrito_id = c.id) as costo_estimado_aprobado_total,
+         -- Quien ejecuto la transicion a "aprobada" -- si se devolvio y se
+         -- volvio a aprobar, toma la mas reciente.
+         (select u.nombre
+          from historico_movimiento_carrito h
+          join usuarios u on u.id = h.registrado_por
+          where h.carrito_id = c.id and h.estado_nuevo = 'aprobada'
+          order by h.fecha_cambio desc
+          limit 1) as aprobado_por_nombre
+       from carritos c
+       join usuarios uc on uc.id = c.creado_por
+       left join usuarios um on um.id = c.modificado_por
+       ${condiciones}
+       order by c.fecha_solicitud desc`,
       valores
     );
 
