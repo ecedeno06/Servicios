@@ -5,6 +5,7 @@ import { ClientesService } from '../../core/services/clientes.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Cliente } from '../../core/models/models';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-clientes',
@@ -96,7 +97,7 @@ export class ClientesComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: ClientesService, public menu: MenuService, private confirmSrv: ConfirmService) {}
+  constructor(private fb: FormBuilder, private srv: ClientesService, public menu: MenuService, private confirmSrv: ConfirmService, private toast: ToastService) {}
 
   ngOnInit(): void { this.cargar(); }
 
@@ -127,6 +128,6 @@ export class ClientesComponent implements OnInit {
 
   async eliminar(c: Cliente): Promise<void> {
     if (!(await this.confirmSrv.confirmar(`Eliminar al cliente "${c.nombre}"? Esta accion no se puede deshacer.`))) return;
-    this.srv.eliminar(c.id).subscribe(() => this.cargar());
+    this.srv.eliminar(c.id).subscribe(() => { this.toast.exito(`Cliente "${c.nombre}" eliminado correctamente.`); this.cargar(); });
   }
 }

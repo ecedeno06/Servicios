@@ -285,7 +285,7 @@ export class RegistroHorasComponent implements OnInit {
 
   async eliminar(r: RegistroHora): Promise<void> {
     if (!(await this.confirmSrv.confirmar('Eliminar este registro de horas?'))) return;
-    this.srv.eliminar(r.id).subscribe(() => this.cargar());
+    this.srv.eliminar(r.id).subscribe(() => { this.toast.exito('Registro de horas eliminado correctamente.'); this.cargar(); });
   }
 
   numeroServicio(r: RegistroHora): string {
@@ -414,9 +414,12 @@ export class RegistroHorasComponent implements OnInit {
     if (!registro) return;
     if (!(await this.confirmSrv.confirmar('¿Eliminar este adjunto?'))) return;
     this.srv.eliminarAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
-      next: () => this.comentariosDelRegistro.update((lista) =>
-        lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
-      ),
+      next: () => {
+        this.comentariosDelRegistro.update((lista) =>
+          lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
+        );
+        this.toast.exito('Adjunto eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }

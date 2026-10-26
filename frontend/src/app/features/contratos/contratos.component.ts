@@ -153,7 +153,7 @@ export class ContratosComponent implements OnInit {
 
   async eliminar(c: Contrato): Promise<void> {
     if (!(await this.confirmSrv.confirmar(`Eliminar el contrato "${c.numero_contrato}"? Se eliminaran tambien sus horas y registros.`))) return;
-    this.srv.eliminar(c.id).subscribe(() => this.cargar());
+    this.srv.eliminar(c.id).subscribe(() => { this.toast.exito(`Contrato "${c.numero_contrato}" eliminado correctamente.`); this.cargar(); });
   }
 
   vigencia(c: Contrato): { texto: string; clase: string } {

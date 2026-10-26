@@ -98,7 +98,7 @@ export class RolesPermisosComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`Eliminar el rol "${actual.nombre}"? Esto falla si todavia hay usuarios con ese rol asignado.`))) return;
     this.rolesSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevoRol(); this.cargarRoles(); },
+      next: () => { this.toast.exito(`Rol "${actual.nombre}" eliminado correctamente.`); this.nuevoRol(); this.cargarRoles(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el rol'),
     });
   }

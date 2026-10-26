@@ -122,7 +122,7 @@ export class ContratoDetalleComponent implements OnInit {
 
   async eliminarServicio(contratoServicioId: string): Promise<void> {
     if (!(await this.confirmSrv.confirmar('Quitar este servicio del contrato? Se perdera el historial de horas asociado.'))) return;
-    this.srv.eliminarServicio(this.contratoId, contratoServicioId).subscribe(() => this.cargar());
+    this.srv.eliminarServicio(this.contratoId, contratoServicioId).subscribe(() => { this.toast.exito('Servicio eliminado del contrato correctamente.'); this.cargar(); });
   }
 
   editarHoras(s: ConsumoHoras): void {

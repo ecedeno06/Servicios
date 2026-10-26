@@ -140,7 +140,7 @@ export class EmpresasComponent implements OnInit {
   async eliminar(e: Empresa): Promise<void> {
     if (!(await this.confirmSrv.confirmar(`Eliminar la empresa "${e.nombre}"?`))) return;
     this.srv.eliminar(e.id).subscribe({
-      next: () => this.cargar(),
+      next: () => { this.toast.exito(`Empresa "${e.nombre}" eliminada correctamente.`); this.cargar(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la empresa'),
     });
   }

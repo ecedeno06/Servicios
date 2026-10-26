@@ -85,7 +85,7 @@ export class EstadosServicioComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`¿Eliminar el estado "${actual.nombre}"? Esto falla si todavia hay servicios con este estado.`))) return;
     this.estadosSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevoEstado(); this.cargarEstados(); },
+      next: () => { this.toast.exito(`Estado "${actual.nombre}" eliminado correctamente.`); this.nuevoEstado(); this.cargarEstados(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el estado'),
     });
   }

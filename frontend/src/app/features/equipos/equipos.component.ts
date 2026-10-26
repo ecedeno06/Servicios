@@ -183,7 +183,7 @@ export class EquiposComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`))) return;
     this.categoriasSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevaCategoria(); this.cargarCategorias(); },
+      next: () => { this.toast.exito(`Categoria "${actual.nombre}" eliminada correctamente.`); this.nuevaCategoria(); this.cargarCategorias(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
     });
   }
@@ -232,7 +232,7 @@ export class EquiposComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`Eliminar el producto "${actual.nombre}"?`))) return;
     this.productosSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevoProducto(); this.cargarProductos(); },
+      next: () => { this.toast.exito(`Producto "${actual.nombre}" eliminado correctamente.`); this.nuevoProducto(); this.cargarProductos(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el producto'),
     });
   }
@@ -266,7 +266,7 @@ export class EquiposComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`Eliminar el procesador "${actual.nombre}"?`))) return;
     this.procesadoresSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevoProcesador(); this.cargarProcesadores(); },
+      next: () => { this.toast.exito(`Procesador "${actual.nombre}" eliminado correctamente.`); this.nuevoProcesador(); this.cargarProcesadores(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el procesador'),
     });
   }

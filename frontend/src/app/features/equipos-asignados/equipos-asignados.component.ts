@@ -601,6 +601,7 @@ export class EquiposAsignadosComponent implements OnInit {
         this.eliminandoHistorial.set(false);
         this.historialAEliminar.set(null);
         this.cargarHistorial(pendiente.equipoId);
+        this.toast.exito('Movimiento del historial eliminado correctamente.');
       },
       error: (err) => {
         this.eliminandoHistorial.set(false);
@@ -633,7 +634,10 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!equipo) return;
     if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.srv.eliminarAdjunto(equipo.id, adjuntoId).subscribe({
-      next: () => this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      next: () => {
+        this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+        this.toast.exito('Adjunto eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
@@ -833,6 +837,7 @@ export class EquiposAsignadosComponent implements OnInit {
         this.confirmandoEliminarEquipo.set(false);
         this.nuevo();
         this.cargar();
+        this.toast.exito('Equipo eliminado correctamente.');
       },
       error: (err) => {
         this.eliminandoEquipo.set(false);
@@ -995,7 +1000,10 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!equipo) return;
     if (!(await this.confirmSrv.confirmar('¿Eliminar este checklist?'))) return;
     this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id).subscribe({
-      next: () => this.cargarChecklistEjecuciones(),
+      next: () => {
+        this.cargarChecklistEjecuciones();
+        this.toast.exito('Checklist eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
     });
   }

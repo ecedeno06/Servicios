@@ -253,6 +253,7 @@ export class CarritosComponent implements OnInit {
       next: () => {
         if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
         this.carritos.update((arr) => arr.filter((x) => x.id !== c.id));
+        this.toast.exito(`Carrito "${c.titulo}" eliminado correctamente.`);
       },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar el carrito'),
     });
@@ -571,7 +572,10 @@ export class CarritosComponent implements OnInit {
     if (!carrito) return;
     if (!(await this.confirmSrv.confirmar('¿Eliminar esta linea del carrito?'))) return;
     this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
-      next: () => this.refrescarCarritoActual(),
+      next: () => {
+        this.refrescarCarritoActual();
+        this.toast.exito('Linea del carrito eliminada correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la linea'),
     });
   }

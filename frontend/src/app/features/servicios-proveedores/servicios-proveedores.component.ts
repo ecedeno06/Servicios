@@ -677,7 +677,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId).subscribe({
-      next: () => this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      next: () => {
+        this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+        this.toast.exito('Adjunto eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
@@ -904,6 +907,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
         if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
         this.cargarDatos();
+        this.toast.exito('Evento del registro eliminado correctamente.');
       },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar el evento'),
     });
@@ -950,7 +954,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio || !incidente) return;
     if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId).subscribe({
-      next: () => this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      next: () => {
+        this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+        this.toast.exito('Adjunto eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
@@ -1166,6 +1173,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.incidentesServicioActual.update((arr) =>
           arr.map((i) => (i.id === incidente.id ? { ...i, notas_count: Math.max(0, (i.notas_count || 0) - 1) } : i))
         );
+        this.toast.exito('Entrada del historico eliminada correctamente.');
       },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar la nota'),
     });
@@ -1216,7 +1224,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!servicio) return;
     if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
     this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId).subscribe({
-      next: () => this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId)),
+      next: () => {
+        this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+        this.toast.exito('Adjunto eliminado correctamente.');
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
     });
   }
@@ -1393,7 +1404,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!(await this.confirmSrv.confirmar(`¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`))) return;
 
     this.sectoresSrv.eliminar(s.id).subscribe({
-      next: () => this.cargarDatos(),
+      next: () => {
+        this.toast.exito(`Sector "${s.nombre}" eliminado correctamente.`);
+        this.cargarDatos();
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar sector'),
     });
   }
@@ -1471,7 +1485,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!(await this.confirmSrv.confirmar(`¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`))) return;
 
     this.proveedoresSrv.eliminar(p.id).subscribe({
-      next: () => this.cargarDatos(),
+      next: () => {
+        this.toast.exito(`Proveedor "${p.nombre}" eliminado correctamente.`);
+        this.cargarDatos();
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar proveedor'),
     });
   }
@@ -1844,7 +1861,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     if (!(await this.confirmSrv.confirmar(`¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`))) return;
 
     this.serviciosSrv.eliminar(s.id).subscribe({
-      next: () => this.cargarDatos(),
+      next: () => {
+        this.toast.exito(`Servicio "${s.servicio}" eliminado correctamente.`);
+        this.cargarDatos();
+      },
       error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar servicio'),
     });
   }
@@ -1942,6 +1962,7 @@ export class ServiciosProveedoresComponent implements OnInit {
 
     this.serviciosSrv.eliminarFactura(servicio.id, f.id).subscribe({
       next: () => {
+        this.toast.exito('Factura eliminada correctamente.');
         this.cargarFacturas(servicio.id);
         this.cargarDatos();
       },

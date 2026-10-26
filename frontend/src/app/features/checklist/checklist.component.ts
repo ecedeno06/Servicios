@@ -82,7 +82,7 @@ export class ChecklistComponent implements OnInit {
     if (!actual) return;
     if (!(await this.confirmSrv.confirmar(`¿Eliminar "${actual.descripcion}"?`))) return;
     this.checklistsSrv.eliminar(actual.id).subscribe({
-      next: () => { this.nuevoItem(); this.cargarItems(); },
+      next: () => { this.toast.exito(`Item "${actual.descripcion}" eliminado correctamente.`); this.nuevoItem(); this.cargarItems(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
     });
   }

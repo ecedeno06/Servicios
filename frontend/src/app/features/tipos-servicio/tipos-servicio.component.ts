@@ -5,6 +5,7 @@ import { TiposServicioService } from '../../core/services/tipos-servicio.service
 import { MenuService } from '../../core/services/menu.service';
 import { TipoServicio } from '../../core/models/models';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-tipos-servicio',
@@ -24,7 +25,7 @@ export class TiposServicioComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService, private confirmSrv: ConfirmService) {}
+  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService, private confirmSrv: ConfirmService, private toast: ToastService) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.tipos.set(data)); }
@@ -43,6 +44,6 @@ export class TiposServicioComponent implements OnInit {
 
   async eliminar(t: TipoServicio): Promise<void> {
     if (!(await this.confirmSrv.confirmar(`Eliminar el tipo de servicio "${t.nombre}"?`))) return;
-    this.srv.eliminar(t.id).subscribe(() => this.cargar());
+    this.srv.eliminar(t.id).subscribe(() => { this.toast.exito(`Tipo de servicio "${t.nombre}" eliminado correctamente.`); this.cargar(); });
   }
 }
