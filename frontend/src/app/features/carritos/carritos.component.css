@@ -82,3 +82,13 @@
 .carrito-stepper-linea.completado {
   background: var(--teal-600);
 }
+
+/* Fondo gris suave para distinguir el historico del resto del card blanco
+   -- usa la misma variable que ya se ajusta sola entre modo claro/oscuro
+   (ver --bg-surface-muted en styles.css), no un gris fijo. */
+.carrito-historico-panel {
+  background: var(--bg-surface-muted);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
