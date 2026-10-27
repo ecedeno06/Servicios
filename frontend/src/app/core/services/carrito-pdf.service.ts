@@ -42,6 +42,18 @@ export interface CarritoPdfMovimiento {
   fecha: string; // ya formateada
 }
 
+export interface CarritoPdfCotizacion {
+  equipo: string; // "marca modelo" de la linea a la que pertenece
+  fecha: string; // ya formateada
+  proveedor: string;
+  numeroCotizacion?: string | null;
+  costoUnitario: number;
+  url?: string | null;
+  contactoNombre?: string | null;
+  contactoCorreo?: string | null;
+  contactoTelefono?: string | null;
+}
+
 export interface CarritoPdfData {
   empresaNombre?: string | null;
   empresaLogo?: string | null; // data URI base64
@@ -61,6 +73,9 @@ export interface CarritoPdfData {
   movimientos: CarritoPdfMovimiento[]; // orden cronologico (mas antiguo primero)
   fechaGeneracion: string; // ya formateada
   generadoPor?: string;
+  // Opcional (el usuario elige incluirlas o no al generar el PDF) -- si
+  // vienen, se agregan en una hoja aparte al final (pageBreak: 'before').
+  cotizaciones?: CarritoPdfCotizacion[];
 }
 
 // ------------------------- Colores / estilos -------------------------
@@ -107,6 +122,20 @@ export class CarritoPdfService {
       { text: l.cantidadAprobada != null ? String(l.cantidadAprobada) : '-', style: 'td', alignment: 'center' },
       { text: l.costoEstimado != null ? formatearMoneda(l.costoEstimado) : '-', style: 'td', alignment: 'right' },
       { text: formatearMoneda(l.totalLinea), style: 'tdBold', fillColor: GREY, alignment: 'right' },
+    ]));
+
+    const filasCotizaciones = (data.cotizaciones || []).map((q) => ([
+      { text: q.equipo, style: 'td' },
+      { text: q.fecha || '-', style: 'td' },
+      { text: q.proveedor || '-', style: 'td' },
+      { text: q.numeroCotizacion || '-', style: 'td' },
+      { text: formatearMoneda(q.costoUnitario), style: 'tdBold', fillColor: GREY, alignment: 'right' },
+      q.url
+        ? { text: 'Ver', style: 'td', link: q.url, color: PRIMARY, decoration: 'underline', alignment: 'center' }
+        : { text: '-', style: 'td', alignment: 'center' },
+      { text: q.contactoNombre || '-', style: 'td' },
+      { text: q.contactoCorreo || '-', style: 'td' },
+      { text: q.contactoTelefono || '-', style: 'td' },
     ]));
 
     const filasMovimientos = data.movimientos.map((m) => ([
@@ -244,6 +273,39 @@ export class CarritoPdfService {
               },
             }
           : { text: 'Sin movimientos registrados.', style: 'valor', italics: true },
+
+        // Cotizaciones -- hoja aparte, solo si el usuario eligio incluirlas.
+        ...(data.cotizaciones ? [
+          { text: 'COTIZACIONES', style: 'subtitulo', margin: [0, 0, 0, 6] as [number, number, number, number], pageBreak: 'before' as const },
+          data.cotizaciones.length > 0
+            ? {
+                table: {
+                  headerRows: 1,
+                  widths: ['*', 60, 90, 70, 65, 35, 90, 110, 70],
+                  body: [
+                    [
+                      { text: 'Equipo', style: 'th' },
+                      { text: 'Fecha', style: 'th' },
+                      { text: 'Proveedor', style: 'th' },
+                      { text: 'ID Cotizacion', style: 'th' },
+                      { text: 'Costo Unit.', style: 'th' },
+                      { text: 'URL', style: 'th' },
+                      { text: 'Contacto', style: 'th' },
+                      { text: 'Correo', style: 'th' },
+                      { text: 'Telefono', style: 'th' },
+                    ],
+                    ...filasCotizaciones,
+                  ],
+                },
+                layout: {
+                  hLineColor: () => '#B7B7B7',
+                  vLineColor: () => '#B7B7B7',
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                },
+              }
+            : { text: 'Sin cotizaciones registradas.', style: 'valor', italics: true },
+        ] : []),
       ],
 
       footer: (currentPage: number, pageCount: number) => ({

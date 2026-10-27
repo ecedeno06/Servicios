@@ -2,14 +2,14 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, map } from 'rxjs';
+import { firstValueFrom, forkJoin, map } from 'rxjs';
 import { CarritosService } from '../../core/services/carritos.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProveedoresService } from '../../core/services/proveedores.service';
 import { MenuService } from '../../core/services/menu.service';
 import { AuthService } from '../../core/services/auth.service';
-import { CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
+import { CarritoPdfCotizacion, CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { Carrito, CarritoCotizacion, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
@@ -773,13 +773,24 @@ export class CarritosComponent implements OnInit {
 
   // Encabezado + detalle + totales + historico de la solicitud, todo en
   // un PDF -- mismo mecanismo que el checklist de equipo (pdfmake con
-  // carga diferida, ventana en blanco abierta YA dentro del click para
-  // que el navegador no la bloquee mientras pdfmake carga).
-  generarPdf(): void {
+  // carga diferida, ventana en blanco abierta YA dentro del click, ANTES
+  // de cualquier await, para que el navegador no la bloquee -- el permiso
+  // de popup solo se concede dentro del gesto sincrono del click).
+  async generarPdf(): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
 
     const ventana = window.open('', '_blank') ?? undefined;
+
+    const lineas = this.detalles();
+    const incluirCotizaciones = lineas.length > 0
+      ? await this.confirmSrv.confirmar('¿Deseas incluir las cotizaciones de cada equipo en una hoja aparte del PDF?', {
+          titulo: 'Generar PDF',
+          textoAceptar: 'Si, incluirlas',
+          textoCancelar: 'No incluirlas',
+          peligroso: false,
+        })
+      : false;
 
     const formatearFecha = (f?: string | null): string | null =>
       f ? this.datePipe.transform(f, 'mediumDate', 'UTC') : null;
@@ -827,10 +838,40 @@ export class CarritosComponent implements OnInit {
       })),
       fechaGeneracion: formatearFechaHora(new Date().toISOString()) || '',
       generadoPor: this.auth.usuario()?.nombre,
+      cotizaciones: incluirCotizaciones
+        ? await this.obtenerCotizacionesParaPdf(carrito.id, lineas, formatearFecha)
+        : undefined,
     };
 
     this.pdfSrv.generar(data)
       .then((doc) => doc.open(undefined, ventana))
       .catch(() => this.toast.error('No se pudo generar el PDF de la solicitud.'));
+  }
+
+  // Trae las cotizaciones de todas las lineas de un saque (frescas, sin
+  // depender de si el usuario ya visito el tab Cotizaciones) y las aplana
+  // en una sola lista para la hoja aparte del PDF.
+  private async obtenerCotizacionesParaPdf(
+    carritoId: string,
+    lineas: CarritoDetalle[],
+    formatearFecha: (f?: string | null) => string | null
+  ): Promise<CarritoPdfCotizacion[]> {
+    if (!lineas.length) return [];
+    const pares = await firstValueFrom(
+      forkJoin(lineas.map((d) => this.srv.listarCotizaciones(carritoId, d.id).pipe(map((data) => ({ detalle: d, data })))))
+    );
+    return pares.flatMap(({ detalle, data }) =>
+      data.map((q) => ({
+        equipo: `${detalle.marca} ${detalle.modelo}`,
+        fecha: formatearFecha(q.fecha) || '-',
+        proveedor: q.proveedor_nombre || '-',
+        numeroCotizacion: q.numero_cotizacion,
+        costoUnitario: q.costo_unitario,
+        url: q.url,
+        contactoNombre: q.contacto_nombre,
+        contactoCorreo: q.contacto_correo,
+        contactoTelefono: q.contacto_telefono,
+      }))
+    );
   }
 }
