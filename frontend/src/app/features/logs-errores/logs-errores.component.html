@@ -101,7 +101,6 @@
           <span class="th-sortable" (click)="ordenarPor('status')">Status <span class="orden-icono">{{ iconoOrden('status') }}</span></span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroStatus()" (ngModelChange)="filtroStatus.set($event)" />
         </th>
-        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -115,7 +114,12 @@
             <span class="badge" [class]="claseNivel(l.nivel)">{{ l.metodo_http || '-' }}</span>
             <div class="text-muted text-sm">{{ l.ruta || '-' }}</div>
           </td>
-          <td class="text-sm">{{ l.mensaje }}</td>
+          <td class="text-sm">
+            <button type="button" class="btn-icon btn-icon-inline" title="Ver detalle" (click)="abrirDetalle(l)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </button>
+            {{ l.mensaje }}
+          </td>
           <td>
             @if (l.usuario_nombre) {
               <div>{{ l.usuario_nombre }}</div>
@@ -126,15 +130,10 @@
           </td>
           <td>{{ l.empresa_nombre || '-' }}</td>
           <td><span class="badge" [class]="claseStatus(l.status_http)">{{ l.status_http ?? '-' }}</span></td>
-          <td class="table-actions">
-            <button type="button" class="btn-icon" title="Ver detalle" (click)="abrirDetalle(l)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-            </button>
-          </td>
         </tr>
       } @empty {
         <tr>
-          <td colspan="8">
+          <td colspan="7">
             <div class="empty-state">
               @if (cargando()) {
                 Cargando logs...
