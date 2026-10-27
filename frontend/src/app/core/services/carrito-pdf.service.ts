@@ -70,11 +70,12 @@ export interface CarritoPdfData {
   lineas: CarritoPdfLinea[];
   totalPropuesto: number;
   totalAprobado: number;
-  movimientos: CarritoPdfMovimiento[]; // orden cronologico (mas antiguo primero)
+  // Opcionales (el usuario elige, con un checkbox cada uno, que secciones
+  // incluir al generar el PDF) -- si no vienen, la seccion se omite entera.
+  movimientos?: CarritoPdfMovimiento[]; // orden cronologico (mas antiguo primero)
   fechaGeneracion: string; // ya formateada
   generadoPor?: string;
-  // Opcional (el usuario elige incluirlas o no al generar el PDF) -- si
-  // vienen, se agregan en una hoja aparte al final (pageBreak: 'before').
+  // Si vienen, se agregan en una hoja aparte al final (pageBreak: 'before').
   cotizaciones?: CarritoPdfCotizacion[];
 }
 
@@ -138,7 +139,7 @@ export class CarritoPdfService {
       { text: q.contactoTelefono || '-', style: 'td' },
     ]));
 
-    const filasMovimientos = data.movimientos.map((m) => ([
+    const filasMovimientos = (data.movimientos || []).map((m) => ([
       { text: m.estadoAnterior ? `${m.estadoAnterior} -> ${m.estadoNuevo}` : `Creado como ${m.estadoNuevo}`, style: 'td' },
       { text: m.registradoPor || '-', style: 'td' },
       { text: m.fecha, style: 'td' },
@@ -249,30 +250,32 @@ export class CarritoPdfService {
           margin: [0, 8, 0, 18],
         },
 
-        // Historico de movimientos
-        { text: 'HISTORICO DE MOVIMIENTOS', style: 'subtitulo', margin: [0, 0, 0, 6] },
-        data.movimientos.length > 0
-          ? {
-              table: {
-                headerRows: 1,
-                widths: ['*', 130, 110],
-                body: [
-                  [
-                    { text: 'Movimiento', style: 'th' },
-                    { text: 'Registrado por', style: 'th' },
-                    { text: 'Fecha', style: 'th' },
+        // Historico de movimientos -- solo si el usuario eligio incluirlo.
+        ...(data.movimientos ? [
+          { text: 'HISTORICO DE MOVIMIENTOS', style: 'subtitulo', margin: [0, 0, 0, 6] as [number, number, number, number] },
+          data.movimientos.length > 0
+            ? {
+                table: {
+                  headerRows: 1,
+                  widths: ['*', 130, 110],
+                  body: [
+                    [
+                      { text: 'Movimiento', style: 'th' },
+                      { text: 'Registrado por', style: 'th' },
+                      { text: 'Fecha', style: 'th' },
+                    ],
+                    ...filasMovimientos,
                   ],
-                  ...filasMovimientos,
-                ],
-              },
-              layout: {
-                hLineColor: () => '#B7B7B7',
-                vLineColor: () => '#B7B7B7',
-                hLineWidth: () => 0.5,
-                vLineWidth: () => 0.5,
-              },
-            }
-          : { text: 'Sin movimientos registrados.', style: 'valor', italics: true },
+                },
+                layout: {
+                  hLineColor: () => '#B7B7B7',
+                  vLineColor: () => '#B7B7B7',
+                  hLineWidth: () => 0.5,
+                  vLineWidth: () => 0.5,
+                },
+              }
+            : { text: 'Sin movimientos registrados.', style: 'valor', italics: true },
+        ] : []),
 
         // Cotizaciones -- hoja aparte, solo si el usuario eligio incluirlas.
         ...(data.cotizaciones ? [

@@ -749,6 +749,24 @@ export class CarritosComponent implements OnInit {
     this.toast.exito('Cotizacion eliminada correctamente.');
   }
 
+  // Popup de opciones del PDF: que secciones aparte del encabezado/equipos
+  // incluir -- checkboxes en vez de una pregunta si/no, para poder elegir
+  // historico y cotizaciones de forma independiente.
+  popupOpcionesPdfAbierto = signal(false);
+  opcionesPdfIncluirMovimientos = signal(true);
+  opcionesPdfIncluirCotizaciones = signal(false);
+
+  abrirOpcionesPdf(): void {
+    if (!this.carritoSeleccionado()) return;
+    this.opcionesPdfIncluirMovimientos.set(true);
+    this.opcionesPdfIncluirCotizaciones.set(false);
+    this.popupOpcionesPdfAbierto.set(true);
+  }
+
+  cerrarOpcionesPdf(): void {
+    this.popupOpcionesPdfAbierto.set(false);
+  }
+
   // Encabezado + detalle + totales + historico de la solicitud, todo en
   // un PDF -- mismo mecanismo que el checklist de equipo (pdfmake con
   // carga diferida). A diferencia de los demas PDF de la app, aqui hay
@@ -763,14 +781,9 @@ export class CarritosComponent implements OnInit {
     if (!carrito) return;
 
     const lineas = this.detalles();
-    const incluirCotizaciones = lineas.length > 0
-      ? await this.confirmSrv.confirmar('¿Deseas incluir las cotizaciones de cada equipo en una hoja aparte del PDF?', {
-          titulo: 'Generar PDF',
-          textoAceptar: 'Si, incluirlas',
-          textoCancelar: 'No incluirlas',
-          peligroso: false,
-        })
-      : false;
+    const incluirMovimientos = this.opcionesPdfIncluirMovimientos();
+    const incluirCotizaciones = lineas.length > 0 && this.opcionesPdfIncluirCotizaciones();
+    this.popupOpcionesPdfAbierto.set(false);
 
     const ventana = window.open('', '_blank') ?? undefined;
 
@@ -812,12 +825,14 @@ export class CarritosComponent implements OnInit {
       })),
       totalPropuesto: carrito.costo_estimado_propuesto_total ?? 0,
       totalAprobado: carrito.costo_estimado_aprobado_total ?? 0,
-      movimientos: movimientosCronologicos.map((h) => ({
-        estadoAnterior: h.estado_anterior ? this.etiquetasEstado[h.estado_anterior] : null,
-        estadoNuevo: this.etiquetasEstado[h.estado_nuevo],
-        registradoPor: h.registrado_por_nombre,
-        fecha: formatearFechaHora(h.fecha_cambio) || '',
-      })),
+      movimientos: incluirMovimientos
+        ? movimientosCronologicos.map((h) => ({
+            estadoAnterior: h.estado_anterior ? this.etiquetasEstado[h.estado_anterior] : null,
+            estadoNuevo: this.etiquetasEstado[h.estado_nuevo],
+            registradoPor: h.registrado_por_nombre,
+            fecha: formatearFechaHora(h.fecha_cambio) || '',
+          }))
+        : undefined,
       fechaGeneracion: formatearFechaHora(new Date().toISOString()) || '',
       generadoPor: this.auth.usuario()?.nombre,
       cotizaciones: incluirCotizaciones

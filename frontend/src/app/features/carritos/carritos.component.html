@@ -99,7 +99,7 @@
       </h2>
       <div class="flex items-center gap-8">
         <span class="badge" [class]="clasesBadgeEstado[carrito.estado]">{{ etiquetasEstado[carrito.estado] }}</span>
-        <button type="button" class="btn btn-outline btn-sm" (click)="generarPdf()">Generar PDF</button>
+        <button type="button" class="btn btn-outline btn-sm" (click)="abrirOpcionesPdf()">Generar PDF</button>
       </div>
     </div>
 
@@ -603,6 +603,42 @@
         <button type="button" class="btn btn-accent btn-sm" [disabled]="!totalDestinatarios() || enviandoCorreo()" (click)="confirmarEnvioCorreo()">
           {{ enviandoCorreo() ? 'Enviando...' : 'Enviar' }}
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- POPUP: elegir que secciones incluir en el PDF (checkboxes en vez de un simple si/no) -->
+@if (popupOpcionesPdfAbierto()) {
+  <div class="modal-overlay" (click)="cerrarOpcionesPdf()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>Generar PDF</h2>
+        <button type="button" class="close" (click)="cerrarOpcionesPdf()">&times;</button>
+      </div>
+      <p class="desc" style="margin: 0 0 14px;">¿Que secciones deseas incluir en el PDF?</p>
+
+      <label class="flex items-center gap-8" style="padding: 5px 2px; cursor: pointer;">
+        <input
+          type="checkbox"
+          [checked]="opcionesPdfIncluirMovimientos()"
+          (change)="opcionesPdfIncluirMovimientos.set(!opcionesPdfIncluirMovimientos())"
+        />
+        <span>Historico de Movimientos</span>
+      </label>
+      <label class="flex items-center gap-8" style="padding: 5px 2px; cursor: pointer;" [class.text-muted]="!detalles().length">
+        <input
+          type="checkbox"
+          [checked]="opcionesPdfIncluirCotizaciones()"
+          [disabled]="!detalles().length"
+          (change)="opcionesPdfIncluirCotizaciones.set(!opcionesPdfIncluirCotizaciones())"
+        />
+        <span>Cotizaciones de cada equipo (hoja aparte)</span>
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline btn-sm" (click)="cerrarOpcionesPdf()">Cancelar</button>
+        <button type="button" class="btn btn-accent btn-sm" (click)="generarPdf()">Generar</button>
       </div>
     </div>
   </div>
