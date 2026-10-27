@@ -1,15 +1,3 @@
-/* Boton "Ver detalle" delante del texto del mensaje (en vez de su propia
-   columna al final de la tabla) -- mas chico que el .btn-icon estandar
-   (24px) para no competir visualmente con el texto, y flotando a la
-   izquierda para que el mensaje fluya a su derecha en la misma linea. */
-.btn-icon-inline {
-  width: 22px;
-  height: 22px;
-  float: left;
-  margin: 0 6px 2px 0;
-}
-.btn-icon-inline svg { width: 13px; height: 13px; }
-
 .log-detalle-pre {
   background: var(--bg-surface-muted);
   color: var(--text-body);
