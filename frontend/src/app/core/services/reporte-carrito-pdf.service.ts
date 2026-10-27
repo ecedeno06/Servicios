@@ -81,6 +81,11 @@ export class ReporteCarritoPdfService {
     const totalPropuesto = cabeceras.reduce((sum, c) => sum + Number(c.costo_estimado_propuesto_total ?? 0), 0);
     const totalAprobado = cabeceras.reduce((sum, c) => sum + Number(c.costo_estimado_aprobado_total ?? 0), 0);
 
+    // El check se dibuja como SVG (no como glifo "✓" de texto): la fuente
+    // Roboto embebida en pdfmake no trae ese caracter y se veia en blanco
+    // (mismo hallazgo que checklist-equipo-pdf.service.ts).
+    const svgCheckAprobado = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6" stroke="#1F7A3D" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
     const cuerpoDetalles = detalles.map((d) => ([
       { text: `${idCorto(d.carrito_id)} · ${d.carrito_titulo}`, style: 'td' },
       { text: d.categoria_nombre || '-', style: 'td' },
@@ -136,7 +141,15 @@ export class ReporteCarritoPdfService {
               [
                 { text: 'Totales', style: 'totalesValor', alignment: 'right', colSpan: 5 }, {}, {}, {}, {},
                 { text: formatearMoneda(totalPropuesto), style: 'totalesValor', fillColor: LIGHT, alignment: 'right' },
-                { text: formatearMoneda(totalAprobado), style: 'totalesValor', fillColor: LIGHT, alignment: 'right' },
+                {
+                  fillColor: LIGHT,
+                  margin: [2, 4, 2, 4],
+                  columns: [
+                    { text: '', width: '*' },
+                    { svg: svgCheckAprobado, width: 12, height: 12, margin: [0, 1, 4, 0] },
+                    { text: formatearMoneda(totalAprobado), width: 'auto', bold: true, fontSize: 11 },
+                  ],
+                },
               ],
             ],
           },
