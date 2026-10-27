@@ -134,9 +134,9 @@ export class ReporteCarritoPdfService {
               ],
               ...cuerpoCabeceras,
               [
-                { text: 'Totales', style: 'tdBold', alignment: 'right', colSpan: 5 }, {}, {}, {}, {},
-                { text: formatearMoneda(totalPropuesto), style: 'tdBold', fillColor: LIGHT, alignment: 'right' },
-                { text: formatearMoneda(totalAprobado), style: 'tdBold', fillColor: LIGHT, alignment: 'right' },
+                { text: 'Totales', style: 'totalesValor', alignment: 'right', colSpan: 5 }, {}, {}, {}, {},
+                { text: formatearMoneda(totalPropuesto), style: 'totalesValor', fillColor: LIGHT, alignment: 'right' },
+                { text: formatearMoneda(totalAprobado), style: 'totalesValor', fillColor: LIGHT, alignment: 'right' },
               ],
             ],
           },
@@ -188,6 +188,7 @@ export class ReporteCarritoPdfService {
         th: { fontSize: 8, bold: true, color: 'white', alignment: 'center', fillColor: PRIMARY, margin: [2, 4, 2, 4] } as Style,
         td: { fontSize: 8, alignment: 'left', margin: [2, 3, 2, 3] } as Style,
         tdBold: { fontSize: 8.5, bold: true, alignment: 'center', margin: [2, 3, 2, 3] } as Style,
+        totalesValor: { fontSize: 11, bold: true, margin: [2, 4, 2, 4] } as Style,
       },
       defaultStyle: { font: 'Roboto' },
     };
