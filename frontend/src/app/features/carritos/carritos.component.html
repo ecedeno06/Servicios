@@ -256,36 +256,44 @@
       }
     </div>
 
-    <!-- Historico de movimientos: una fila por cada cambio de estado (de donde, a donde, quien y cuando) -->
+    <!-- Historico de movimientos / Cotizaciones (futura mejora) -->
     <div style="margin-top: 24px;">
-      <h3>Historico de Movimientos</h3>
-
-      <div class="carrito-historico-panel">
-        @if (cargandoHistorico()) {
-          <div class="desc" style="padding: 16px 0;">Cargando historico...</div>
-        } @else {
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            @for (h of historico(); track h.id) {
-              <div class="card" style="padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                <div class="flex items-center gap-8">
-                  @if (h.estado_anterior) {
-                    <span class="badge" [class]="clasesBadgeEstado[h.estado_anterior]">{{ etiquetasEstado[h.estado_anterior] }}</span>
-                    <span class="desc">&rarr;</span>
-                  } @else {
-                    <span class="desc" style="font-style: italic;">Creado como</span>
-                  }
-                  <span class="badge" [class]="clasesBadgeEstado[h.estado_nuevo]">{{ etiquetasEstado[h.estado_nuevo] }}</span>
-                </div>
-                <div class="desc text-sm">
-                  {{ (h.fecha_cambio | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ h.registrado_por_nombre }}
-                </div>
-              </div>
-            } @empty {
-              <div class="empty-state">Sin movimientos registrados.</div>
-            }
-          </div>
-        }
+      <div class="tabs">
+        <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'historico'" (click)="pestanaDetalle.set('historico')">Historico de Movimientos</button>
+        <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'cotizaciones'" (click)="pestanaDetalle.set('cotizaciones')">Cotizaciones</button>
       </div>
+
+      @if (pestanaDetalle() === 'historico') {
+        <!-- Historico de movimientos: una fila por cada cambio de estado (de donde, a donde, quien y cuando) -->
+        <div class="carrito-historico-panel">
+          @if (cargandoHistorico()) {
+            <div class="desc" style="padding: 16px 0;">Cargando historico...</div>
+          } @else {
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              @for (h of historico(); track h.id) {
+                <div class="card" style="padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                  <div class="flex items-center gap-8">
+                    @if (h.estado_anterior) {
+                      <span class="badge" [class]="clasesBadgeEstado[h.estado_anterior]">{{ etiquetasEstado[h.estado_anterior] }}</span>
+                      <span class="desc">&rarr;</span>
+                    } @else {
+                      <span class="desc" style="font-style: italic;">Creado como</span>
+                    }
+                    <span class="badge" [class]="clasesBadgeEstado[h.estado_nuevo]">{{ etiquetasEstado[h.estado_nuevo] }}</span>
+                  </div>
+                  <div class="desc text-sm">
+                    {{ (h.fecha_cambio | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ h.registrado_por_nombre }}
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-state">Sin movimientos registrados.</div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">Proximamente: cotizaciones asociadas a esta solicitud.</div>
+      }
     </div>
   }
 </div>

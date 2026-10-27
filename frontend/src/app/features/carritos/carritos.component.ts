@@ -319,6 +319,7 @@ export class CarritosComponent implements OnInit {
 
   historico = signal<HistoricoMovimientoCarrito[]>([]);
   cargandoHistorico = signal(false);
+  pestanaDetalle = signal<'historico' | 'cotizaciones'>('historico');
 
   headerForm = this.fb.group({
     titulo: ['', Validators.required],
