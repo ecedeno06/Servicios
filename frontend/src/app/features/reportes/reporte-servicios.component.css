@@ -8,3 +8,30 @@
 /* Estado "No Renovar": rojo solido mas llamativo que el badge-red global
    (fondo rojo claro / texto rojo oscuro, usado para Vencido/Cancelado). */
 .badge-red-solid { background: var(--red-600); color: white; text-align: center; }
+
+/* El boton "Buscar" queda siempre en la misma fila que los campos de
+   filtro -- mismo patron que Reporte de Carrito de Compras. A diferencia
+   de .form-grid (CSS grid con columnas de minimo 220px, que envuelve a una
+   segunda fila interna en pantallas angostas y empuja el boton hacia
+   abajo), aca los campos son items flex normales con un piso mucho menor
+   (130px), asi que se achican antes de envolver y el boton nunca queda en
+   una fila aparte. */
+.reporte-servicios-filtros-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.reporte-servicios-campo-filtro {
+  flex: 1 1 130px;
+  min-width: 130px;
+}
+
+.reporte-servicios-boton-buscar {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.btn-icon:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-icon:disabled:hover { background: none; }

@@ -7,46 +7,46 @@
 
 <div class="card">
   <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
-    <div class="form-grid">
-      <!-- Proveedor y Sector ocultos hasta nueva orden (pedido explicito):
-           quedan redundantes con los filtros de columna de la tabla de
-           resultados. El formControl sigue activo (filtroForm, buscar(),
-           filtroActual()) -- para restaurarlos, descomentar estos dos
-           form-group.
-      <div class="form-group">
-        <label>Proveedor</label>
-        <select class="input" formControlName="proveedor_id">
-          <option value="">Todos los proveedores</option>
-          @for (p of proveedores(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Sector</label>
-        <select class="input" formControlName="sector_id">
-          <option value="">Todos los sectores</option>
-          @for (s of sectores(); track s.id) { <option [value]="s.id">{{ s.nombre }}</option> }
-        </select>
-      </div>
-      -->
-      <div class="form-group">
+    <!-- Proveedor y Sector ocultos hasta nueva orden (pedido explicito):
+         quedan redundantes con los filtros de columna de la tabla de
+         resultados. El formControl sigue activo (filtroForm, buscar(),
+         filtroActual()) -- para restaurarlos, descomentar estos dos
+         form-group dentro de la fila de abajo.
+    <div class="form-group">
+      <label>Proveedor</label>
+      <select class="input" formControlName="proveedor_id">
+        <option value="">Todos los proveedores</option>
+        @for (p of proveedores(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Sector</label>
+      <select class="input" formControlName="sector_id">
+        <option value="">Todos los sectores</option>
+        @for (s of sectores(); track s.id) { <option [value]="s.id">{{ s.nombre }}</option> }
+      </select>
+    </div>
+    -->
+    <div class="reporte-servicios-filtros-fila">
+      <div class="form-group reporte-servicios-campo-filtro">
         <label>Desde *</label>
         <input class="input" type="date" formControlName="fechaInicio" />
       </div>
-      <div class="form-group">
+      <div class="form-group reporte-servicios-campo-filtro">
         <label>Hasta *</label>
         <input class="input" type="date" formControlName="fechaFin" />
+      </div>
+
+      <div class="form-actions reporte-servicios-boton-buscar">
+        <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
+          {{ cargando() ? 'Buscando...' : 'Buscar' }}
+        </button>
       </div>
     </div>
 
     @if (errorBuscar()) {
       <div class="error-text mt-16">{{ errorBuscar() }}</div>
     }
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
-        {{ cargando() ? 'Buscando...' : 'Buscar' }}
-      </button>
-    </div>
   </form>
 </div>
 
@@ -62,11 +62,11 @@
       }
       @if (errorPdf()) { <span class="error-text">{{ errorPdf() }}</span> }
       @if (errorExcel()) { <span class="error-text">{{ errorExcel() }}</span> }
-      <button type="button" class="btn btn-outline" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
-        {{ generandoExcel() ? 'Generando...' : 'Descargar Excel' }}
+      <button type="button" class="btn-icon" [title]="generandoExcel() ? 'Generando...' : 'Descargar Excel'" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
       </button>
-      <button type="button" class="btn btn-primary" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
-        {{ generandoPdf() ? 'Generando...' : 'Imprimir PDF' }}
+      <button type="button" class="btn-icon" [title]="generandoPdf() ? 'Generando...' : 'Imprimir PDF'" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
       </button>
     </div>
   </div>
