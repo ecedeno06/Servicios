@@ -52,12 +52,11 @@
           <span class="th-label">Creado por</span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroCreadoPor()" (ngModelChange)="filtroCreadoPor.set($event)" />
         </th>
-        <th></th>
       </tr>
     </thead>
     <tbody>
       @if (cargando()) {
-        <tr><td colspan="9" class="desc" style="padding:16px;">Cargando...</td></tr>
+        <tr><td colspan="8" class="desc" style="padding:16px;">Cargando...</td></tr>
       } @else {
         @for (c of carritosFiltrados(); track c.id) {
           <tr class="row-clickable" [class.row-selected]="carritoSeleccionado()?.id === c.id" (click)="abrirCarrito(c)">
@@ -69,21 +68,9 @@
             <td style="text-align:center;">{{ c.costo_estimado_propuesto_total ? (c.costo_estimado_propuesto_total | currency:'USD':'symbol':'1.2-2') : '-' }}</td>
             <td style="text-align:center;">{{ c.costo_estimado_aprobado_total ? (c.costo_estimado_aprobado_total | currency:'USD':'symbol':'1.2-2') : '-' }}</td>
             <td>{{ c.creado_por_nombre }}</td>
-            <td class="table-actions" (click)="$event.stopPropagation()">
-              <div class="actions-inner">
-                <button type="button" class="btn-icon" title="Enviar por correo" aria-label="Enviar por correo" (click)="abrirPopupCorreo(c)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-                </button>
-                @if (menu.tienePermiso('carrito_compras', 'eliminar')) {
-                  <button type="button" class="btn-icon btn-icon-danger" title="Eliminar carrito" aria-label="Eliminar carrito" (click)="eliminarCarrito(c)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                }
-              </div>
-            </td>
           </tr>
         } @empty {
-          <tr><td colspan="9" class="empty-state">{{ hayFiltros() ? 'Ningun carrito coincide con los filtros.' : 'No hay carritos de compra registrados.' }}</td></tr>
+          <tr><td colspan="8" class="empty-state">{{ hayFiltros() ? 'Ningun carrito coincide con los filtros.' : 'No hay carritos de compra registrados.' }}</td></tr>
         }
       }
     </tbody>
@@ -99,7 +86,17 @@
       </h2>
       <div class="flex items-center gap-8">
         <span class="badge" [class]="clasesBadgeEstado[carrito.estado]">{{ etiquetasEstado[carrito.estado] }}</span>
-        <button type="button" class="btn btn-outline btn-sm" (click)="abrirOpcionesPdf()">Generar PDF</button>
+        <button type="button" class="btn-icon" title="Generar PDF" aria-label="Generar PDF" (click)="abrirOpcionesPdf()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+        </button>
+        <button type="button" class="btn-icon" title="Enviar por correo" aria-label="Enviar por correo" (click)="abrirPopupCorreo(carrito)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+        </button>
+        @if (menu.tienePermiso('carrito_compras', 'eliminar')) {
+          <button type="button" class="btn-icon btn-icon-danger" title="Eliminar carrito" aria-label="Eliminar carrito" (click)="eliminarCarrito(carrito)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        }
       </div>
     </div>
 
