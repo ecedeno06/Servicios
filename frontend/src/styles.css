@@ -207,10 +207,15 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
   padding: 12px 10px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-nav a {
