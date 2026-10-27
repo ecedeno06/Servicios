@@ -49,11 +49,11 @@
       }
       @if (errorPdf()) { <span class="error-text">{{ errorPdf() }}</span> }
       @if (errorExcel()) { <span class="error-text">{{ errorExcel() }}</span> }
-      <button type="button" class="btn btn-outline" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
-        {{ generandoExcel() ? 'Generando...' : 'Descargar Excel' }}
+      <button type="button" class="btn-icon" [title]="generandoExcel() ? 'Generando...' : 'Descargar Excel'" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
       </button>
-      <button type="button" class="btn btn-primary" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
-        {{ generandoPdf() ? 'Generando...' : 'Imprimir PDF' }}
+      <button type="button" class="btn-icon" [title]="generandoPdf() ? 'Generando...' : 'Imprimir PDF'" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
       </button>
     </div>
   </div>
@@ -65,7 +65,7 @@
           <th class="th-narrow">
             <input type="checkbox" [checked]="todasSeleccionadas()" (change)="toggleSeleccionarTodas()" title="Seleccionar todas" />
           </th>
-          <th>
+          <th class="th-id-carrito">
             <span class="th-sortable" (click)="ordenarPor('id')">ID <span class="orden-icono">{{ iconoOrden('id') }}</span></span>
             <app-multi-select-filter [valores]="valoresId()" [seleccionados]="filtroId()" (seleccionadosChange)="filtroId.set($event)" />
           </th>
@@ -86,11 +86,11 @@
             <app-multi-select-filter [valores]="valoresAprobadoPor()" [seleccionados]="filtroAprobadoPor()" (seleccionadosChange)="filtroAprobadoPor.set($event)" />
           </th>
           <th>
-            <span class="th-sortable" (click)="ordenarPor('costoPropuesto')">Costo Estimado Propuesto <span class="orden-icono">{{ iconoOrden('costoPropuesto') }}</span></span>
+            <span class="th-sortable" (click)="ordenarPor('costoPropuesto')">Costo Propuesto <span class="orden-icono">{{ iconoOrden('costoPropuesto') }}</span></span>
             <app-multi-select-filter [valores]="valoresCostoPropuesto()" [seleccionados]="filtroCostoPropuesto()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroCostoPropuesto.set($event)" />
           </th>
           <th>
-            <span class="th-sortable" (click)="ordenarPor('costoAprobado')">Costo Total Aprobado <span class="orden-icono">{{ iconoOrden('costoAprobado') }}</span></span>
+            <span class="th-sortable" (click)="ordenarPor('costoAprobado')">Costo Aprobado <span class="orden-icono">{{ iconoOrden('costoAprobado') }}</span></span>
             <app-multi-select-filter [valores]="valoresCostoAprobado()" [seleccionados]="filtroCostoAprobado()" [formatoValor]="formatoMoneda" (seleccionadosChange)="filtroCostoAprobado.set($event)" />
           </th>
           <th>
