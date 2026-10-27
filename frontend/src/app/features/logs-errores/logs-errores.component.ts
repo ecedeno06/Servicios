@@ -222,6 +222,30 @@ export class LogsErroresComponent implements OnInit {
     this.eliminando.set(false);
   }
 
+  // Exporta exactamente lo que se ve en pantalla (ya filtrado/ordenado por
+  // columna), una linea de texto plano por log -- mismo patron de
+  // Blob + <a download> que los reportes a Excel, pero sin libreria.
+  exportarTxt(): void {
+    const filas = this.logsOrdenados();
+    if (!filas.length) return;
+
+    const lineas = filas.map((l) => {
+      const usuario = l.usuario_nombre ? `${l.usuario_nombre} (${l.usuario_email})` : 'Sin usuario';
+      const metodoRuta = `${l.metodo_http || '-'} ${l.ruta || ''}`.trim();
+      return `[${this.formatoFecha(l.created_at)}] ${metodoRuta} | Status: ${l.status_http ?? '-'} | ${l.mensaje} | Usuario: ${usuario} | Empresa: ${l.empresa_nombre || '-'}`;
+    });
+
+    const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs_${hoyISO()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   claseNivel(nivel: NivelLog): string {
     switch (nivel) {
       case 'exito': return 'badge-green';
