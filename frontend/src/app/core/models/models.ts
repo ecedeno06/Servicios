@@ -624,6 +624,25 @@ export interface CarritoDetalle {
   updated_at: string;
 }
 
+// Cotizacion de una linea del carrito: una propuesta de precio de un
+// proveedor concreto -- puede haber mas de una por linea, para comparar
+// antes de aprobar.
+export interface CarritoCotizacion {
+  id: string;
+  carrito_detalle_id: string;
+  proveedor_id: string;
+  proveedor_nombre?: string;
+  costo: number;
+  observacion?: string | null;
+  url?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  modificado_por?: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Historico de cambios de estado de un carrito -- una fila por cada
 // transicion (de null al crear, o de un estado a otro al avanzar/devolver).
 export interface HistoricoMovimientoCarrito {

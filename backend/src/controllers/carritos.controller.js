@@ -730,6 +730,135 @@ async function eliminarDetalle(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// -------------------------------------------------------------
+// COTIZACIONES (propuestas de precio por linea -- mas de una, cada una
+// de un proveedor, para comparar antes de aprobar)
+// -------------------------------------------------------------
+
+const SELECT_COTIZACION = `
+  select
+    q.*,
+    pr.nombre as proveedor_nombre,
+    uc.nombre as creado_por_nombre,
+    um.nombre as modificado_por_nombre
+  from carrito_cotizaciones q
+  join proveedores pr on pr.id = q.proveedor_id
+  join usuarios uc on uc.id = q.creado_por
+  left join usuarios um on um.id = q.modificado_por
+`;
+
+// Verifica el carrito (empresa) y que la linea realmente le pertenezca --
+// mismo criterio de dos pasos que verificarCarrito, uno mas abajo en la
+// jerarquia (cotizacion -> linea -> carrito).
+async function verificarDetalle(req) {
+  const carrito = await verificarCarrito(req);
+  if (!carrito) return null;
+  const { rows } = await pool.query(
+    'select id from carrito_detalles where id = $1 and carrito_id = $2',
+    [req.params.detalleId, req.params.id]
+  );
+  return rows[0] ? carrito : null;
+}
+
+async function listarCotizaciones(req, res, next) {
+  try {
+    if (!(await verificarDetalle(req))) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+
+    const { rows } = await pool.query(
+      `${SELECT_COTIZACION} where q.carrito_detalle_id = $1 order by q.created_at asc`,
+      [req.params.detalleId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearCotizacion(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (carrito.estado === 'aprobada' || carrito.estado === 'cerrada') {
+      return res.status(400).json({ mensaje: 'Las cotizaciones de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { proveedor_id, costo, observacion, url } = req.body;
+    if (!proveedor_id) return res.status(400).json({ mensaje: 'El proveedor es requerido' });
+    if (costo === undefined || costo === null || Number(costo) < 0) {
+      return res.status(400).json({ mensaje: 'El costo debe ser mayor o igual a cero' });
+    }
+
+    const { rows: prov } = await pool.query(
+      'select id from proveedores where id = $1 and empresa_id = $2',
+      [proveedor_id, req.empresaId]
+    );
+    if (!prov[0]) return res.status(400).json({ mensaje: 'El proveedor seleccionado no existe o no pertenece a la empresa' });
+
+    const { rows } = await pool.query(
+      `insert into carrito_cotizaciones (carrito_detalle_id, proveedor_id, costo, observacion, url, creado_por)
+       values ($1, $2, $3, $4, $5, $6)
+       returning id`,
+      [req.params.detalleId, proveedor_id, costo, observacion ? observacion.trim() : null, url ? url.trim() : null, req.usuario.id]
+    );
+
+    const { rows: completo } = await pool.query(`${SELECT_COTIZACION} where q.id = $1`, [rows[0].id]);
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarCotizacion(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (carrito.estado === 'aprobada' || carrito.estado === 'cerrada') {
+      return res.status(400).json({ mensaje: 'Las cotizaciones de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { rows: cot } = await pool.query(
+      'select id from carrito_cotizaciones where id = $1 and carrito_detalle_id = $2',
+      [req.params.cotizacionId, req.params.detalleId]
+    );
+    if (!cot[0]) return res.status(404).json({ mensaje: 'Cotizacion no encontrada' });
+
+    const { proveedor_id, costo, observacion, url } = req.body;
+    if (!proveedor_id) return res.status(400).json({ mensaje: 'El proveedor es requerido' });
+    if (costo === undefined || costo === null || Number(costo) < 0) {
+      return res.status(400).json({ mensaje: 'El costo debe ser mayor o igual a cero' });
+    }
+
+    const { rows: prov } = await pool.query(
+      'select id from proveedores where id = $1 and empresa_id = $2',
+      [proveedor_id, req.empresaId]
+    );
+    if (!prov[0]) return res.status(400).json({ mensaje: 'El proveedor seleccionado no existe o no pertenece a la empresa' });
+
+    await pool.query(
+      `update carrito_cotizaciones set
+         proveedor_id = $1, costo = $2, observacion = $3, url = $4, modificado_por = $5
+       where id = $6`,
+      [proveedor_id, costo, observacion ? observacion.trim() : null, url ? url.trim() : null, req.usuario.id, req.params.cotizacionId]
+    );
+
+    const { rows: completo } = await pool.query(`${SELECT_COTIZACION} where q.id = $1`, [req.params.cotizacionId]);
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarCotizacion(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (carrito.estado === 'aprobada' || carrito.estado === 'cerrada') {
+      return res.status(400).json({ mensaje: 'Las cotizaciones de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { rowCount } = await pool.query(
+      'delete from carrito_cotizaciones where id = $1 and carrito_detalle_id = $2',
+      [req.params.cotizacionId, req.params.detalleId]
+    );
+    if (!rowCount) return res.status(404).json({ mensaje: 'Cotizacion no encontrada' });
+    res.json({ ok: true, mensaje: 'Cotizacion eliminada correctamente' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar,
   reporte,
@@ -746,4 +875,8 @@ module.exports = {
   crearDetalle,
   actualizarDetalle,
   eliminarDetalle,
+  listarCotizaciones,
+  crearCotizacion,
+  actualizarCotizacion,
+  eliminarCotizacion,
 };

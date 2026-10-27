@@ -260,7 +260,7 @@
     <div style="margin-top: 24px;">
       <div class="tabs">
         <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'historico'" (click)="pestanaDetalle.set('historico')">Historico de Movimientos</button>
-        <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'cotizaciones'" (click)="pestanaDetalle.set('cotizaciones')">Cotizaciones</button>
+        <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'cotizaciones'" (click)="pestanaDetalle.set('cotizaciones'); cargarCotizaciones()">Cotizaciones</button>
       </div>
 
       @if (pestanaDetalle() === 'historico') {
@@ -292,11 +292,105 @@
           }
         </div>
       } @else {
-        <div class="empty-state">Proximamente: cotizaciones asociadas a esta solicitud.</div>
+        <!-- Cotizaciones: mas de una propuesta de precio por equipo, cada una de un proveedor -->
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+          @if (cargandoCotizaciones()) {
+            <div class="desc" style="padding: 16px 0;">Cargando cotizaciones...</div>
+          } @else {
+            @for (d of detalles(); track d.id) {
+              <div class="card" style="padding: 12px 14px;">
+                <div class="flex items-center gap-8" style="justify-content: space-between;">
+                  <div style="font-weight: 700; color: var(--text-heading);">{{ d.marca }} {{ d.modelo }}</div>
+                  @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'crear')) {
+                    <button type="button" class="btn btn-outline btn-sm" (click)="abrirPopupCotizacion(d)">+ Agregar cotizacion</button>
+                  }
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+                  @for (q of cotizaciones(d.id); track q.id) {
+                    <div class="row-clickable" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px;" (click)="puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'editar') && abrirPopupCotizacion(d, q)">
+                      <div>
+                        <div style="font-weight: 600;">{{ q.proveedor_nombre }}</div>
+                        @if (q.observacion) { <div class="desc text-sm">{{ q.observacion }}</div> }
+                      </div>
+                      <div class="flex items-center gap-8">
+                        <div style="font-weight: 700;">{{ q.costo | currency:'USD':'symbol':'1.2-2' }}</div>
+                        @if (q.url) {
+                          <a [href]="q.url" target="_blank" rel="noopener" title="Abrir enlace" (click)="$event.stopPropagation()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                          </a>
+                        }
+                        @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'eliminar')) {
+                          <button type="button" class="btn-icon btn-icon-danger" title="Eliminar cotizacion" aria-label="Eliminar cotizacion" (click)="$event.stopPropagation(); eliminarCotizacion(d, q)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="desc text-sm" style="font-style: italic;">Sin cotizaciones registradas.</div>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">No hay equipos en esta solicitud todavia.</div>
+            }
+          }
+        </div>
       }
     </div>
   }
 </div>
+
+<!-- POPUP: agregar/editar una cotizacion (propuesta de precio de un equipo) -->
+@if (popupCotizacionAbierto()) {
+  <div class="modal-overlay" (click)="cerrarPopupCotizacion()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ cotizacionEdicion() ? 'Editar cotizacion' : 'Agregar cotizacion' }}</h2>
+        <button type="button" class="close" (click)="cerrarPopupCotizacion()">&times;</button>
+      </div>
+
+      @if (detalleCotizacionActual(); as det) {
+        <div class="desc" style="margin-top: -4px; margin-bottom: 10px;">{{ det.marca }} {{ det.modelo }}</div>
+      }
+
+      <form [formGroup]="cotizacionForm" (ngSubmit)="guardarCotizacion()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Proveedor</label>
+            <select class="input" formControlName="proveedor_id">
+              <option value="">Seleccionar...</option>
+              @for (p of proveedores(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Costo (USD)</label>
+            <input class="input" type="number" min="0" step="0.01" formControlName="costo" placeholder="0.00" />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>URL de la cotizacion</label>
+          <input class="input" type="text" formControlName="url" placeholder="https://..." />
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Observacion</label>
+          <textarea class="input" rows="2" formControlName="observacion"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-accent btn-sm" [disabled]="cotizacionForm.invalid || guardandoCotizacion()">
+            {{ guardandoCotizacion() ? 'Guardando...' : (cotizacionEdicion() ? 'Guardar cambios' : '+ Agregar cotizacion') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
 
 <!-- POPUP: agregar/editar una linea (equipo a comprar) -->
 @if (popupLineaAbierto()) {

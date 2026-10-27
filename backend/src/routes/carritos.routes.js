@@ -25,4 +25,10 @@ router.post('/:id/detalles', requirePermiso('carrito_compras', 'crear'), ctrl.cr
 router.put('/:id/detalles/:detalleId', requirePermiso('carrito_compras', 'editar'), ctrl.actualizarDetalle);
 router.delete('/:id/detalles/:detalleId', requirePermiso('carrito_compras', 'eliminar'), ctrl.eliminarDetalle);
 
+// Cotizaciones (propuestas de precio por linea, una o mas, cada una de un proveedor)
+router.get('/:id/detalles/:detalleId/cotizaciones', requirePermiso('carrito_compras', 'ver'), ctrl.listarCotizaciones);
+router.post('/:id/detalles/:detalleId/cotizaciones', requirePermiso('carrito_compras', 'crear'), ctrl.crearCotizacion);
+router.put('/:id/detalles/:detalleId/cotizaciones/:cotizacionId', requirePermiso('carrito_compras', 'editar'), ctrl.actualizarCotizacion);
+router.delete('/:id/detalles/:detalleId/cotizaciones/:cotizacionId', requirePermiso('carrito_compras', 'eliminar'), ctrl.eliminarCotizacion);
+
 module.exports = router;

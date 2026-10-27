@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Carrito, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
+import { Carrito, CarritoCotizacion, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class CarritosService {
@@ -57,5 +57,22 @@ export class CarritosService {
 
   eliminarDetalle(carritoId: string, detalleId: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}`);
+  }
+
+  // COTIZACIONES (propuestas de precio de una linea, una o mas, cada una de un proveedor)
+  listarCotizaciones(carritoId: string, detalleId: string): Observable<CarritoCotizacion[]> {
+    return this.http.get<CarritoCotizacion[]>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones`);
+  }
+
+  crearCotizacion(carritoId: string, detalleId: string, data: { proveedor_id: string; costo: number; observacion?: string | null; url?: string | null }): Observable<CarritoCotizacion> {
+    return this.http.post<CarritoCotizacion>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones`, data);
+  }
+
+  actualizarCotizacion(carritoId: string, detalleId: string, cotizacionId: string, data: { proveedor_id: string; costo: number; observacion?: string | null; url?: string | null }): Observable<CarritoCotizacion> {
+    return this.http.put<CarritoCotizacion>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, data);
+  }
+
+  eliminarCotizacion(carritoId: string, detalleId: string, cotizacionId: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`);
   }
 }

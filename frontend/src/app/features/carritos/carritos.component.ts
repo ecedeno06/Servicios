@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin, map } from 'rxjs';
 import { CarritosService } from '../../core/services/carritos.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
@@ -11,7 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
-import { Carrito, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
+import { Carrito, CarritoCotizacion, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
 // boton de avance que se muestra es el siguiente de esta lista respecto
@@ -321,6 +322,11 @@ export class CarritosComponent implements OnInit {
   cargandoHistorico = signal(false);
   pestanaDetalle = signal<'historico' | 'cotizaciones'>('historico');
 
+  // Cotizaciones por linea de equipo -- mapa { carrito_detalle_id: CarritoCotizacion[] },
+  // cargado perezosamente al entrar al tab (ver cargarCotizaciones()).
+  cotizacionesPorDetalle = signal<Record<string, CarritoCotizacion[]>>({});
+  cargandoCotizaciones = signal(false);
+
   headerForm = this.fb.group({
     titulo: ['', Validators.required],
     fecha_solicitud: [this.hoyISO(), Validators.required],
@@ -360,6 +366,14 @@ export class CarritosComponent implements OnInit {
   puedeEditarEncabezado = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
   puedeEditarLineas = computed(() => this.carritoSeleccionado()?.estado === 'en_construccion');
   puedeCargarAprobado = computed(() => this.carritoSeleccionado()?.estado === 'en_revision');
+  // Las cotizaciones son un paso de comparacion previo a aprobar -- se
+  // pueden seguir agregando mientras se revisa, igual que la cantidad
+  // aprobada de una linea (puedeCargarAprobado); una vez aprobada/cerrada
+  // ya no tiene sentido seguir cotizando.
+  puedeEditarCotizaciones = computed(() => {
+    const estado = this.carritoSeleccionado()?.estado;
+    return estado === 'en_construccion' || estado === 'en_revision';
+  });
 
   // En construccion todavia no hay cantidad aprobada -- el total se
   // proyecta con la cantidad propuesta. Desde en_revision en adelante usa
@@ -617,6 +631,126 @@ export class CarritosComponent implements OnInit {
 
   abrirUrlProducto(url: string): void {
     window.open(url, '_blank', 'noopener');
+  }
+
+  // -------------------------------------------------------------
+  // COTIZACIONES: mas de una propuesta de precio por linea de equipo,
+  // cada una de un proveedor -- para comparar antes de aprobar.
+  // -------------------------------------------------------------
+
+  popupCotizacionAbierto = signal(false);
+  cotizacionEdicion = signal<CarritoCotizacion | null>(null);
+  detalleCotizacionActual = signal<CarritoDetalle | null>(null);
+  guardandoCotizacion = signal(false);
+
+  cotizacionForm = this.fb.group({
+    proveedor_id: ['', Validators.required],
+    costo: ['', [Validators.required, Validators.min(0)]],
+    observacion: [''],
+    url: ['', Validators.pattern(/^https?:\/\/.+/)],
+  });
+
+  cotizaciones(detalleId: string): CarritoCotizacion[] {
+    return this.cotizacionesPorDetalle()[detalleId] || [];
+  }
+
+  // Trae las cotizaciones de TODAS las lineas de un saque (son pocas lineas
+  // por carrito) al entrar al tab -- mismo criterio que cargarDetalles.
+  cargarCotizaciones(): void {
+    const carrito = this.carritoSeleccionado();
+    const lineas = this.detalles();
+    if (!carrito || !lineas.length) {
+      this.cotizacionesPorDetalle.set({});
+      return;
+    }
+
+    this.cargandoCotizaciones.set(true);
+    forkJoin(
+      lineas.map((d) =>
+        this.srv.listarCotizaciones(carrito.id, d.id).pipe(map((data) => [d.id, data] as const))
+      )
+    ).subscribe({
+      next: (pares) => {
+        this.cotizacionesPorDetalle.set(Object.fromEntries(pares));
+        this.cargandoCotizaciones.set(false);
+      },
+      error: () => this.cargandoCotizaciones.set(false),
+    });
+  }
+
+  private cargarCotizacionesDeDetalle(detalleId: string): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    this.srv.listarCotizaciones(carrito.id, detalleId).subscribe({
+      next: (data) => this.cotizacionesPorDetalle.update((map) => ({ ...map, [detalleId]: data })),
+    });
+  }
+
+  abrirPopupCotizacion(detalle: CarritoDetalle, cotizacion?: CarritoCotizacion): void {
+    this.detalleCotizacionActual.set(detalle);
+    if (cotizacion) {
+      this.cotizacionEdicion.set(cotizacion);
+      this.cotizacionForm.reset({
+        proveedor_id: cotizacion.proveedor_id,
+        costo: String(cotizacion.costo),
+        observacion: cotizacion.observacion || '',
+        url: cotizacion.url || '',
+      });
+    } else {
+      this.cotizacionEdicion.set(null);
+      this.cotizacionForm.reset({ proveedor_id: '', costo: '', observacion: '', url: '' });
+    }
+    this.popupCotizacionAbierto.set(true);
+  }
+
+  cerrarPopupCotizacion(): void {
+    this.popupCotizacionAbierto.set(false);
+    this.cotizacionEdicion.set(null);
+    this.detalleCotizacionActual.set(null);
+  }
+
+  guardarCotizacion(): void {
+    const carrito = this.carritoSeleccionado();
+    const detalle = this.detalleCotizacionActual();
+    if (!carrito || !detalle || this.cotizacionForm.invalid || this.guardandoCotizacion()) return;
+
+    this.guardandoCotizacion.set(true);
+    const raw = this.cotizacionForm.getRawValue();
+    const data = {
+      proveedor_id: raw.proveedor_id!,
+      costo: Number(raw.costo),
+      observacion: raw.observacion || null,
+      url: raw.url || null,
+    };
+
+    const edicion = this.cotizacionEdicion();
+    const obs = edicion
+      ? this.srv.actualizarCotizacion(carrito.id, detalle.id, edicion.id, data)
+      : this.srv.crearCotizacion(carrito.id, detalle.id, data);
+    obs.subscribe({
+      next: () => {
+        this.guardandoCotizacion.set(false);
+        this.cerrarPopupCotizacion();
+        this.cargarCotizacionesDeDetalle(detalle.id);
+      },
+      error: (err) => {
+        this.guardandoCotizacion.set(false);
+        this.toast.error(err.error?.mensaje || 'Error al guardar la cotizacion');
+      },
+    });
+  }
+
+  async eliminarCotizacion(detalle: CarritoDetalle, cotizacion: CarritoCotizacion): Promise<void> {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    if (!(await this.confirmSrv.confirmar('¿Eliminar esta cotizacion?'))) return;
+    this.srv.eliminarCotizacion(carrito.id, detalle.id, cotizacion.id).subscribe({
+      next: () => {
+        this.cargarCotizacionesDeDetalle(detalle.id);
+        this.toast.exito('Cotizacion eliminada correctamente.');
+      },
+      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la cotizacion'),
+    });
   }
 
   // Encabezado + detalle + totales + historico de la solicitud, todo en
