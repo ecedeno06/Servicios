@@ -373,7 +373,7 @@
 <!-- POPUP: agregar/editar una cotizacion (propuesta de precio de un equipo) -->
 @if (popupCotizacionAbierto()) {
   <div class="modal-overlay" (click)="cerrarPopupCotizacion()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card" style="max-width: 560px; width: 92vw;" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>{{ cotizacionEdicion() ? 'Editar cotizacion' : 'Agregar cotizacion' }}</h2>
         <button type="button" class="close" (click)="cerrarPopupCotizacion()">&times;</button>
@@ -452,7 +452,7 @@
 <!-- POPUP: agregar/editar una linea (equipo a comprar) -->
 @if (popupLineaAbierto()) {
   <div class="modal-overlay" (click)="cerrarPopupLinea()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card" style="max-width: 560px; width: 92vw;" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>{{ lineaEdicion() ? 'Editar equipo' : 'Agregar equipo' }}</h2>
         <button type="button" class="close" (click)="cerrarPopupLinea()">&times;</button>
