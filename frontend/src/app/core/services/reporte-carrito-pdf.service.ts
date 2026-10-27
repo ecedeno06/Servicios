@@ -133,6 +133,11 @@ export class ReporteCarritoPdfService {
                 { text: 'Costo Aprobado', style: 'th' },
               ],
               ...cuerpoCabeceras,
+              [
+                { text: 'Totales', style: 'tdBold', alignment: 'right', colSpan: 5 }, {}, {}, {}, {},
+                { text: formatearMoneda(totalPropuesto), style: 'tdBold', fillColor: LIGHT, alignment: 'right' },
+                { text: formatearMoneda(totalAprobado), style: 'tdBold', fillColor: LIGHT, alignment: 'right' },
+              ],
             ],
           },
           layout: {
@@ -141,27 +146,7 @@ export class ReporteCarritoPdfService {
             hLineWidth: () => 0.5,
             vLineWidth: () => 0.5,
           },
-        },
-        {
-          columns: [
-            { text: '', width: '*' },
-            {
-              table: {
-                widths: ['*', 85],
-                body: [
-                  [{ text: 'TOTAL COSTO PROPUESTO', style: 'label', alignment: 'right' }, { text: formatearMoneda(totalPropuesto), style: 'tdBold', fillColor: LIGHT, alignment: 'right' }],
-                  [{ text: 'TOTAL COSTO APROBADO', style: 'label', alignment: 'right' }, { text: formatearMoneda(totalAprobado), style: 'tdBold', fillColor: LIGHT, alignment: 'right' }],
-                ],
-              },
-              layout: {
-                hLineColor: () => '#B7B7B7',
-                vLineColor: () => '#B7B7B7',
-                hLineWidth: () => 0.5,
-                vLineWidth: () => 0.5,
-              },
-            },
-          ],
-          margin: [0, 10, 0, 16],
+          margin: [0, 0, 0, 16],
         },
         {
           table: { widths: ['*'], body: [[{ text: 'DETALLE DE EQUIPOS POR ORDEN', style: 'tituloSeccion', fillColor: PRIMARY }]] },
@@ -200,7 +185,6 @@ export class ReporteCarritoPdfService {
         titulo: { fontSize: 15, bold: true, color: 'white', alignment: 'center', margin: [0, 8, 0, 8] } as Style,
         tituloSeccion: { fontSize: 12, bold: true, color: 'white', alignment: 'center', margin: [0, 5, 0, 5] } as Style,
         subtituloItalic: { fontSize: 8, italics: true, alignment: 'center', color: 'grey' } as Style,
-        label: { fontSize: 9, bold: true, margin: [4, 4, 4, 4] } as Style,
         th: { fontSize: 8, bold: true, color: 'white', alignment: 'center', fillColor: PRIMARY, margin: [2, 4, 2, 4] } as Style,
         td: { fontSize: 8, alignment: 'left', margin: [2, 3, 2, 3] } as Style,
         tdBold: { fontSize: 8.5, bold: true, alignment: 'center', margin: [2, 3, 2, 3] } as Style,
