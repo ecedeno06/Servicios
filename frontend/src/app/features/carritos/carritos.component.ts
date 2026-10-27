@@ -773,14 +773,16 @@ export class CarritosComponent implements OnInit {
 
   // Encabezado + detalle + totales + historico de la solicitud, todo en
   // un PDF -- mismo mecanismo que el checklist de equipo (pdfmake con
-  // carga diferida, ventana en blanco abierta YA dentro del click, ANTES
-  // de cualquier await, para que el navegador no la bloquee -- el permiso
-  // de popup solo se concede dentro del gesto sincrono del click).
+  // carga diferida). A diferencia de los demas PDF de la app, aqui hay
+  // una pregunta de por medio (incluir cotizaciones o no) antes de
+  // generar nada, asi que la ventana en blanco se abre DESPUES de
+  // responder -- abrirla antes dejaba un tab en blanco confuso mientras
+  // el usuario todavia no habia contestado. El click en el boton del
+  // modal de confirmacion es en si mismo un gesto del usuario, asi que el
+  // navegador sigue permitiendo el popup en ese momento.
   async generarPdf(): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-
-    const ventana = window.open('', '_blank') ?? undefined;
 
     const lineas = this.detalles();
     const incluirCotizaciones = lineas.length > 0
@@ -791,6 +793,8 @@ export class CarritosComponent implements OnInit {
           peligroso: false,
         })
       : false;
+
+    const ventana = window.open('', '_blank') ?? undefined;
 
     const formatearFecha = (f?: string | null): string | null =>
       f ? this.datePipe.transform(f, 'mediumDate', 'UTC') : null;
