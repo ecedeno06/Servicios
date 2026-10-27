@@ -15,7 +15,7 @@ import { Categoria, ChecklistItem, EquipoAsignado, EquipoChecklistEjecucion, Equ
 import { MultiSelectFilterComponent } from '../../core/components/multi-select-filter/multi-select-filter.component';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -398,7 +398,7 @@ export class EquiposAsignadosComponent implements OnInit {
     private checklistPdfSrv: ChecklistEquipoPdfService,
     public auth: AuthService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -570,44 +570,19 @@ export class EquiposAsignadosComponent implements OnInit {
   // Solo super-admin (ver tambien el boton en la plantilla) -- borrar un
   // movimiento rompe la trazabilidad del historico, por eso ademas de ir
   // mas alla del permiso normal de "eliminar" de equipos_asignados, pide
-  // confirmar la contrasena de la sesion actual (pedido explicito) en vez
-  // de un confirm() nativo.
-  historialAEliminar = signal<{ equipoId: string; historialId: string } | null>(null);
-  passwordEliminarHistorialForm = this.fb.group({ password: ['', Validators.required] });
-  eliminandoHistorial = signal(false);
-  errorEliminarHistorial = signal<string | null>(null);
-
-  pedirEliminarMovimientoHistorial(historialId: string): void {
+  // confirmar la contrasena de la sesion actual -- via el dialogo
+  // compartido ConfirmPasswordService.
+  async eliminarMovimientoHistorial(historialId: string): Promise<void> {
     const equipo = this.seleccionado();
     if (!equipo) return;
-    this.passwordEliminarHistorialForm.reset();
-    this.errorEliminarHistorial.set(null);
-    this.historialAEliminar.set({ equipoId: equipo.id, historialId });
-  }
-
-  cancelarEliminarHistorial(): void {
-    if (this.eliminandoHistorial()) return;
-    this.historialAEliminar.set(null);
-  }
-
-  confirmarEliminarHistorial(): void {
-    const pendiente = this.historialAEliminar();
-    if (!pendiente || this.passwordEliminarHistorialForm.invalid) return;
-    const password = this.passwordEliminarHistorialForm.getRawValue().password!;
-    this.eliminandoHistorial.set(true);
-    this.errorEliminarHistorial.set(null);
-    this.srv.eliminarHistorial(pendiente.equipoId, pendiente.historialId, password).subscribe({
-      next: () => {
-        this.eliminandoHistorial.set(false);
-        this.historialAEliminar.set(null);
-        this.cargarHistorial(pendiente.equipoId);
-        this.toast.exito('Movimiento del historial eliminado correctamente.');
-      },
-      error: (err) => {
-        this.eliminandoHistorial.set(false);
-        this.errorEliminarHistorial.set(err?.error?.mensaje || 'No se pudo eliminar el movimiento');
-      },
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este movimiento del historial?',
+      (password) => this.srv.eliminarHistorial(equipo.id, historialId, password),
+      { titulo: 'Eliminar movimiento' }
+    );
+    if (!ok) return;
+    this.cargarHistorial(equipo.id);
+    this.toast.exito('Movimiento del historial eliminado correctamente.');
   }
 
   // ---------- Adjuntos (imagenes/documentos) ----------
@@ -632,14 +607,13 @@ export class EquiposAsignadosComponent implements OnInit {
   async eliminarImagen(adjuntoId: string): Promise<void> {
     const equipo = this.seleccionado();
     if (!equipo) return;
-    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
-    this.srv.eliminarAdjunto(equipo.id, adjuntoId).subscribe({
-      next: () => {
-        this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
-        this.toast.exito('Adjunto eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este adjunto?',
+      (password) => this.srv.eliminarAdjunto(equipo.id, adjuntoId, password)
+    );
+    if (!ok) return;
+    this.imagenesEquipoActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+    this.toast.exito('Adjunto eliminado correctamente.');
   }
 
   actualizarDescripcionAdjunto(adjuntoId: string, descripcion: string): void {
@@ -806,44 +780,19 @@ export class EquiposAsignadosComponent implements OnInit {
   }
 
   // Pide confirmar la contrasena de la sesion actual antes de borrar el
-  // equipo -- mismo patron que eliminar un movimiento del historico.
-  confirmandoEliminarEquipo = signal(false);
-  passwordEliminarEquipoForm = this.fb.group({ password: ['', Validators.required] });
-  eliminandoEquipo = signal(false);
-  errorEliminarEquipo = signal<string | null>(null);
-
-  pedirEliminarEquipo(): void {
+  // equipo -- via el dialogo compartido ConfirmPasswordService.
+  async eliminarEquipo(): Promise<void> {
     const actual = this.seleccionado();
     if (!actual) return;
-    this.passwordEliminarEquipoForm.reset();
-    this.errorEliminarEquipo.set(null);
-    this.confirmandoEliminarEquipo.set(true);
-  }
-
-  cancelarEliminarEquipo(): void {
-    if (this.eliminandoEquipo()) return;
-    this.confirmandoEliminarEquipo.set(false);
-  }
-
-  confirmarEliminarEquipo(): void {
-    const actual = this.seleccionado();
-    if (!actual || this.passwordEliminarEquipoForm.invalid) return;
-    const password = this.passwordEliminarEquipoForm.getRawValue().password!;
-    this.eliminandoEquipo.set(true);
-    this.errorEliminarEquipo.set(null);
-    this.srv.eliminar(actual.id, password).subscribe({
-      next: () => {
-        this.eliminandoEquipo.set(false);
-        this.confirmandoEliminarEquipo.set(false);
-        this.nuevo();
-        this.cargar();
-        this.toast.exito('Equipo eliminado correctamente.');
-      },
-      error: (err) => {
-        this.eliminandoEquipo.set(false);
-        this.errorEliminarEquipo.set(err?.error?.mensaje || 'No se pudo eliminar el equipo');
-      },
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este equipo? Esta accion no se puede deshacer.',
+      (password) => this.srv.eliminar(actual.id, password),
+      { titulo: 'Eliminar equipo' }
+    );
+    if (!ok) return;
+    this.nuevo();
+    this.cargar();
+    this.toast.exito('Equipo eliminado correctamente.');
   }
 
   // ---------- Cambio rapido de estado (boton-icono por fila) ----------
@@ -998,14 +947,13 @@ export class EquiposAsignadosComponent implements OnInit {
     event.stopPropagation();
     const equipo = this.checklistEquipoActual();
     if (!equipo) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar este checklist?'))) return;
-    this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id).subscribe({
-      next: () => {
-        this.cargarChecklistEjecuciones();
-        this.toast.exito('Checklist eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el checklist'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este checklist?',
+      (password) => this.srv.eliminarChecklistEjecucion(equipo.id, ejecucion.id, password)
+    );
+    if (!ok) return;
+    this.cargarChecklistEjecuciones();
+    this.toast.exito('Checklist eliminado correctamente.');
   }
 
   toggleCompletadoChecklistItem(item: EquipoChecklistItem): void {

@@ -15,6 +15,7 @@ import { PasswordChecklistComponent } from '../../core/components/password-check
 import { AvisoInactividadComponent } from '../../core/components/aviso-inactividad/aviso-inactividad.component';
 import { ToastContainerComponent } from '../../core/components/toast-container/toast-container.component';
 import { ConfirmDialogComponent } from '../../core/components/confirm-dialog/confirm-dialog.component';
+import { ConfirmPasswordDialogComponent } from '../../core/components/confirm-password-dialog/confirm-password-dialog.component';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { SeguridadComponent } from '../seguridad/seguridad.component';
 import { passwordsCoincidenValidator, construirValidadorPolitica, construirValidadorPista, generarPasswordSegunPolitica } from '../../core/utils/password.util';
@@ -28,7 +29,7 @@ const INTERVALO_NOTIFICACIONES_MS = 60000;
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent, ToastContainerComponent, ConfirmDialogComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectorFotoComponent, PasswordChecklistComponent, AvisoInactividadComponent, SeguridadComponent, ToastContainerComponent, ConfirmDialogComponent, ConfirmPasswordDialogComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })

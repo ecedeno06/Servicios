@@ -12,5 +12,5 @@ export class CategoriasService {
   listar(): Observable<Categoria[]> { return this.http.get<Categoria[]>(this.base); }
   crear(data: { nombre: string }): Observable<Categoria> { return this.http.post<Categoria>(this.base, data); }
   actualizar(id: number, data: { nombre: string }): Observable<Categoria> { return this.http.put<Categoria>(`${this.base}/${id}`, data); }
-  eliminar(id: number): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: number, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

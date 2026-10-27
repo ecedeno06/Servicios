@@ -13,7 +13,7 @@ export class ContratosService {
   obtener(id: string): Observable<Contrato> { return this.http.get<Contrato>(`${this.base}/${id}`); }
   crear(data: any): Observable<Contrato> { return this.http.post<Contrato>(this.base, data); }
   actualizar(id: string, data: any): Observable<Contrato> { return this.http.put<Contrato>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 
   agregarServicio(contratoId: string, data: any): Observable<ContratoServicio> {
     return this.http.post<ContratoServicio>(`${this.base}/${contratoId}/servicios`, data);
@@ -21,7 +21,7 @@ export class ContratosService {
   actualizarServicio(contratoId: string, contratoServicioId: string, data: any): Observable<ContratoServicio> {
     return this.http.put<ContratoServicio>(`${this.base}/${contratoId}/servicios/${contratoServicioId}`, data);
   }
-  eliminarServicio(contratoId: string, contratoServicioId: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${contratoId}/servicios/${contratoServicioId}`);
+  eliminarServicio(contratoId: string, contratoServicioId: string, password: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${contratoId}/servicios/${contratoServicioId}`, { body: { password } });
   }
 }

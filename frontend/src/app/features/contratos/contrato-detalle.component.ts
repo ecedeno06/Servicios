@@ -8,6 +8,7 @@ import { MenuService } from '../../core/services/menu.service';
 import { Contacto, ConsumoHoras, Contrato, Documento, TipoServicio } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 @Component({
   selector: 'app-contrato-detalle',
@@ -47,7 +48,8 @@ export class ContratoDetalleComponent implements OnInit {
     private tiposSrv: TiposServicioService,
     public menu: MenuService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmSrv: ConfirmService,
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -121,8 +123,14 @@ export class ContratoDetalleComponent implements OnInit {
   }
 
   async eliminarServicio(contratoServicioId: string): Promise<void> {
-    if (!(await this.confirmSrv.confirmar('Quitar este servicio del contrato? Se perdera el historial de horas asociado.'))) return;
-    this.srv.eliminarServicio(this.contratoId, contratoServicioId).subscribe(() => { this.toast.exito('Servicio eliminado del contrato correctamente.'); this.cargar(); });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      'Quitar este servicio del contrato? Se perdera el historial de horas asociado.',
+      (password) => this.srv.eliminarServicio(this.contratoId, contratoServicioId, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito('Servicio eliminado del contrato correctamente.');
+    this.cargar();
   }
 
   editarHoras(s: ConsumoHoras): void {

@@ -13,5 +13,5 @@ export class TiposServicioService {
   obtener(id: string): Observable<TipoServicio> { return this.http.get<TipoServicio>(`${this.base}/${id}`); }
   crear(data: any): Observable<TipoServicio> { return this.http.post<TipoServicio>(this.base, data); }
   actualizar(id: string, data: any): Observable<TipoServicio> { return this.http.put<TipoServicio>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

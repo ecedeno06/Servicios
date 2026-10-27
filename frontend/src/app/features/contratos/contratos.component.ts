@@ -7,7 +7,7 @@ import { ClientesService } from '../../core/services/clientes.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Contrato, Cliente, EstadoContrato } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 @Component({
   selector: 'app-contratos',
@@ -108,7 +108,7 @@ export class ContratosComponent implements OnInit {
     private clientesSrv: ClientesService,
     public menu: MenuService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -152,8 +152,14 @@ export class ContratosComponent implements OnInit {
   }
 
   async eliminar(c: Contrato): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Eliminar el contrato "${c.numero_contrato}"? Se eliminaran tambien sus horas y registros.`))) return;
-    this.srv.eliminar(c.id).subscribe(() => { this.toast.exito(`Contrato "${c.numero_contrato}" eliminado correctamente.`); this.cargar(); });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar el contrato "${c.numero_contrato}"? Se eliminaran tambien sus horas y registros.`,
+      (password) => this.srv.eliminar(c.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Contrato "${c.numero_contrato}" eliminado correctamente.`);
+    this.cargar();
   }
 
   vigencia(c: Contrato): { texto: string; clase: string } {

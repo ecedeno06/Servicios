@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/registroHoras.controller');
-const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso, requirePassword } = require('../middleware/auth');
 
 router.use(requireAuth, requireEmpresa);
 
@@ -16,7 +16,7 @@ router.get('/:id', ctrl.obtener);
 // le siembra permiso 'crear' aqui.
 router.post('/', requirePermiso('horas', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('horas', 'editar'), ctrl.actualizar);
-router.delete('/:id', requirePermiso('horas', 'eliminar'), ctrl.eliminar);
+router.delete('/:id', requirePermiso('horas', 'eliminar'), requirePassword, ctrl.eliminar);
 router.get('/:id/comentarios', ctrl.listarComentarios);
 router.post('/:id/comentarios', ctrl.agregarComentario); // cualquier rol autenticado puede comentar
 router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);
@@ -24,6 +24,6 @@ router.post('/:id/comentarios/marcar-visto', ctrl.marcarComentariosVistos);
 // (cualquier rol autenticado con acceso al registro), no un permiso aparte.
 router.post('/:id/comentarios/:comentarioId/adjuntos', ctrl.crearAdjuntoComentario);
 router.get('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', ctrl.obtenerAdjuntoComentario);
-router.delete('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', ctrl.eliminarAdjuntoComentario);
+router.delete('/:id/comentarios/:comentarioId/adjuntos/:adjuntoId', requirePassword, ctrl.eliminarAdjuntoComentario);
 
 module.exports = router;

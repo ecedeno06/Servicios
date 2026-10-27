@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { ClientesService } from '../../core/services/clientes.service';
 import { MenuService } from '../../core/services/menu.service';
 import { Cliente } from '../../core/models/models';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -97,7 +97,13 @@ export class ClientesComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: ClientesService, public menu: MenuService, private confirmSrv: ConfirmService, private toast: ToastService) {}
+  constructor(
+    private fb: FormBuilder,
+    private srv: ClientesService,
+    public menu: MenuService,
+    private toast: ToastService,
+    private confirmPasswordSrv: ConfirmPasswordService
+  ) {}
 
   ngOnInit(): void { this.cargar(); }
 
@@ -127,7 +133,13 @@ export class ClientesComponent implements OnInit {
   }
 
   async eliminar(c: Cliente): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Eliminar al cliente "${c.nombre}"? Esta accion no se puede deshacer.`))) return;
-    this.srv.eliminar(c.id).subscribe(() => { this.toast.exito(`Cliente "${c.nombre}" eliminado correctamente.`); this.cargar(); });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar al cliente "${c.nombre}"? Esta accion no se puede deshacer.`,
+      (password) => this.srv.eliminar(c.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Cliente "${c.nombre}" eliminado correctamente.`);
+    this.cargar();
   }
 }

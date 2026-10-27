@@ -34,8 +34,8 @@ export class ServiciosProveedoresService {
     return this.http.put<ServicioProveedor>(`${this.base}/${id}`, data);
   }
 
-  eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`);
+  eliminar(id: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`, { body: { password } });
   }
 
   // FACTURAS / TRANSACCIONES
@@ -58,8 +58,8 @@ export class ServiciosProveedoresService {
     return this.http.put<FacturaServicioProveedor>(`${this.base}/${servicioId}/facturas/${facturaId}`, data);
   }
 
-  eliminarFactura(servicioId: string, facturaId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}`);
+  eliminarFactura(servicioId: string, facturaId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}`, { body: { password } });
   }
 
   // ADJUNTOS (imagenes/documentos)
@@ -75,8 +75,8 @@ export class ServiciosProveedoresService {
     return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`, data);
   }
 
-  eliminarAdjunto(servicioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`);
+  eliminarAdjunto(servicioId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 
   // ADJUNTOS DE FACTURA (imagenes/documentos)
@@ -92,8 +92,8 @@ export class ServiciosProveedoresService {
     return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`, data);
   }
 
-  eliminarAdjuntoFactura(servicioId: string, facturaId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`);
+  eliminarAdjuntoFactura(servicioId: string, facturaId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/facturas/${facturaId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 
   // INCIDENTES
@@ -116,8 +116,8 @@ export class ServiciosProveedoresService {
     return this.http.put<ServicioIncidente>(`${this.base}/${servicioId}/incidentes/${incidenteId}`, data);
   }
 
-  eliminarIncidente(servicioId: string, incidenteId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}`);
+  eliminarIncidente(servicioId: string, incidenteId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}`, { body: { password } });
   }
 
   // ADJUNTOS DE INCIDENTE (imagenes/documentos)
@@ -133,8 +133,8 @@ export class ServiciosProveedoresService {
     return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`, data);
   }
 
-  eliminarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`);
+  eliminarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 
   // NOTAS/HISTORICO DE INCIDENTE
@@ -150,7 +150,7 @@ export class ServiciosProveedoresService {
     return this.http.post<{ nota: IncidenteNota; incidente: ServicioIncidente }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/notas`, data);
   }
 
-  eliminarNotaIncidente(servicioId: string, incidenteId: string, notaId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/notas/${notaId}`);
+  eliminarNotaIncidente(servicioId: string, incidenteId: string, notaId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/notas/${notaId}`, { body: { password } });
   }
 }

@@ -37,8 +37,8 @@ export class EquiposAsignadosService {
     return this.http.put<ImagenServicioProveedor>(`${this.base}/${equipoId}/adjuntos/${adjuntoId}`, data);
   }
 
-  eliminarAdjunto(equipoId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/adjuntos/${adjuntoId}`);
+  eliminarAdjunto(equipoId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 
   // CHECKLIST (ejecuciones -- se puede repetir mas de una vez por equipo,
@@ -59,8 +59,8 @@ export class EquiposAsignadosService {
     return this.http.put<EquipoChecklistEjecucion>(`${this.base}/${equipoId}/checklist/${ejecucionId}`, data);
   }
 
-  eliminarChecklistEjecucion(equipoId: string, ejecucionId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}`);
+  eliminarChecklistEjecucion(equipoId: string, ejecucionId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}`, { body: { password } });
   }
 
   actualizarChecklistEjecucionItem(equipoId: string, ejecucionId: string, checklistId: string, data: { completado: boolean }): Observable<EquipoChecklistItem> {

@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TiposServicioService } from '../../core/services/tipos-servicio.service';
 import { MenuService } from '../../core/services/menu.service';
 import { TipoServicio } from '../../core/models/models';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -25,7 +25,13 @@ export class TiposServicioComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: TiposServicioService, public menu: MenuService, private confirmSrv: ConfirmService, private toast: ToastService) {}
+  constructor(
+    private fb: FormBuilder,
+    private srv: TiposServicioService,
+    public menu: MenuService,
+    private toast: ToastService,
+    private confirmPasswordSrv: ConfirmPasswordService
+  ) {}
 
   ngOnInit(): void { this.cargar(); }
   cargar(): void { this.srv.listar().subscribe((data) => this.tipos.set(data)); }
@@ -43,7 +49,13 @@ export class TiposServicioComponent implements OnInit {
   }
 
   async eliminar(t: TipoServicio): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Eliminar el tipo de servicio "${t.nombre}"?`))) return;
-    this.srv.eliminar(t.id).subscribe(() => { this.toast.exito(`Tipo de servicio "${t.nombre}" eliminado correctamente.`); this.cargar(); });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar el tipo de servicio "${t.nombre}"?`,
+      (password) => this.srv.eliminar(t.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Tipo de servicio "${t.nombre}" eliminado correctamente.`);
+    this.cargar();
   }
 }

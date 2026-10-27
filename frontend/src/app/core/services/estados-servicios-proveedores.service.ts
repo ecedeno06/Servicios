@@ -25,7 +25,7 @@ export class EstadosServiciosProveedoresService {
     return this.http.put<EstadoServicioProveedorItem>(`${this.base}/${id}`, data);
   }
 
-  eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`);
+  eliminar(id: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`, { body: { password } });
   }
 }

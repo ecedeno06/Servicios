@@ -12,5 +12,5 @@ export class ProcesadoresService {
   listar(): Observable<Procesador[]> { return this.http.get<Procesador[]>(this.base); }
   crear(data: { nombre: string }): Observable<Procesador> { return this.http.post<Procesador>(this.base, data); }
   actualizar(id: number, data: { nombre: string }): Observable<Procesador> { return this.http.put<Procesador>(`${this.base}/${id}`, data); }
-  eliminar(id: number): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: number, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

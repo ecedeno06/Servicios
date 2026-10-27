@@ -1,9 +1,10 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { tap } from 'rxjs';
 import { LogsService } from '../../core/services/logs.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { LogError, NivelLog } from '../../core/models/models';
 
 function hoyISO(): string {
@@ -120,7 +121,11 @@ export class LogsErroresComponent implements OnInit {
     });
   });
 
-  constructor(private srv: LogsService, private toast: ToastService, private confirmSrv: ConfirmService) {}
+  constructor(
+    private srv: LogsService,
+    private toast: ToastService,
+    private confirmPasswordSrv: ConfirmPasswordService
+  ) {}
 
   ngOnInit(): void {
     this.buscar();
@@ -201,21 +206,20 @@ export class LogsErroresComponent implements OnInit {
   async eliminarSeleccionados(): Promise<void> {
     const ids = Array.from(this.seleccionados());
     if (ids.length === 0) return;
-    const ok = await this.confirmSrv.confirmar(`Eliminar ${ids.length} log(s) seleccionado(s)? Esta accion no se puede deshacer.`, { titulo: 'Eliminar logs' });
-    if (!ok) return;
 
     this.eliminando.set(true);
-    this.srv.eliminar(ids).subscribe({
-      next: (res) => {
-        this.eliminando.set(false);
-        this.toast.exito(`Se eliminaron ${res.eliminados} log(s).`);
-        this.buscar();
-      },
-      error: (err) => {
-        this.eliminando.set(false);
-        this.toast.error(err?.error?.mensaje || 'No se pudieron eliminar los logs seleccionados.');
-      },
-    });
+    await this.confirmPasswordSrv.confirmar(
+      `Eliminar ${ids.length} log(s) seleccionado(s)? Esta accion no se puede deshacer.`,
+      (password) =>
+        this.srv.eliminar(ids, password).pipe(
+          tap((res) => {
+            this.toast.exito(`Se eliminaron ${res.eliminados} log(s).`);
+            this.buscar();
+          })
+        ),
+      { titulo: 'Eliminar logs' }
+    );
+    this.eliminando.set(false);
   }
 
   claseNivel(nivel: NivelLog): string {

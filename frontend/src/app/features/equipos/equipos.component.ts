@@ -5,7 +5,7 @@ import { CategoriasService } from '../../core/services/categorias.service';
 import { ProductosService } from '../../core/services/productos.service';
 import { ProcesadoresService } from '../../core/services/procesadores.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { Categoria, Procesador, Producto } from '../../core/models/models';
 
 type Pestana = 'categorias' | 'productos' | 'procesadores';
@@ -134,7 +134,7 @@ export class EquiposComponent implements OnInit {
     private productosSrv: ProductosService,
     private procesadoresSrv: ProcesadoresService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -181,11 +181,15 @@ export class EquiposComponent implements OnInit {
   async eliminarCategoria(): Promise<void> {
     const actual = this.categoriaSeleccionada();
     if (!actual) return;
-    if (!(await this.confirmSrv.confirmar(`Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`))) return;
-    this.categoriasSrv.eliminar(actual.id).subscribe({
-      next: () => { this.toast.exito(`Categoria "${actual.nombre}" eliminada correctamente.`); this.nuevaCategoria(); this.cargarCategorias(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la categoria'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar la categoria "${actual.nombre}"? Esto falla si todavia tiene productos asociados.`,
+      (password) => this.categoriasSrv.eliminar(actual.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Categoria "${actual.nombre}" eliminada correctamente.`);
+    this.nuevaCategoria();
+    this.cargarCategorias();
   }
 
   // ---------- Productos: mantenimiento ----------
@@ -230,11 +234,15 @@ export class EquiposComponent implements OnInit {
   async eliminarProducto(): Promise<void> {
     const actual = this.productoSeleccionado();
     if (!actual) return;
-    if (!(await this.confirmSrv.confirmar(`Eliminar el producto "${actual.nombre}"?`))) return;
-    this.productosSrv.eliminar(actual.id).subscribe({
-      next: () => { this.toast.exito(`Producto "${actual.nombre}" eliminado correctamente.`); this.nuevoProducto(); this.cargarProductos(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el producto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar el producto "${actual.nombre}"?`,
+      (password) => this.productosSrv.eliminar(actual.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Producto "${actual.nombre}" eliminado correctamente.`);
+    this.nuevoProducto();
+    this.cargarProductos();
   }
 
   // ---------- Procesadores: mantenimiento ----------
@@ -264,10 +272,14 @@ export class EquiposComponent implements OnInit {
   async eliminarProcesador(): Promise<void> {
     const actual = this.procesadorSeleccionado();
     if (!actual) return;
-    if (!(await this.confirmSrv.confirmar(`Eliminar el procesador "${actual.nombre}"?`))) return;
-    this.procesadoresSrv.eliminar(actual.id).subscribe({
-      next: () => { this.toast.exito(`Procesador "${actual.nombre}" eliminado correctamente.`); this.nuevoProcesador(); this.cargarProcesadores(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el procesador'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar el procesador "${actual.nombre}"?`,
+      (password) => this.procesadoresSrv.eliminar(actual.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Procesador "${actual.nombre}" eliminado correctamente.`);
+    this.nuevoProcesador();
+    this.cargarProcesadores();
   }
 }

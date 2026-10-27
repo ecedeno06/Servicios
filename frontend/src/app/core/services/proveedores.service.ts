@@ -13,5 +13,5 @@ export class ProveedoresService {
   obtener(id: string): Observable<Proveedor> { return this.http.get<Proveedor>(`${this.base}/${id}`); }
   crear(data: Partial<Proveedor>): Observable<Proveedor> { return this.http.post<Proveedor>(this.base, data); }
   actualizar(id: string, data: Partial<Proveedor>): Observable<Proveedor> { return this.http.put<Proveedor>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> { return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<{ ok: boolean; mensaje: string }> { return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`, { body: { password } }); }
 }

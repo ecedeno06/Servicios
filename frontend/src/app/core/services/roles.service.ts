@@ -12,5 +12,5 @@ export class RolesService {
   listar(): Observable<RolCatalogo[]> { return this.http.get<RolCatalogo[]>(this.base); }
   crear(data: { codigo: string; nombre: string }): Observable<RolCatalogo> { return this.http.post<RolCatalogo>(this.base, data); }
   actualizar(id: number, data: { nombre?: string; activo?: boolean }): Observable<RolCatalogo> { return this.http.put<RolCatalogo>(`${this.base}/${id}`, data); }
-  eliminar(id: number): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: number, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

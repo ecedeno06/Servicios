@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { MenuService } from '../../core/services/menu.service';
 import { HojaServicioPdfService } from '../../core/services/hoja-servicio-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { RegistroHora, Contrato, ConsumoHoras, Comentario, ImagenServicioProveedor } from '../../core/models/models';
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
@@ -167,7 +167,7 @@ export class RegistroHorasComponent implements OnInit {
     public auth: AuthService,
     public menu: MenuService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -284,8 +284,14 @@ export class RegistroHorasComponent implements OnInit {
   }
 
   async eliminar(r: RegistroHora): Promise<void> {
-    if (!(await this.confirmSrv.confirmar('Eliminar este registro de horas?'))) return;
-    this.srv.eliminar(r.id).subscribe(() => { this.toast.exito('Registro de horas eliminado correctamente.'); this.cargar(); });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      'Eliminar este registro de horas?',
+      (password) => this.srv.eliminar(r.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito('Registro de horas eliminado correctamente.');
+    this.cargar();
   }
 
   numeroServicio(r: RegistroHora): string {
@@ -412,16 +418,16 @@ export class RegistroHorasComponent implements OnInit {
   async eliminarAdjuntoComentario(comentarioId: string, adjuntoId: string): Promise<void> {
     const registro = this.registroComentando();
     if (!registro) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar este adjunto?'))) return;
-    this.srv.eliminarAdjuntoComentario(registro.id, comentarioId, adjuntoId).subscribe({
-      next: () => {
-        this.comentariosDelRegistro.update((lista) =>
-          lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
-        );
-        this.toast.exito('Adjunto eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este adjunto?',
+      (password) => this.srv.eliminarAdjuntoComentario(registro.id, comentarioId, adjuntoId, password)
+    );
+    if (!ok) return;
+
+    this.comentariosDelRegistro.update((lista) =>
+      lista.map((c) => (c.id === comentarioId ? { ...c, adjuntos: (c.adjuntos ?? []).filter((a) => a.id !== adjuntoId) } : c))
+    );
+    this.toast.exito('Adjunto eliminado correctamente.');
   }
 
   // El listado de comentarios solo trae el encabezado recortado del base64

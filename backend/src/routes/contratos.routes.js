@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/contratos.controller');
-const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso, requirePassword } = require('../middleware/auth');
 
 router.use(requireAuth, requireEmpresa);
 
@@ -10,10 +10,10 @@ router.get('/', requirePermiso('contratos', 'ver'), ctrl.listar);
 router.get('/:id', requirePermiso('contratos', 'ver'), ctrl.obtener);
 router.post('/', requirePermiso('contratos', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('contratos', 'editar'), ctrl.actualizar);
-router.delete('/:id', requirePermiso('contratos', 'eliminar'), ctrl.eliminar);
+router.delete('/:id', requirePermiso('contratos', 'eliminar'), requirePassword, ctrl.eliminar);
 
 router.post('/:id/servicios', requirePermiso('contratos', 'crear'), ctrl.agregarServicio);
 router.put('/:id/servicios/:contratoServicioId', requirePermiso('contratos', 'editar'), ctrl.actualizarServicio);
-router.delete('/:id/servicios/:contratoServicioId', requirePermiso('contratos', 'eliminar'), ctrl.eliminarServicio);
+router.delete('/:id/servicios/:contratoServicioId', requirePermiso('contratos', 'eliminar'), requirePassword, ctrl.eliminarServicio);
 
 module.exports = router;

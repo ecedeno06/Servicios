@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/serviciosProveedores.controller');
-const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso, requirePassword } = require('../middleware/auth');
 
 router.use(requireAuth);
 router.use(requireEmpresa);
@@ -12,7 +12,7 @@ router.get('/reporte/pagos', requirePermiso('servicios_proveedores', 'ver'), ctr
 router.get('/:id', requirePermiso('servicios_proveedores', 'ver'), ctrl.obtenerPorId);
 router.post('/', requirePermiso('servicios_proveedores', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizar);
-router.delete('/:id', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminar);
+router.delete('/:id', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminar);
 
 // Facturas / Transacciones
 router.get('/:id/facturas', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarFacturas);
@@ -22,19 +22,19 @@ router.get('/:id/facturas', requirePermiso('servicios_proveedores', 'ver'), ctrl
 router.get('/:id/facturas-info', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarFacturasConAdjuntos);
 router.post('/:id/facturas', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearFactura);
 router.put('/:id/facturas/:facturaId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarFactura);
-router.delete('/:id/facturas/:facturaId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarFactura);
+router.delete('/:id/facturas/:facturaId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarFactura);
 
 // Adjuntos (imagenes/documentos)
 router.get('/:id/adjuntos', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarAdjuntos);
 router.post('/:id/adjuntos', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearAdjunto);
 router.put('/:id/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjunto);
-router.delete('/:id/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjunto);
+router.delete('/:id/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarAdjunto);
 
 // Adjuntos de una factura (imagenes/documentos)
 router.get('/:id/facturas/:facturaId/adjuntos', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarAdjuntosFactura);
 router.post('/:id/facturas/:facturaId/adjuntos', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearAdjuntoFactura);
 router.put('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoFactura);
-router.delete('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoFactura);
+router.delete('/:id/facturas/:facturaId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarAdjuntoFactura);
 
 // Incidentes
 router.get('/:id/incidentes', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarIncidentes);
@@ -44,17 +44,17 @@ router.get('/:id/incidentes', requirePermiso('servicios_proveedores', 'ver'), ct
 router.get('/:id/incidentes-info', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarIncidentesConDetalle);
 router.post('/:id/incidentes', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearIncidente);
 router.put('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarIncidente);
-router.delete('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarIncidente);
+router.delete('/:id/incidentes/:incidenteId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarIncidente);
 
 // Adjuntos de un incidente (imagenes/documentos)
 router.get('/:id/incidentes/:incidenteId/adjuntos', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarAdjuntosIncidente);
 router.post('/:id/incidentes/:incidenteId/adjuntos', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearAdjuntoIncidente);
 router.put('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizarAdjuntoIncidente);
-router.delete('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarAdjuntoIncidente);
+router.delete('/:id/incidentes/:incidenteId/adjuntos/:adjuntoId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarAdjuntoIncidente);
 
 // Notas/historico de un incidente (nota + cambio de estado + adjunto opcional)
 router.get('/:id/incidentes/:incidenteId/notas', requirePermiso('servicios_proveedores', 'ver'), ctrl.listarNotasIncidente);
 router.post('/:id/incidentes/:incidenteId/notas', requirePermiso('servicios_proveedores', 'crear'), ctrl.crearNotaIncidente);
-router.delete('/:id/incidentes/:incidenteId/notas/:notaId', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminarNotaIncidente);
+router.delete('/:id/incidentes/:incidenteId/notas/:notaId', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminarNotaIncidente);
 
 module.exports = router;

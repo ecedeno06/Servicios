@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/roles.controller');
-const { requireAuth, requireSuperAdmin } = require('../middleware/auth');
+const { requireAuth, requireSuperAdmin, requirePassword } = require('../middleware/auth');
 
 // Administrar roles (crear/editar/borrar) es exclusivo de super-admin --
 // a diferencia de agro, donde estos endpoints solo pedian estar logueado.
@@ -10,6 +10,6 @@ const { requireAuth, requireSuperAdmin } = require('../middleware/auth');
 router.get('/', requireAuth, ctrl.listar);
 router.post('/', requireAuth, requireSuperAdmin, ctrl.crear);
 router.put('/:id', requireAuth, requireSuperAdmin, ctrl.actualizar);
-router.delete('/:id', requireAuth, requireSuperAdmin, ctrl.eliminar);
+router.delete('/:id', requireAuth, requireSuperAdmin, requirePassword, ctrl.eliminar);
 
 module.exports = router;

@@ -10,6 +10,7 @@ import { Usuario, Cliente, Rol, PoliticaPassword, RolCatalogo } from '../../core
 import { generarPasswordSegunPolitica } from '../../core/utils/password.util';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -48,7 +49,8 @@ export class UsuariosComponent implements OnInit {
     private rolesSrv: RolesService,
     public auth: AuthService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmSrv: ConfirmService,
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -132,11 +134,14 @@ export class UsuariosComponent implements OnInit {
   }
 
   async eliminar(u: Usuario): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Quitar a "${u.nombre}" de esta empresa?`))) return;
-    this.srv.eliminar(u.id).subscribe({
-      next: () => { this.toast.exito(`Usuario "${u.nombre}" eliminado correctamente.`); this.cargar(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Quitar a "${u.nombre}" de esta empresa?`,
+      (password) => this.srv.eliminar(u.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Usuario "${u.nombre}" eliminado correctamente.`);
+    this.cargar();
   }
 
   async resetearPassword(u: Usuario): Promise<void> {

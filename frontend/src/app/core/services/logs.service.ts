@@ -19,8 +19,8 @@ export class LogsService {
     return this.http.get<LogError[]>(this.base, { params });
   }
 
-  eliminar(ids: string[]): Observable<{ eliminados: number }> {
-    return this.http.post<{ eliminados: number }>(`${this.base}/eliminar`, { ids });
+  eliminar(ids: string[], password: string): Observable<{ eliminados: number }> {
+    return this.http.post<{ eliminados: number }>(`${this.base}/eliminar`, { ids, password });
   }
 
   // Cualquier usuario autenticado puede llamar esto (a diferencia de

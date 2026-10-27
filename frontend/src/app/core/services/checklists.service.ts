@@ -25,7 +25,7 @@ export class ChecklistsService {
     return this.http.put<ChecklistItem>(`${this.base}/${id}`, data);
   }
 
-  eliminar(id: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`);
+  eliminar(id: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}`, { body: { password } });
   }
 }

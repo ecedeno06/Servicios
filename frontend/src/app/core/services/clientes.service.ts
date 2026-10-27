@@ -13,5 +13,5 @@ export class ClientesService {
   obtener(id: string): Observable<Cliente> { return this.http.get<Cliente>(`${this.base}/${id}`); }
   crear(data: any): Observable<Cliente> { return this.http.post<Cliente>(this.base, data); }
   actualizar(id: string, data: any): Observable<Cliente> { return this.http.put<Cliente>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

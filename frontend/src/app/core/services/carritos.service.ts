@@ -67,8 +67,8 @@ export class CarritosService {
     return this.http.put<CarritoDetalle>(`${this.base}/${carritoId}/detalles/${detalleId}`, data);
   }
 
-  eliminarDetalle(carritoId: string, detalleId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}`);
+  eliminarDetalle(carritoId: string, detalleId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}`, { body: { password } });
   }
 
   // COTIZACIONES (propuestas de precio de una linea, una o mas, cada una de un proveedor)
@@ -84,7 +84,7 @@ export class CarritosService {
     return this.http.put<CarritoCotizacion>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, data);
   }
 
-  eliminarCotizacion(carritoId: string, detalleId: string, cotizacionId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`);
+  eliminarCotizacion(carritoId: string, detalleId: string, cotizacionId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, { body: { password } });
   }
 }

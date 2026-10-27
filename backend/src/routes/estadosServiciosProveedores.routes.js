@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/estadosServiciosProveedores.controller');
-const { requireAuth, requireEmpresa, requireSuperAdmin } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requireSuperAdmin, requirePassword } = require('../middleware/auth');
 
 // Catalogo expuesto solo en Configuracion -- igual que el resto de ese
 // grupo (Empresas, Politica de password, Equipos, Roles y permisos), solo
@@ -11,6 +11,6 @@ router.get('/', ctrl.listar);
 router.get('/:id', ctrl.obtenerPorId);
 router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);
-router.delete('/:id', ctrl.eliminar);
+router.delete('/:id', requirePassword, ctrl.eliminar);
 
 module.exports = router;

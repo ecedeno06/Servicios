@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { EstadosServiciosProveedoresService } from '../../core/services/estados-servicios-proveedores.service';
 import { EstadoServicioProveedorItem } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 const CLASES_BADGE: { valor: string; etiqueta: string }[] = [
   { valor: 'badge-green', etiqueta: 'Verde' },
@@ -45,7 +45,7 @@ export class EstadosServicioComponent implements OnInit {
     private fb: FormBuilder,
     private estadosSrv: EstadosServiciosProveedoresService,
     private toast: ToastService,
-    private confirmSrv: ConfirmService
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -83,10 +83,14 @@ export class EstadosServicioComponent implements OnInit {
   async eliminarEstado(): Promise<void> {
     const actual = this.estadoSeleccionado();
     if (!actual) return;
-    if (!(await this.confirmSrv.confirmar(`¿Eliminar el estado "${actual.nombre}"? Esto falla si todavia hay servicios con este estado.`))) return;
-    this.estadosSrv.eliminar(actual.id).subscribe({
-      next: () => { this.toast.exito(`Estado "${actual.nombre}" eliminado correctamente.`); this.nuevoEstado(); this.cargarEstados(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar el estado'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `¿Eliminar el estado "${actual.nombre}"? Esto falla si todavia hay servicios con este estado.`,
+      (password) => this.estadosSrv.eliminar(actual.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Estado "${actual.nombre}" eliminado correctamente.`);
+    this.nuevoEstado();
+    this.cargarEstados();
   }
 }

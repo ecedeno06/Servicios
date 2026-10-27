@@ -18,7 +18,7 @@ export class EmpresasService {
   obtener(id: string): Observable<Empresa> { return this.http.get<Empresa>(`${this.base}/${id}`); }
   crear(data: any): Observable<Empresa> { return this.http.post<Empresa>(this.base, data); }
   actualizar(id: string, data: any): Observable<Empresa> { return this.http.put<Empresa>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 
   usuariosGlobales(): Observable<UsuarioGlobal[]> {
     return this.http.get<UsuarioGlobal[]>(`${this.base}/usuarios-globales`);
@@ -32,8 +32,8 @@ export class EmpresasService {
     return this.http.post<UsuarioDeEmpresa>(`${this.base}/${empresaId}/usuarios`, data);
   }
 
-  desasociarUsuario(empresaId: string, usuarioId: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${empresaId}/usuarios/${usuarioId}`);
+  desasociarUsuario(empresaId: string, usuarioId: string, password: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${empresaId}/usuarios/${usuarioId}`, { body: { password } });
   }
 
   clientesDeEmpresa(empresaId: string): Observable<ClienteDeEmpresa[]> {

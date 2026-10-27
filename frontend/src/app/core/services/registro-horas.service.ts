@@ -25,7 +25,7 @@ export class RegistroHorasService {
   }
   crear(data: any): Observable<RegistroHora> { return this.http.post<RegistroHora>(this.base, data); }
   actualizar(id: string, data: any): Observable<RegistroHora> { return this.http.put<RegistroHora>(`${this.base}/${id}`, data); }
-  eliminar(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
   consumoGeneral(): Observable<ConsumoHoras[]> { return this.http.get<ConsumoHoras[]>(`${this.base}/consumo`); }
   consumoPorContrato(contratoId: string): Observable<ConsumoHoras[]> {
     return this.http.get<ConsumoHoras[]>(`${this.base}/consumo/${contratoId}`);
@@ -58,7 +58,7 @@ export class RegistroHorasService {
   obtenerAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string): Observable<ImagenServicioProveedor> {
     return this.http.get<ImagenServicioProveedor>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`);
   }
-  eliminarAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`);
+  eliminarAdjuntoComentario(registroId: string, comentarioId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${registroId}/comentarios/${comentarioId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 }

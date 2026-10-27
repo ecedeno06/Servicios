@@ -27,6 +27,7 @@ import { MultiSelectFilterComponent } from '../../core/components/multi-select-f
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
 const ESTADOS_FACTURA: { valor: EstadoFacturaServicio; etiqueta: string }[] = [
   { valor: 'pagada', etiqueta: 'Pagada' },
@@ -675,14 +676,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   async eliminarImagen(adjuntoId: string): Promise<void> {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
-    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
-    this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId).subscribe({
-      next: () => {
-        this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
-        this.toast.exito('Adjunto eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      'Eliminar este adjunto?',
+      (password) => this.serviciosSrv.eliminarAdjunto(servicio.id, adjuntoId, password)
+    );
+    if (!ok) return;
+
+    this.imagenesServicioActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+    this.toast.exito('Adjunto eliminado correctamente.');
   }
 
   actualizarDescripcionAdjunto(adjuntoId: string, descripcion: string): void {
@@ -901,16 +902,16 @@ export class ServiciosProveedoresComponent implements OnInit {
   async eliminarIncidente(inc: ServicioIncidente): Promise<void> {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar este evento del registro?'))) return;
-    this.serviciosSrv.eliminarIncidente(servicio.id, inc.id).subscribe({
-      next: () => {
-        this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
-        if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
-        this.cargarDatos();
-        this.toast.exito('Evento del registro eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar el evento'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este evento del registro?',
+      (password) => this.serviciosSrv.eliminarIncidente(servicio.id, inc.id, password)
+    );
+    if (!ok) return;
+
+    this.incidentesServicioActual.update((arr) => arr.filter((i) => i.id !== inc.id));
+    if (this.incidenteSeleccionado()?.id === inc.id) this.cancelarEdicionIncidente();
+    this.cargarDatos();
+    this.toast.exito('Evento del registro eliminado correctamente.');
   }
 
   claseBadgeEstadoIncidente(e: EstadoIncidente): string {
@@ -952,14 +953,14 @@ export class ServiciosProveedoresComponent implements OnInit {
     const servicio = this.servicioEdicion();
     const incidente = this.incidenteSeleccionado();
     if (!servicio || !incidente) return;
-    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
-    this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId).subscribe({
-      next: () => {
-        this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
-        this.toast.exito('Adjunto eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      'Eliminar este adjunto?',
+      (password) => this.serviciosSrv.eliminarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId, password)
+    );
+    if (!ok) return;
+
+    this.adjuntosIncidenteActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+    this.toast.exito('Adjunto eliminado correctamente.');
   }
 
   actualizarDescripcionAdjuntoIncidente(adjuntoId: string, descripcion: string): void {
@@ -1163,20 +1164,20 @@ export class ServiciosProveedoresComponent implements OnInit {
     const servicio = this.servicioEdicion();
     const incidente = this.incidenteNotasSeleccionado();
     if (!servicio || !incidente) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar esta entrada del histórico?'))) return;
-    this.serviciosSrv.eliminarNotaIncidente(servicio.id, incidente.id, nota.id).subscribe({
-      next: () => {
-        this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id));
-        // El backend no devuelve el incidente actualizado en el delete --
-        // se descuenta a mano para que la burbuja de la tabla no quede
-        // desfasada hasta el proximo refresh.
-        this.incidentesServicioActual.update((arr) =>
-          arr.map((i) => (i.id === incidente.id ? { ...i, notas_count: Math.max(0, (i.notas_count || 0) - 1) } : i))
-        );
-        this.toast.exito('Entrada del historico eliminada correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar la nota'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar esta entrada del histórico?',
+      (password) => this.serviciosSrv.eliminarNotaIncidente(servicio.id, incidente.id, nota.id, password)
+    );
+    if (!ok) return;
+
+    this.notasIncidenteActual.update((arr) => arr.filter((n) => n.id !== nota.id));
+    // El backend no devuelve el incidente actualizado en el delete --
+    // se descuenta a mano para que la burbuja de la tabla no quede
+    // desfasada hasta el proximo refresh.
+    this.incidentesServicioActual.update((arr) =>
+      arr.map((i) => (i.id === incidente.id ? { ...i, notas_count: Math.max(0, (i.notas_count || 0) - 1) } : i))
+    );
+    this.toast.exito('Entrada del historico eliminada correctamente.');
   }
 
   // -------------------------------------------------------------------
@@ -1222,14 +1223,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   async eliminarAdjuntoFactura(adjuntoId: string, f: FacturaServicioProveedor): Promise<void> {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
-    if (!(await this.confirmSrv.confirmar('Eliminar este adjunto?'))) return;
-    this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId).subscribe({
-      next: () => {
-        this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
-        this.toast.exito('Adjunto eliminado correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo eliminar el adjunto'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      'Eliminar este adjunto?',
+      (password) => this.serviciosSrv.eliminarAdjuntoFactura(servicio.id, f.id, adjuntoId, password)
+    );
+    if (!ok) return;
+
+    this.adjuntosFacturaActual.update((arr) => arr.filter((a) => a.id !== adjuntoId));
+    this.toast.exito('Adjunto eliminado correctamente.');
   }
 
   actualizarDescripcionAdjuntoFactura(adjuntoId: string, descripcion: string, f: FacturaServicioProveedor): void {
@@ -1303,6 +1304,7 @@ export class ServiciosProveedoresComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private toast: ToastService,
     private confirmSrv: ConfirmService,
+    private confirmPasswordSrv: ConfirmPasswordService,
     public menu: MenuService
   ) {}
 
@@ -1401,15 +1403,14 @@ export class ServiciosProveedoresComponent implements OnInit {
       return;
     }
 
-    if (!(await this.confirmSrv.confirmar(`¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`))) return;
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `¿Eliminar el sector "${s.nombre}"? Esta acción no se puede deshacer.`,
+      (password) => this.sectoresSrv.eliminar(s.id, password)
+    );
+    if (!ok) return;
 
-    this.sectoresSrv.eliminar(s.id).subscribe({
-      next: () => {
-        this.toast.exito(`Sector "${s.nombre}" eliminado correctamente.`);
-        this.cargarDatos();
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar sector'),
-    });
+    this.toast.exito(`Sector "${s.nombre}" eliminado correctamente.`);
+    this.cargarDatos();
   }
 
   // -------------------------------------------------------------------
@@ -1482,15 +1483,14 @@ export class ServiciosProveedoresComponent implements OnInit {
       return;
     }
 
-    if (!(await this.confirmSrv.confirmar(`¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`))) return;
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `¿Eliminar el proveedor "${p.nombre}"? Esta acción no se puede deshacer.`,
+      (password) => this.proveedoresSrv.eliminar(p.id, password)
+    );
+    if (!ok) return;
 
-    this.proveedoresSrv.eliminar(p.id).subscribe({
-      next: () => {
-        this.toast.exito(`Proveedor "${p.nombre}" eliminado correctamente.`);
-        this.cargarDatos();
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar proveedor'),
-    });
+    this.toast.exito(`Proveedor "${p.nombre}" eliminado correctamente.`);
+    this.cargarDatos();
   }
 
   // codigoPais (ej. "+507") se antepone al numero local -- sin esto el
@@ -1858,15 +1858,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   }
 
   async eliminarServicio(s: ServicioProveedor): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`))) return;
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `¿Eliminar el servicio "${s.servicio}"? Esta acción no se puede deshacer.`,
+      (password) => this.serviciosSrv.eliminar(s.id, password)
+    );
+    if (!ok) return;
 
-    this.serviciosSrv.eliminar(s.id).subscribe({
-      next: () => {
-        this.toast.exito(`Servicio "${s.servicio}" eliminado correctamente.`);
-        this.cargarDatos();
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar servicio'),
-    });
+    this.toast.exito(`Servicio "${s.servicio}" eliminado correctamente.`);
+    this.cargarDatos();
   }
 
   // -------------------------------------------------------------------
@@ -1958,16 +1957,15 @@ export class ServiciosProveedoresComponent implements OnInit {
     const servicio = this.servicioSeleccionado();
     if (!servicio) return;
 
-    if (!(await this.confirmSrv.confirmar('¿Eliminar esta factura del registro?'))) return;
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar esta factura del registro?',
+      (password) => this.serviciosSrv.eliminarFactura(servicio.id, f.id, password)
+    );
+    if (!ok) return;
 
-    this.serviciosSrv.eliminarFactura(servicio.id, f.id).subscribe({
-      next: () => {
-        this.toast.exito('Factura eliminada correctamente.');
-        this.cargarFacturas(servicio.id);
-        this.cargarDatos();
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar factura'),
-    });
+    this.toast.exito('Factura eliminada correctamente.');
+    this.cargarFacturas(servicio.id);
+    this.cargarDatos();
   }
 
   // Helpers de Formato y Badges

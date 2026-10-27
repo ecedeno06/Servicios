@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/proveedores.controller');
-const { requireAuth, requireEmpresa, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requireEmpresa, requirePermiso, requirePassword } = require('../middleware/auth');
 
 router.use(requireAuth);
 router.use(requireEmpresa);
@@ -9,6 +9,6 @@ router.get('/', requirePermiso('servicios_proveedores', 'ver'), ctrl.listar);
 router.get('/:id', requirePermiso('servicios_proveedores', 'ver'), ctrl.obtenerPorId);
 router.post('/', requirePermiso('servicios_proveedores', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('servicios_proveedores', 'editar'), ctrl.actualizar);
-router.delete('/:id', requirePermiso('servicios_proveedores', 'eliminar'), ctrl.eliminar);
+router.delete('/:id', requirePermiso('servicios_proveedores', 'eliminar'), requirePassword, ctrl.eliminar);
 
 module.exports = router;

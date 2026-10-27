@@ -12,5 +12,5 @@ export class ProductosService {
   listar(): Observable<Producto[]> { return this.http.get<Producto[]>(this.base); }
   crear(data: { categoria_id: number; nombre: string; aplica_checklist?: boolean; observacion?: string; url?: string; precio_referencia?: number | null }): Observable<Producto> { return this.http.post<Producto>(this.base, data); }
   actualizar(id: number, data: { categoria_id?: number; nombre?: string; aplica_checklist?: boolean; observacion?: string; url?: string; precio_referencia?: number | null }): Observable<Producto> { return this.http.put<Producto>(`${this.base}/${id}`, data); }
-  eliminar(id: number): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
+  eliminar(id: number, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
 }

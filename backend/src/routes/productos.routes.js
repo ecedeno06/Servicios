@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/productos.controller');
-const { requireAuth, requireSuperAdmin } = require('../middleware/auth');
+const { requireAuth, requireSuperAdmin, requirePassword } = require('../middleware/auth');
 
 // Lectura: cualquier usuario autenticado (un admin de empresa necesita
 // verlos para asignar equipos en Equipos asignados). Escritura: solo
@@ -8,6 +8,6 @@ const { requireAuth, requireSuperAdmin } = require('../middleware/auth');
 router.get('/', requireAuth, ctrl.listar);
 router.post('/', requireAuth, requireSuperAdmin, ctrl.crear);
 router.put('/:id', requireAuth, requireSuperAdmin, ctrl.actualizar);
-router.delete('/:id', requireAuth, requireSuperAdmin, ctrl.eliminar);
+router.delete('/:id', requireAuth, requireSuperAdmin, requirePassword, ctrl.eliminar);
 
 module.exports = router;

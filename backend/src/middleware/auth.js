@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { tienePermiso } = require('../utils/permisos');
 
@@ -115,4 +116,24 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, requirePermiso, requireEmpresa, requireSuperAdmin };
+// Pide la contrasena de la SESION ACTUAL (no la del registro que se borra)
+// y la verifica contra la BD antes de dejar pasar un delete -- pedido
+// explicito del usuario para que eliminar cualquier registro no sea un
+// solo click accidental. Mismo patron ya usado a mano en carritos.eliminar
+// y equiposAsignados.eliminar/eliminarHistorial, factorizado aqui para no
+// duplicar el bcrypt.compare en cada controller.
+async function requirePassword(req, res, next) {
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ mensaje: 'La contrasena es requerida' });
+  try {
+    const { rows } = await pool.query('select password_hash from usuarios where id = $1', [req.usuario.id]);
+    // 403, no 401: el interceptor del frontend trata cualquier 401 como
+    // "sesion invalida" y cierra la sesion -- esto es solo una contrasena
+    // equivocada, no un token vencido.
+    const passwordOk = rows[0] && await bcrypt.compare(password, rows[0].password_hash);
+    if (!passwordOk) return res.status(403).json({ mensaje: 'Contrasena incorrecta' });
+    next();
+  } catch (err) { next(err); }
+}
+
+module.exports = { requireAuth, requirePermiso, requireEmpresa, requireSuperAdmin, requirePassword };

@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { EmpresasService, ClienteDeEmpresa } from '../../core/services/empresas.service';
 import { RolesService } from '../../core/services/roles.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { Empresa, UsuarioGlobal, UsuarioDeEmpresa, Rol, RolCatalogo } from '../../core/models/models';
 
 @Component({
@@ -44,7 +44,13 @@ export class EmpresasComponent implements OnInit {
     activo: [true],
   });
 
-  constructor(private fb: FormBuilder, private srv: EmpresasService, private rolesSrv: RolesService, private toast: ToastService, private confirmSrv: ConfirmService) {}
+  constructor(
+    private fb: FormBuilder,
+    private srv: EmpresasService,
+    private rolesSrv: RolesService,
+    private toast: ToastService,
+    private confirmPasswordSrv: ConfirmPasswordService
+  ) {}
 
   ngOnInit(): void {
     this.cargar();
@@ -96,11 +102,13 @@ export class EmpresasComponent implements OnInit {
   }
 
   async desasociarUsuario(empresaId: string, u: UsuarioDeEmpresa): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Quitar a "${u.nombre}" de esta empresa?`))) return;
-    this.srv.desasociarUsuario(empresaId, u.id).subscribe({
-      next: () => this.cargarUsuariosDeEmpresa(empresaId),
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo quitar al usuario'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Quitar a "${u.nombre}" de esta empresa?`,
+      (password) => this.srv.desasociarUsuario(empresaId, u.id, password)
+    );
+    if (!ok) return;
+
+    this.cargarUsuariosDeEmpresa(empresaId);
   }
 
   cerrarPanel(): void { this.panelAbierto.set(false); }
@@ -138,11 +146,14 @@ export class EmpresasComponent implements OnInit {
   }
 
   async eliminar(e: Empresa): Promise<void> {
-    if (!(await this.confirmSrv.confirmar(`Eliminar la empresa "${e.nombre}"?`))) return;
-    this.srv.eliminar(e.id).subscribe({
-      next: () => { this.toast.exito(`Empresa "${e.nombre}" eliminada correctamente.`); this.cargar(); },
-      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo eliminar la empresa'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar la empresa "${e.nombre}"?`,
+      (password) => this.srv.eliminar(e.id, password)
+    );
+    if (!ok) return;
+
+    this.toast.exito(`Empresa "${e.nombre}" eliminada correctamente.`);
+    this.cargar();
   }
 }
 

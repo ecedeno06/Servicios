@@ -12,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CarritoPdfCotizacion, CarritoPdfData, CarritoPdfService } from '../../core/services/carrito-pdf.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
+import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 import { Carrito, CarritoCotizacion, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
@@ -139,7 +140,8 @@ export class CarritosComponent implements OnInit {
     private pdfSrv: CarritoPdfService,
     private toast: ToastService,
     public menu: MenuService,
-    private confirmSrv: ConfirmService
+    private confirmSrv: ConfirmService,
+    private confirmPasswordSrv: ConfirmPasswordService
   ) {}
 
   ngOnInit(): void {
@@ -251,41 +253,19 @@ export class CarritosComponent implements OnInit {
   // Pide confirmar la contrasena de la sesion actual antes de borrar el
   // carrito -- mismo patron que eliminar un equipo asignado o un
   // movimiento de su historico, para que no sea un solo click accidental.
-  carritoAEliminar = signal<Carrito | null>(null);
-  passwordEliminarCarritoForm = this.fb.group({ password: ['', Validators.required] });
-  eliminandoCarrito = signal(false);
-  errorEliminarCarrito = signal<string | null>(null);
-
-  pedirEliminarCarrito(c: Carrito): void {
-    this.passwordEliminarCarritoForm.reset();
-    this.errorEliminarCarrito.set(null);
-    this.carritoAEliminar.set(c);
-  }
-
-  cancelarEliminarCarrito(): void {
-    if (this.eliminandoCarrito()) return;
-    this.carritoAEliminar.set(null);
-  }
-
-  confirmarEliminarCarrito(): void {
-    const c = this.carritoAEliminar();
-    if (!c || this.passwordEliminarCarritoForm.invalid) return;
-    const password = this.passwordEliminarCarritoForm.getRawValue().password!;
-    this.eliminandoCarrito.set(true);
-    this.errorEliminarCarrito.set(null);
-    this.srv.eliminar(c.id, password).subscribe({
-      next: () => {
-        this.eliminandoCarrito.set(false);
-        this.carritoAEliminar.set(null);
-        if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
-        this.carritos.update((arr) => arr.filter((x) => x.id !== c.id));
-        this.toast.exito(`Carrito "${c.titulo}" eliminado correctamente.`);
-      },
-      error: (err) => {
-        this.eliminandoCarrito.set(false);
-        this.errorEliminarCarrito.set(err?.error?.mensaje || 'No se pudo eliminar el carrito');
-      },
-    });
+  // Ahora via el dialogo compartido ConfirmPasswordService (antes era un
+  // FormGroup/popup propio de este componente, duplicado con el de
+  // Equipos Asignados).
+  async eliminarCarrito(c: Carrito): Promise<void> {
+    const ok = await this.confirmPasswordSrv.confirmar(
+      `Eliminar el carrito "${c.titulo}"? Esta accion no se puede deshacer. Confirma tu contraseña para continuar.`,
+      (password) => this.srv.eliminar(c.id, password),
+      { titulo: 'Eliminar carrito' }
+    );
+    if (!ok) return;
+    if (this.carritoSeleccionado()?.id === c.id) this.abrirNuevo();
+    this.carritos.update((arr) => arr.filter((x) => x.id !== c.id));
+    this.toast.exito(`Carrito "${c.titulo}" eliminado correctamente.`);
   }
 
   // Refresca encabezado + lineas del carrito abierto (con sus totales ya
@@ -619,14 +599,13 @@ export class CarritosComponent implements OnInit {
   async eliminarDetalle(d: CarritoDetalle): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar esta linea del carrito?'))) return;
-    this.srv.eliminarDetalle(carrito.id, d.id).subscribe({
-      next: () => {
-        this.refrescarCarritoActual();
-        this.toast.exito('Linea del carrito eliminada correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la linea'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar esta linea del carrito?',
+      (password) => this.srv.eliminarDetalle(carrito.id, d.id, password)
+    );
+    if (!ok) return;
+    this.refrescarCarritoActual();
+    this.toast.exito('Linea del carrito eliminada correctamente.');
   }
 
   abrirUrlProducto(url: string): void {
@@ -761,14 +740,13 @@ export class CarritosComponent implements OnInit {
   async eliminarCotizacion(detalle: CarritoDetalle, cotizacion: CarritoCotizacion): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-    if (!(await this.confirmSrv.confirmar('¿Eliminar esta cotizacion?'))) return;
-    this.srv.eliminarCotizacion(carrito.id, detalle.id, cotizacion.id).subscribe({
-      next: () => {
-        this.cargarCotizacionesDeDetalle(detalle.id);
-        this.toast.exito('Cotizacion eliminada correctamente.');
-      },
-      error: (err) => this.toast.error(err.error?.mensaje || 'Error al eliminar la cotizacion'),
-    });
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar esta cotizacion?',
+      (password) => this.srv.eliminarCotizacion(carrito.id, detalle.id, cotizacion.id, password)
+    );
+    if (!ok) return;
+    this.cargarCotizacionesDeDetalle(detalle.id);
+    this.toast.exito('Cotizacion eliminada correctamente.');
   }
 
   // Encabezado + detalle + totales + historico de la solicitud, todo en
