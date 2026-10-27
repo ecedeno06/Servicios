@@ -1,3 +1,22 @@
+/* La pagina es el unico contenido del area principal (no hay nada debajo
+   de la tabla como en otras pantallas lista+detalle), asi que el
+   table-wrap-compact generico (max-height: 320px) dejaba un hueco vacio
+   hasta el pie de pagina -- en vez de eso, se estira para aprovechar todo
+   el alto disponible, con su propio scroll interno (encabezado fijo) si
+   los resultados no caben. */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.table-wrap-compact {
+  flex: 1;
+  min-height: 200px;
+  max-height: none;
+}
+
 .log-detalle-pre {
   background: var(--bg-surface-muted);
   color: var(--text-body);
