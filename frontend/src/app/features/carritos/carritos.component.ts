@@ -644,10 +644,15 @@ export class CarritosComponent implements OnInit {
   guardandoCotizacion = signal(false);
 
   cotizacionForm = this.fb.group({
+    fecha: [this.hoyISO(), Validators.required],
     proveedor_id: ['', Validators.required],
-    costo: ['', [Validators.required, Validators.min(0)]],
-    observacion: [''],
+    numero_cotizacion: [''],
+    costo_unitario: ['', [Validators.required, Validators.min(0)]],
     url: ['', Validators.pattern(/^https?:\/\/.+/)],
+    contacto_nombre: [''],
+    contacto_correo: ['', Validators.email],
+    contacto_telefono: [''],
+    observacion: [''],
   });
 
   cotizaciones(detalleId: string): CarritoCotizacion[] {
@@ -691,14 +696,22 @@ export class CarritosComponent implements OnInit {
     if (cotizacion) {
       this.cotizacionEdicion.set(cotizacion);
       this.cotizacionForm.reset({
+        fecha: cotizacion.fecha?.substring(0, 10) || this.hoyISO(),
         proveedor_id: cotizacion.proveedor_id,
-        costo: String(cotizacion.costo),
-        observacion: cotizacion.observacion || '',
+        numero_cotizacion: cotizacion.numero_cotizacion || '',
+        costo_unitario: String(cotizacion.costo_unitario),
         url: cotizacion.url || '',
+        contacto_nombre: cotizacion.contacto_nombre || '',
+        contacto_correo: cotizacion.contacto_correo || '',
+        contacto_telefono: cotizacion.contacto_telefono || '',
+        observacion: cotizacion.observacion || '',
       });
     } else {
       this.cotizacionEdicion.set(null);
-      this.cotizacionForm.reset({ proveedor_id: '', costo: '', observacion: '', url: '' });
+      this.cotizacionForm.reset({
+        fecha: this.hoyISO(), proveedor_id: '', numero_cotizacion: '', costo_unitario: '', url: '',
+        contacto_nombre: '', contacto_correo: '', contacto_telefono: '', observacion: '',
+      });
     }
     this.popupCotizacionAbierto.set(true);
   }
@@ -718,9 +731,14 @@ export class CarritosComponent implements OnInit {
     const raw = this.cotizacionForm.getRawValue();
     const data = {
       proveedor_id: raw.proveedor_id!,
-      costo: Number(raw.costo),
-      observacion: raw.observacion || null,
+      fecha: raw.fecha || null,
+      numero_cotizacion: raw.numero_cotizacion || null,
+      costo_unitario: Number(raw.costo_unitario),
       url: raw.url || null,
+      contacto_nombre: raw.contacto_nombre || null,
+      contacto_correo: raw.contacto_correo || null,
+      contacto_telefono: raw.contacto_telefono || null,
+      observacion: raw.observacion || null,
     };
 
     const edicion = this.cotizacionEdicion();

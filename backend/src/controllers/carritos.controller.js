@@ -780,10 +780,10 @@ async function crearCotizacion(req, res, next) {
       return res.status(400).json({ mensaje: 'Las cotizaciones de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
     }
 
-    const { proveedor_id, costo, observacion, url } = req.body;
+    const { proveedor_id, costo_unitario, fecha, numero_cotizacion, url, contacto_nombre, contacto_correo, contacto_telefono, observacion } = req.body;
     if (!proveedor_id) return res.status(400).json({ mensaje: 'El proveedor es requerido' });
-    if (costo === undefined || costo === null || Number(costo) < 0) {
-      return res.status(400).json({ mensaje: 'El costo debe ser mayor o igual a cero' });
+    if (costo_unitario === undefined || costo_unitario === null || Number(costo_unitario) < 0) {
+      return res.status(400).json({ mensaje: 'El costo unitario debe ser mayor o igual a cero' });
     }
 
     const { rows: prov } = await pool.query(
@@ -793,10 +793,23 @@ async function crearCotizacion(req, res, next) {
     if (!prov[0]) return res.status(400).json({ mensaje: 'El proveedor seleccionado no existe o no pertenece a la empresa' });
 
     const { rows } = await pool.query(
-      `insert into carrito_cotizaciones (carrito_detalle_id, proveedor_id, costo, observacion, url, creado_por)
-       values ($1, $2, $3, $4, $5, $6)
+      `insert into carrito_cotizaciones
+         (carrito_detalle_id, proveedor_id, costo_unitario, fecha, numero_cotizacion, url, contacto_nombre, contacto_correo, contacto_telefono, observacion, creado_por)
+       values ($1, $2, $3, coalesce($4, current_date), $5, $6, $7, $8, $9, $10, $11)
        returning id`,
-      [req.params.detalleId, proveedor_id, costo, observacion ? observacion.trim() : null, url ? url.trim() : null, req.usuario.id]
+      [
+        req.params.detalleId,
+        proveedor_id,
+        costo_unitario,
+        fecha || null,
+        numero_cotizacion ? numero_cotizacion.trim() : null,
+        url ? url.trim() : null,
+        contacto_nombre ? contacto_nombre.trim() : null,
+        contacto_correo ? contacto_correo.trim() : null,
+        contacto_telefono ? contacto_telefono.trim() : null,
+        observacion ? observacion.trim() : null,
+        req.usuario.id,
+      ]
     );
 
     const { rows: completo } = await pool.query(`${SELECT_COTIZACION} where q.id = $1`, [rows[0].id]);
@@ -818,10 +831,10 @@ async function actualizarCotizacion(req, res, next) {
     );
     if (!cot[0]) return res.status(404).json({ mensaje: 'Cotizacion no encontrada' });
 
-    const { proveedor_id, costo, observacion, url } = req.body;
+    const { proveedor_id, costo_unitario, fecha, numero_cotizacion, url, contacto_nombre, contacto_correo, contacto_telefono, observacion } = req.body;
     if (!proveedor_id) return res.status(400).json({ mensaje: 'El proveedor es requerido' });
-    if (costo === undefined || costo === null || Number(costo) < 0) {
-      return res.status(400).json({ mensaje: 'El costo debe ser mayor o igual a cero' });
+    if (costo_unitario === undefined || costo_unitario === null || Number(costo_unitario) < 0) {
+      return res.status(400).json({ mensaje: 'El costo unitario debe ser mayor o igual a cero' });
     }
 
     const { rows: prov } = await pool.query(
@@ -832,9 +845,22 @@ async function actualizarCotizacion(req, res, next) {
 
     await pool.query(
       `update carrito_cotizaciones set
-         proveedor_id = $1, costo = $2, observacion = $3, url = $4, modificado_por = $5
-       where id = $6`,
-      [proveedor_id, costo, observacion ? observacion.trim() : null, url ? url.trim() : null, req.usuario.id, req.params.cotizacionId]
+         proveedor_id = $1, costo_unitario = $2, fecha = coalesce($3, fecha), numero_cotizacion = $4,
+         url = $5, contacto_nombre = $6, contacto_correo = $7, contacto_telefono = $8, observacion = $9, modificado_por = $10
+       where id = $11`,
+      [
+        proveedor_id,
+        costo_unitario,
+        fecha || null,
+        numero_cotizacion ? numero_cotizacion.trim() : null,
+        url ? url.trim() : null,
+        contacto_nombre ? contacto_nombre.trim() : null,
+        contacto_correo ? contacto_correo.trim() : null,
+        contacto_telefono ? contacto_telefono.trim() : null,
+        observacion ? observacion.trim() : null,
+        req.usuario.id,
+        req.params.cotizacionId,
+      ]
     );
 
     const { rows: completo } = await pool.query(`${SELECT_COTIZACION} where q.id = $1`, [req.params.cotizacionId]);

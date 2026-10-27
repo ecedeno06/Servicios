@@ -4,6 +4,18 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Carrito, CarritoCotizacion, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
 
+export interface CotizacionFormData {
+  proveedor_id: string;
+  fecha?: string | null;
+  numero_cotizacion?: string | null;
+  costo_unitario: number;
+  url?: string | null;
+  contacto_nombre?: string | null;
+  contacto_correo?: string | null;
+  contacto_telefono?: string | null;
+  observacion?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CarritosService {
   private base = `${environment.apiUrl}/carritos`;
@@ -64,11 +76,11 @@ export class CarritosService {
     return this.http.get<CarritoCotizacion[]>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones`);
   }
 
-  crearCotizacion(carritoId: string, detalleId: string, data: { proveedor_id: string; costo: number; observacion?: string | null; url?: string | null }): Observable<CarritoCotizacion> {
+  crearCotizacion(carritoId: string, detalleId: string, data: CotizacionFormData): Observable<CarritoCotizacion> {
     return this.http.post<CarritoCotizacion>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones`, data);
   }
 
-  actualizarCotizacion(carritoId: string, detalleId: string, cotizacionId: string, data: { proveedor_id: string; costo: number; observacion?: string | null; url?: string | null }): Observable<CarritoCotizacion> {
+  actualizarCotizacion(carritoId: string, detalleId: string, cotizacionId: string, data: CotizacionFormData): Observable<CarritoCotizacion> {
     return this.http.put<CarritoCotizacion>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, data);
   }
 

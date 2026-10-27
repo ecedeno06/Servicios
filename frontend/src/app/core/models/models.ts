@@ -632,9 +632,14 @@ export interface CarritoCotizacion {
   carrito_detalle_id: string;
   proveedor_id: string;
   proveedor_nombre?: string;
-  costo: number;
-  observacion?: string | null;
+  fecha: string;
+  numero_cotizacion?: string | null;
+  costo_unitario: number;
   url?: string | null;
+  contacto_nombre?: string | null;
+  contacto_correo?: string | null;
+  contacto_telefono?: string | null;
+  observacion?: string | null;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;

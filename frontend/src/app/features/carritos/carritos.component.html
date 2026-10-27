@@ -293,43 +293,71 @@
         </div>
       } @else {
         <!-- Cotizaciones: mas de una propuesta de precio por equipo, cada una de un proveedor -->
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 10px;">
           @if (cargandoCotizaciones()) {
             <div class="desc" style="padding: 16px 0;">Cargando cotizaciones...</div>
           } @else {
             @for (d of detalles(); track d.id) {
-              <div class="card" style="padding: 12px 14px;">
-                <div class="flex items-center gap-8" style="justify-content: space-between;">
+              <div>
+                <div class="flex items-center gap-8" style="justify-content: space-between; margin-bottom: 6px;">
                   <div style="font-weight: 700; color: var(--text-heading);">{{ d.marca }} {{ d.modelo }}</div>
                   @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'crear')) {
                     <button type="button" class="btn btn-outline btn-sm" (click)="abrirPopupCotizacion(d)">+ Agregar cotizacion</button>
                   }
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
-                  @for (q of cotizaciones(d.id); track q.id) {
-                    <div class="row-clickable" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 8px;" (click)="puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'editar') && abrirPopupCotizacion(d, q)">
-                      <div>
-                        <div style="font-weight: 600;">{{ q.proveedor_nombre }}</div>
-                        @if (q.observacion) { <div class="desc text-sm">{{ q.observacion }}</div> }
-                      </div>
-                      <div class="flex items-center gap-8">
-                        <div style="font-weight: 700;">{{ q.costo | currency:'USD':'symbol':'1.2-2' }}</div>
-                        @if (q.url) {
-                          <a [href]="q.url" target="_blank" rel="noopener" title="Abrir enlace" (click)="$event.stopPropagation()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-                          </a>
-                        }
-                        @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'eliminar')) {
-                          <button type="button" class="btn-icon btn-icon-danger" title="Eliminar cotizacion" aria-label="Eliminar cotizacion" (click)="$event.stopPropagation(); eliminarCotizacion(d, q)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                          </button>
-                        }
-                      </div>
-                    </div>
-                  } @empty {
-                    <div class="desc text-sm" style="font-style: italic;">Sin cotizaciones registradas.</div>
-                  }
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>ID Cotizacion</th>
+                        <th>Costo Unitario</th>
+                        <th>URL</th>
+                        <th>Contacto</th>
+                        <th>Correo</th>
+                        <th>Telefono</th>
+                        <th class="th-narrow">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (q of cotizaciones(d.id); track q.id) {
+                        <tr>
+                          <td>{{ q.fecha | date:'d-MMM-y':'UTC' }}</td>
+                          <td>{{ q.proveedor_nombre }}</td>
+                          <td>{{ q.numero_cotizacion || '-' }}</td>
+                          <td>{{ q.costo_unitario | currency:'USD':'symbol':'1.2-2' }}</td>
+                          <td>
+                            @if (q.url) {
+                              <a [href]="q.url" target="_blank" rel="noopener" title="Abrir enlace">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                              </a>
+                            } @else { - }
+                          </td>
+                          <td>{{ q.contacto_nombre || '-' }}</td>
+                          <td>{{ q.contacto_correo || '-' }}</td>
+                          <td>{{ q.contacto_telefono || '-' }}</td>
+                          <td class="table-actions">
+                            <div class="actions-inner">
+                              @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'editar')) {
+                                <button type="button" class="btn-icon" title="Editar" aria-label="Editar" (click)="abrirPopupCotizacion(d, q)">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </button>
+                              }
+                              @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'eliminar')) {
+                                <button type="button" class="btn-icon btn-icon-danger" title="Eliminar cotizacion" aria-label="Eliminar cotizacion" (click)="eliminarCotizacion(d, q)">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr><td colspan="9"><div class="empty-state">Sin cotizaciones registradas.</div></td></tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
               </div>
             } @empty {
@@ -358,6 +386,10 @@
       <form [formGroup]="cotizacionForm" (ngSubmit)="guardarCotizacion()">
         <div class="form-grid">
           <div class="form-group">
+            <label>Fecha</label>
+            <input class="input" type="date" formControlName="fecha" />
+          </div>
+          <div class="form-group">
             <label>Proveedor</label>
             <select class="input" formControlName="proveedor_id">
               <option value="">Seleccionar...</option>
@@ -366,15 +398,40 @@
               }
             </select>
           </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
           <div class="form-group">
-            <label>Costo (USD)</label>
-            <input class="input" type="number" min="0" step="0.01" formControlName="costo" placeholder="0.00" />
+            <label>ID Cotizacion</label>
+            <input class="input" type="text" formControlName="numero_cotizacion" placeholder="Numero/referencia del proveedor" />
+          </div>
+          <div class="form-group">
+            <label>Costo Unitario (USD)</label>
+            <input class="input" type="number" min="0" step="0.01" formControlName="costo_unitario" placeholder="0.00" />
           </div>
         </div>
 
         <div class="form-group" style="margin-top: 10px;">
           <label>URL de la cotizacion</label>
           <input class="input" type="text" formControlName="url" placeholder="https://..." />
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Contacto</label>
+            <input class="input" type="text" formControlName="contacto_nombre" />
+          </div>
+          <div class="form-group">
+            <label>Correo</label>
+            <input class="input" type="email" formControlName="contacto_correo" />
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 10px;">
+          <div class="form-group">
+            <label>Telefono</label>
+            <input class="input" type="text" formControlName="contacto_telefono" />
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 10px;">
