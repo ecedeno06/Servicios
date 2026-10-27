@@ -101,7 +101,10 @@
           <span class="th-sortable" (click)="ordenarPor('status')">Status <span class="orden-icono">{{ iconoOrden('status') }}</span></span>
           <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroStatus()" (ngModelChange)="filtroStatus.set($event)" />
         </th>
-        <th></th>
+        <th>
+          <span class="th-sortable" style="visibility:hidden;">&nbsp;</span>
+          <input class="input input-th-filtro" style="visibility:hidden;" disabled />
+        </th>
       </tr>
     </thead>
     <tbody>
