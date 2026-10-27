@@ -37,11 +37,11 @@
       <label>Mensaje</label>
       <input class="input" type="text" [ngModel]="mensajeTexto()" (ngModelChange)="mensajeTexto.set($event)" placeholder="Texto del error..." />
     </div>
-    <button type="button" class="btn btn-primary" (click)="buscar()" [disabled]="cargando()">
-      {{ cargando() ? 'Buscando...' : 'Buscar' }}
+    <button type="button" class="btn-icon" (click)="buscar()" [disabled]="cargando()" [title]="cargando() ? 'Buscando...' : 'Buscar'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     </button>
-    <button type="button" class="btn btn-outline" (click)="verTodoElHistorico()" [disabled]="cargando()" title="Quita el filtro de fecha y trae todo el historico (hasta 500 registros)">
-      Ver todo el historico
+    <button type="button" class="btn-icon" (click)="verTodoElHistorico()" [disabled]="cargando()" title="Ver todo el historico -- quita el filtro de fecha y trae todo el historico (hasta 500 registros)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 3"/></svg>
     </button>
   </div>
 </div>

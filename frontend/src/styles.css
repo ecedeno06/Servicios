@@ -432,6 +432,8 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 .btn-icon:hover { background: var(--bg-surface-hover); }
 .btn-icon svg { width: 16px; height: 16px; }
+.btn-icon:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-icon:disabled:hover { background: none; }
 
 .btn-icon-danger { background: var(--bg-surface); color: var(--red-600); border-color: var(--red-100); }
 .btn-icon-danger:hover { background: var(--red-100); }

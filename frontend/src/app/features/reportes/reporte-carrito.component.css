@@ -32,6 +32,3 @@
    fijo la columna hereda el mismo ancho flexible que las de texto largo
    (Titulo, Aprobado por, etc.) y queda con espacio vacio de sobra. */
 .th-id-carrito { width: 110px; }
-
-.btn-icon:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-icon:disabled:hover { background: none; }

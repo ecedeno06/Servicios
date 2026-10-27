@@ -32,6 +32,3 @@
   margin: 0;
   flex-shrink: 0;
 }
-
-.btn-icon:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-icon:disabled:hover { background: none; }
