@@ -13,7 +13,8 @@ import { CarritoPdfCotizacion, CarritoPdfData, CarritoPdfService } from '../../c
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
-import { Carrito, CarritoCotizacion, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
+import { Carrito, CarritoAdjunto, CarritoCotizacion, CarritoDetalle, Categoria, EstadoCarrito, HistoricoMovimientoCarrito, Producto, Proveedor } from '../../core/models/models';
+import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 
 // Orden fijo del flujo -- sin saltos ni retrocesos (ver plan). El unico
 // boton de avance que se muestra es el siguiente de esta lista respecto
@@ -301,7 +302,7 @@ export class CarritosComponent implements OnInit {
 
   historico = signal<HistoricoMovimientoCarrito[]>([]);
   cargandoHistorico = signal(false);
-  pestanaDetalle = signal<'historico' | 'cotizaciones'>('historico');
+  pestanaDetalle = signal<'historico' | 'cotizaciones' | 'adjuntos'>('historico');
 
   // Cotizaciones por linea de equipo -- mapa { carrito_detalle_id: CarritoCotizacion[] },
   // cargado perezosamente al entrar al tab (ver cargarCotizaciones()).
@@ -756,6 +757,158 @@ export class CarritosComponent implements OnInit {
     if (!ok) return;
     this.cargarCotizacionesDeDetalle(detalle.id);
     this.toast.exito('Cotizacion eliminada correctamente.');
+  }
+
+  // -------------------------------------------------------------
+  // ADJUNTOS: archivos (PDF/PNG/JPG en base64, pegados o subidos) o
+  // enlaces por linea de equipo -- mismo patron que las cotizaciones
+  // (mapa por linea, cargado perezosamente al entrar al tab).
+  // -------------------------------------------------------------
+
+  adjuntosPorDetalle = signal<Record<string, CarritoAdjunto[]>>({});
+  cargandoAdjuntos = signal(false);
+  guardandoAdjunto = signal(false);
+  errorArchivoAdjunto = signal<string | null>(null);
+  private readonly TIPOS_ARCHIVO_ADJUNTO = ['image/png', 'image/jpeg', 'application/pdf'];
+  private readonly MAX_ARCHIVO_ADJUNTO_BYTES = 3 * 1024 * 1024; // 3MB, antes de inflarse a base64
+  private readonly MAX_ADJUNTOS_POR_LINEA = 20;
+
+  adjuntos(detalleId: string): CarritoAdjunto[] {
+    return this.adjuntosPorDetalle()[detalleId] || [];
+  }
+
+  cargarAdjuntos(): void {
+    const carrito = this.carritoSeleccionado();
+    const lineas = this.detalles();
+    if (!carrito || !lineas.length) {
+      this.adjuntosPorDetalle.set({});
+      return;
+    }
+
+    this.cargandoAdjuntos.set(true);
+    forkJoin(
+      lineas.map((d) =>
+        this.srv.listarAdjuntos(carrito.id, d.id).pipe(map((data) => [d.id, data] as const))
+      )
+    ).subscribe({
+      next: (pares) => {
+        this.adjuntosPorDetalle.set(Object.fromEntries(pares));
+        this.cargandoAdjuntos.set(false);
+      },
+      error: () => this.cargandoAdjuntos.set(false),
+    });
+  }
+
+  private agregarAdjuntoEntry(detalleId: string, adjunto: CarritoAdjunto): void {
+    this.adjuntosPorDetalle.update((map) => ({ ...map, [detalleId]: [adjunto, ...(map[detalleId] || [])] }));
+  }
+
+  onSeleccionArchivoAdjunto(event: Event, detalleId: string): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.procesarArchivoAdjunto(archivo, detalleId);
+    input.value = '';
+  }
+
+  onPasteAdjunto(event: ClipboardEvent, detalleId: string): void {
+    this.errorArchivoAdjunto.set(null);
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const archivo = items[i].getAsFile();
+        if (archivo) this.procesarArchivoAdjunto(archivo, detalleId);
+        return;
+      }
+    }
+    this.errorArchivoAdjunto.set('No se encontró ninguna imagen en el portapapeles.');
+  }
+
+  private procesarArchivoAdjunto(archivo: File, detalleId: string): void {
+    this.errorArchivoAdjunto.set(null);
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    if (!this.TIPOS_ARCHIVO_ADJUNTO.includes(archivo.type)) {
+      this.errorArchivoAdjunto.set('Solo se permiten archivos PDF, PNG o JPG.');
+    } else if (archivo.size > this.MAX_ARCHIVO_ADJUNTO_BYTES) {
+      this.errorArchivoAdjunto.set('El archivo supera el tamaño máximo permitido (3MB).');
+    } else if (this.adjuntos(detalleId).length >= this.MAX_ADJUNTOS_POR_LINEA) {
+      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS_POR_LINEA} archivos adjuntos.`);
+    } else {
+      this.guardandoAdjunto.set(true);
+      leerArchivoComoBase64(archivo).then((base64) => {
+        this.srv.crearAdjunto(carrito.id, detalleId, { imagen_base64: base64 }).subscribe({
+          next: (nuevo) => {
+            this.guardandoAdjunto.set(false);
+            this.agregarAdjuntoEntry(detalleId, nuevo);
+          },
+          error: (err) => {
+            this.guardandoAdjunto.set(false);
+            this.errorArchivoAdjunto.set(err.error?.mensaje || 'No se pudo guardar el adjunto.');
+          },
+        });
+      }).catch(() => {
+        this.guardandoAdjunto.set(false);
+        this.errorArchivoAdjunto.set('No se pudo leer el archivo.');
+      });
+    }
+  }
+
+  actualizarDescripcionAdjunto(detalleId: string, adjuntoId: string, descripcion: string): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    this.srv.actualizarAdjunto(carrito.id, detalleId, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.adjuntosPorDetalle.update((map) => ({
+        ...map,
+        [detalleId]: (map[detalleId] || []).map((a) => (a.id === adjuntoId ? actualizado : a)),
+      })),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
+  }
+
+  async eliminarAdjunto(detalleId: string, adjuntoId: string): Promise<void> {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    const ok = await this.confirmPasswordSrv.confirmar(
+      '¿Eliminar este adjunto?',
+      (password) => this.srv.eliminarAdjunto(carrito.id, detalleId, adjuntoId, password)
+    );
+    if (!ok) return;
+    this.adjuntosPorDetalle.update((map) => ({
+      ...map,
+      [detalleId]: (map[detalleId] || []).filter((a) => a.id !== adjuntoId),
+    }));
+    this.toast.exito('Adjunto eliminado correctamente.');
+  }
+
+  // Un <a href="data:..."> no alcanza (Chrome/Edge bloquean la navegacion a
+  // un data: URI), asi que se convierte a Blob primero -- mismo patron que
+  // equipos-asignados.component.ts#abrirAdjunto.
+  abrirAdjunto(base64: string): void {
+    const [meta, datos] = base64.split(',');
+    const tipo = meta.match(/data:(.*);base64/)?.[1] || 'application/octet-stream';
+    const binario = atob(datos);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  tipoArchivoAdjuntoLabel(base64: string): string {
+    if (base64.startsWith('data:application/pdf')) return 'Documento PDF';
+    if (base64.startsWith('data:image/png')) return 'Imagen PNG';
+    if (base64.startsWith('data:image/jpeg')) return 'Imagen JPG';
+    return 'Archivo';
+  }
+
+  tamanoArchivoAdjunto(base64: string): string {
+    const datos = base64.split(',')[1] || '';
+    const padding = (datos.match(/=+$/) || [''])[0].length;
+    const bytes = Math.max(0, (datos.length * 3) / 4 - padding);
+    if (bytes < 1024) return `${Math.round(bytes)} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
   // Popup de opciones del PDF: que secciones aparte del encabezado/equipos

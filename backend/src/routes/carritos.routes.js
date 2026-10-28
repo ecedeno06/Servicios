@@ -31,4 +31,10 @@ router.post('/:id/detalles/:detalleId/cotizaciones', requirePermiso('carrito_com
 router.put('/:id/detalles/:detalleId/cotizaciones/:cotizacionId', requirePermiso('carrito_compras', 'editar'), ctrl.actualizarCotizacion);
 router.delete('/:id/detalles/:detalleId/cotizaciones/:cotizacionId', requirePermiso('carrito_compras', 'eliminar'), requirePassword, ctrl.eliminarCotizacion);
 
+// Adjuntos (archivos o enlaces por linea, uno o mas)
+router.get('/:id/detalles/:detalleId/adjuntos', requirePermiso('carrito_compras', 'ver'), ctrl.listarAdjuntos);
+router.post('/:id/detalles/:detalleId/adjuntos', requirePermiso('carrito_compras', 'crear'), ctrl.crearAdjunto);
+router.put('/:id/detalles/:detalleId/adjuntos/:adjuntoId', requirePermiso('carrito_compras', 'editar'), ctrl.actualizarAdjunto);
+router.delete('/:id/detalles/:detalleId/adjuntos/:adjuntoId', requirePermiso('carrito_compras', 'eliminar'), requirePassword, ctrl.eliminarAdjunto);
+
 module.exports = router;

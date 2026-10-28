@@ -258,6 +258,7 @@
       <div class="tabs">
         <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'historico'" (click)="pestanaDetalle.set('historico')">Historico de Movimientos</button>
         <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'cotizaciones'" (click)="pestanaDetalle.set('cotizaciones'); cargarCotizaciones()">Cotizaciones</button>
+        <button type="button" class="tab-btn" [class.active]="pestanaDetalle() === 'adjuntos'" (click)="pestanaDetalle.set('adjuntos'); cargarAdjuntos()">Adjuntos</button>
       </div>
 
       @if (pestanaDetalle() === 'historico') {
@@ -288,7 +289,7 @@
             </div>
           }
         </div>
-      } @else {
+      } @else if (pestanaDetalle() === 'cotizaciones') {
         <!-- Cotizaciones: mas de una propuesta de precio por equipo, cada una de un proveedor -->
         <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 10px;">
           @if (cargandoCotizaciones()) {
@@ -356,6 +357,68 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            } @empty {
+              <div class="empty-state">No hay equipos en esta solicitud todavia.</div>
+            }
+          }
+        </div>
+      } @else {
+        <!-- Adjuntos: archivos (PDF/PNG/JPG, pegados o subidos) o enlaces por equipo -->
+        <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 10px;">
+          @if (cargandoAdjuntos()) {
+            <div class="desc" style="padding: 16px 0;">Cargando adjuntos...</div>
+          } @else {
+            @for (d of detalles(); track d.id) {
+              <div>
+                <div class="flex items-center gap-8" style="justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap;">
+                  <div style="font-weight: 700; color: var(--text-heading);">{{ d.marca }} {{ d.modelo }}</div>
+                  @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'crear')) {
+                    <div class="flex items-center gap-8">
+                      <div class="paste-area" tabindex="0" title="Haz clic aqui y presiona Ctrl+V para pegar una imagen" (paste)="onPasteAdjunto($event, d.id)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                        <span>Pegar (Ctrl+V)</span>
+                      </div>
+                      <input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" #inputArchivoAdjunto hidden (change)="onSeleccionArchivoAdjunto($event, d.id)" />
+                      <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjunto()" (click)="inputArchivoAdjunto.click()">
+                        {{ guardandoAdjunto() ? 'Subiendo...' : '+ Adjuntar archivo' }}
+                      </button>
+                    </div>
+                  }
+                </div>
+
+                @if (errorArchivoAdjunto()) {
+                  <div class="error-text" style="margin-bottom: 8px;">{{ errorArchivoAdjunto() }}</div>
+                }
+
+                @for (a of adjuntos(d.id); track a.id) {
+                  <div class="card" style="margin-bottom: 10px; padding: 12px;">
+                    @if (a.imagen_base64) {
+                      <strong class="text-sm">{{ tipoArchivoAdjuntoLabel(a.imagen_base64) }} &middot; {{ tamanoArchivoAdjunto(a.imagen_base64) }}</strong>
+                    } @else {
+                      <strong class="text-sm">Enlace</strong>
+                    }
+                    <div class="text-muted text-sm" style="margin-top: 2px;">
+                      {{ (a.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ a.creado_por_nombre }}
+                    </div>
+                    <div class="form-group" style="margin-top: 8px;">
+                      <label style="font-size: 11px;">Descripcion</label>
+                      <textarea class="input" rows="1" style="min-height: 36px;" [value]="a.descripcion || ''" [disabled]="!puedeEditarCotizaciones() || !menu.tienePermiso('carrito_compras', 'editar')" placeholder="Ej. Factura de compra, ficha tecnica..." (blur)="actualizarDescripcionAdjunto(d.id, a.id, $any($event.target).value)"></textarea>
+                    </div>
+                    <div class="flex items-center gap-8" style="margin-top: 8px;">
+                      @if (a.imagen_base64) {
+                        <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(a.imagen_base64)">Ver / Descargar</button>
+                      } @else if (a.url) {
+                        <a class="btn btn-outline btn-sm" [href]="a.url" target="_blank" rel="noopener">Abrir enlace</a>
+                      }
+                      @if (puedeEditarCotizaciones() && menu.tienePermiso('carrito_compras', 'eliminar')) {
+                        <button type="button" class="btn btn-danger btn-sm" (click)="eliminarAdjunto(d.id, a.id)">Eliminar</button>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="empty-state">Sin adjuntos registrados.</div>
+                }
               </div>
             } @empty {
               <div class="empty-state">No hay equipos en esta solicitud todavia.</div>

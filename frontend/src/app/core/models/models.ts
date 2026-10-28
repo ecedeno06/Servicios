@@ -648,6 +648,20 @@ export interface CarritoCotizacion {
   updated_at: string;
 }
 
+// Adjunto de una linea del carrito: un archivo (PDF/PNG/JPG en base64,
+// pegado o subido) o un enlace (url) -- puede haber mas de uno por linea.
+export interface CarritoAdjunto {
+  id: string;
+  carrito_detalle_id: string;
+  fecha: string;
+  descripcion?: string | null;
+  url?: string | null;
+  imagen_base64?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  created_at: string;
+}
+
 // Historico de cambios de estado de un carrito -- una fila por cada
 // transicion (de null al crear, o de un estado a otro al avanzar/devolver).
 export interface HistoricoMovimientoCarrito {

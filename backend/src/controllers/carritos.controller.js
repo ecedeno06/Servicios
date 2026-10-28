@@ -870,6 +870,115 @@ async function eliminarCotizacion(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// -------------------------------------------------------------
+// ADJUNTOS (archivos PDF/PNG/JPG en base64, pegados o subidos, o enlaces
+// url -- uno o mas por linea, mismo patron que equipo_adjuntos)
+// -------------------------------------------------------------
+
+const MAX_ADJUNTOS = 20;
+const MAX_IMAGEN_BASE64_CHARS = 4 * 1024 * 1024; // ~4MB de texto base64 (~3MB de archivo real)
+const IMAGEN_BASE64_PREFIJO = /^data:(image\/png|image\/jpeg|application\/pdf);base64,/;
+
+const SELECT_ADJUNTO = `
+  select a.*, uc.nombre as creado_por_nombre
+  from carrito_adjuntos a
+  join usuarios uc on uc.id = a.creado_por
+`;
+
+function bloqueadoPorEstado(carrito) {
+  return carrito.estado === 'aprobada' || carrito.estado === 'cerrada';
+}
+
+async function listarAdjuntos(req, res, next) {
+  try {
+    if (!(await verificarDetalle(req))) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    const { rows } = await pool.query(
+      `${SELECT_ADJUNTO} where a.carrito_detalle_id = $1 order by a.fecha desc, a.created_at desc`,
+      [req.params.detalleId]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
+async function crearAdjunto(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (bloqueadoPorEstado(carrito)) {
+      return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { descripcion, url, imagen_base64 } = req.body;
+    if (!url && !imagen_base64) {
+      return res.status(400).json({ mensaje: 'Debe incluir un archivo o una url' });
+    }
+    if (imagen_base64) {
+      if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+        return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+      }
+      if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+        return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+      }
+    }
+
+    const { rows: cuenta } = await pool.query(
+      'select count(*)::int as n from carrito_adjuntos where carrito_detalle_id = $1', [req.params.detalleId]
+    );
+    if (cuenta[0].n >= MAX_ADJUNTOS) {
+      return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS} archivos adjuntos` });
+    }
+
+    const { rows } = await pool.query(
+      `insert into carrito_adjuntos (carrito_detalle_id, descripcion, url, imagen_base64, creado_por)
+       values ($1, $2, $3, $4, $5) returning id`,
+      [req.params.detalleId, descripcion ? descripcion.trim() : null, url ? url.trim() : null, imagen_base64 || null, req.usuario.id]
+    );
+    const { rows: completo } = await pool.query(`${SELECT_ADJUNTO} where a.id = $1`, [rows[0].id]);
+    res.status(201).json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function actualizarAdjunto(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (bloqueadoPorEstado(carrito)) {
+      return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { rows: adj } = await pool.query(
+      'select id from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
+      [req.params.adjuntoId, req.params.detalleId]
+    );
+    if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+
+    const { descripcion, url } = req.body;
+    await pool.query(
+      'update carrito_adjuntos set descripcion = $1, url = $2 where id = $3',
+      [descripcion ? descripcion.trim() : null, url ? url.trim() : null, req.params.adjuntoId]
+    );
+    const { rows: completo } = await pool.query(`${SELECT_ADJUNTO} where a.id = $1`, [req.params.adjuntoId]);
+    res.json(completo[0]);
+  } catch (err) { next(err); }
+}
+
+async function eliminarAdjunto(req, res, next) {
+  try {
+    const carrito = await verificarDetalle(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (bloqueadoPorEstado(carrito)) {
+      return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
+    }
+
+    const { rowCount } = await pool.query(
+      'delete from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
+      [req.params.adjuntoId, req.params.detalleId]
+    );
+    if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
+    res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar,
   reporte,
@@ -890,4 +999,8 @@ module.exports = {
   crearCotizacion,
   actualizarCotizacion,
   eliminarCotizacion,
+  listarAdjuntos,
+  crearAdjunto,
+  actualizarAdjunto,
+  eliminarAdjunto,
 };

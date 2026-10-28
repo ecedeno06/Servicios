@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Carrito, CarritoCotizacion, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
+import { Carrito, CarritoAdjunto, CarritoCotizacion, CarritoDetalle, EstadoCarrito, HistoricoMovimientoCarrito, ReporteCarritoResponse } from '../models/models';
 
 export interface CotizacionFormData {
   proveedor_id: string;
@@ -14,6 +14,12 @@ export interface CotizacionFormData {
   contacto_correo?: string | null;
   contacto_telefono?: string | null;
   observacion?: string | null;
+}
+
+export interface AdjuntoFormData {
+  descripcion?: string | null;
+  url?: string | null;
+  imagen_base64?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -86,5 +92,22 @@ export class CarritosService {
 
   eliminarCotizacion(carritoId: string, detalleId: string, cotizacionId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, { body: { password } });
+  }
+
+  // ADJUNTOS (archivos o enlaces de una linea, uno o mas)
+  listarAdjuntos(carritoId: string, detalleId: string): Observable<CarritoAdjunto[]> {
+    return this.http.get<CarritoAdjunto[]>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos`);
+  }
+
+  crearAdjunto(carritoId: string, detalleId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
+    return this.http.post<CarritoAdjunto>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos`, data);
+  }
+
+  actualizarAdjunto(carritoId: string, detalleId: string, adjuntoId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
+    return this.http.put<CarritoAdjunto>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos/${adjuntoId}`, data);
+  }
+
+  eliminarAdjunto(carritoId: string, detalleId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 }
