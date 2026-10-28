@@ -522,9 +522,11 @@ export class EquiposAsignadosComponent implements OnInit {
     }
   }
 
+  // Clic en una fila siempre abre esa fila en modo edicion, incluso si ya
+  // estaba abierta -- volver a modo "nuevo" es explicito, solo con los
+  // botones "+ Nuevo"/"Nuevo equipo" (antes un segundo clic en la misma
+  // fila la reseteaba a "nuevo", lo cual no era lo esperado).
   seleccionar(e: EquipoAsignado): void {
-    const yaSeleccionado = this.seleccionado()?.id === e.id;
-    if (yaSeleccionado) { this.nuevo(); return; }
     this.abrirParaEditar(e);
   }
 
