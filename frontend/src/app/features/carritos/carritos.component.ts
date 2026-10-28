@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -141,7 +141,8 @@ export class CarritosComponent implements OnInit {
     private toast: ToastService,
     public menu: MenuService,
     private confirmSrv: ConfirmService,
-    private confirmPasswordSrv: ConfirmPasswordService
+    private confirmPasswordSrv: ConfirmPasswordService,
+    private elRef: ElementRef<HTMLElement>
   ) {}
 
   ngOnInit(): void {
@@ -367,11 +368,19 @@ export class CarritosComponent implements OnInit {
     return cantidad * (d.costo_estimado ?? 0);
   }
 
+  // Mismo patron que "+ Nuevo" en Equipos Asignados: limpia el formulario
+  // y pone el foco en el primer campo (Titulo) -- el setTimeout espera a
+  // que Angular renderice el bloque @if del encabezado antes de buscarlo.
   abrirNuevo(): void {
     this.carritoSeleccionado.set(null);
     this.detalles.set([]);
     this.historico.set([]);
     this.headerForm.reset({ titulo: '', fecha_solicitud: this.hoyISO(), observacion: '' });
+    setTimeout(() => {
+      const input = this.elRef.nativeElement.querySelector<HTMLInputElement>('#carritoTituloInput');
+      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input?.focus();
+    });
   }
 
   abrirCarrito(c: Carrito): void {
