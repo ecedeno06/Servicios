@@ -761,75 +761,56 @@ export class CarritosComponent implements OnInit {
 
   // -------------------------------------------------------------
   // ADJUNTOS: archivos (PDF/PNG/JPG en base64, pegados o subidos) o
-  // enlaces por linea de equipo -- mismo patron que las cotizaciones
-  // (mapa por linea, cargado perezosamente al entrar al tab).
+  // enlaces de la SOLICITUD completa (no de una linea de equipo).
   // -------------------------------------------------------------
 
-  adjuntosPorDetalle = signal<Record<string, CarritoAdjunto[]>>({});
+  adjuntos = signal<CarritoAdjunto[]>([]);
   cargandoAdjuntos = signal(false);
   guardandoAdjunto = signal(false);
   errorArchivoAdjunto = signal<string | null>(null);
   private readonly TIPOS_ARCHIVO_ADJUNTO = ['image/png', 'image/jpeg', 'application/pdf'];
   private readonly MAX_ARCHIVO_ADJUNTO_BYTES = 3 * 1024 * 1024; // 3MB, antes de inflarse a base64
-  private readonly MAX_ADJUNTOS_POR_LINEA = 20;
-
-  adjuntos(detalleId: string): CarritoAdjunto[] {
-    return this.adjuntosPorDetalle()[detalleId] || [];
-  }
+  private readonly MAX_ADJUNTOS = 20;
 
   cargarAdjuntos(): void {
     const carrito = this.carritoSeleccionado();
-    const lineas = this.detalles();
-    if (!carrito || !lineas.length) {
-      this.adjuntosPorDetalle.set({});
+    if (!carrito) {
+      this.adjuntos.set([]);
       return;
     }
-
     this.cargandoAdjuntos.set(true);
-    forkJoin(
-      lineas.map((d) =>
-        this.srv.listarAdjuntos(carrito.id, d.id).pipe(map((data) => [d.id, data] as const))
-      )
-    ).subscribe({
-      next: (pares) => {
-        this.adjuntosPorDetalle.set(Object.fromEntries(pares));
+    this.srv.listarAdjuntos(carrito.id).subscribe({
+      next: (data) => {
+        this.adjuntos.set(data);
         this.cargandoAdjuntos.set(false);
       },
       error: () => this.cargandoAdjuntos.set(false),
     });
   }
 
-  private agregarAdjuntoEntry(detalleId: string, adjunto: CarritoAdjunto): void {
-    this.adjuntosPorDetalle.update((map) => ({ ...map, [detalleId]: [adjunto, ...(map[detalleId] || [])] }));
+  private agregarAdjuntoEntry(adjunto: CarritoAdjunto): void {
+    this.adjuntos.update((arr) => [adjunto, ...arr]);
   }
 
-  // Adjunto como enlace (sin archivo) -- un input + boton por linea, en vez
-  // de un popup, ya que es un solo campo.
-  nuevoEnlacePorDetalle = signal<Record<string, string>>({});
+  // Adjunto como enlace (sin archivo) -- un input + boton, en vez de un
+  // popup, ya que es un solo campo.
+  nuevoEnlaceAdjunto = signal('');
 
-  enlaceTexto(detalleId: string): string {
-    return this.nuevoEnlacePorDetalle()[detalleId] || '';
-  }
-
-  setEnlaceTexto(detalleId: string, valor: string): void {
-    this.nuevoEnlacePorDetalle.update((map) => ({ ...map, [detalleId]: valor }));
-  }
-
-  agregarEnlaceAdjunto(detalleId: string): void {
+  agregarEnlaceAdjunto(): void {
     this.errorArchivoAdjunto.set(null);
     const carrito = this.carritoSeleccionado();
-    const url = this.enlaceTexto(detalleId).trim();
+    const url = this.nuevoEnlaceAdjunto().trim();
     if (!carrito || !url) return;
-    if (this.adjuntos(detalleId).length >= this.MAX_ADJUNTOS_POR_LINEA) {
-      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS_POR_LINEA} archivos adjuntos.`);
+    if (this.adjuntos().length >= this.MAX_ADJUNTOS) {
+      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS} archivos adjuntos.`);
       return;
     }
     this.guardandoAdjunto.set(true);
-    this.srv.crearAdjunto(carrito.id, detalleId, { url }).subscribe({
+    this.srv.crearAdjunto(carrito.id, { url }).subscribe({
       next: (nuevo) => {
         this.guardandoAdjunto.set(false);
-        this.agregarAdjuntoEntry(detalleId, nuevo);
-        this.setEnlaceTexto(detalleId, '');
+        this.agregarAdjuntoEntry(nuevo);
+        this.nuevoEnlaceAdjunto.set('');
       },
       error: (err) => {
         this.guardandoAdjunto.set(false);
@@ -838,40 +819,37 @@ export class CarritosComponent implements OnInit {
     });
   }
 
-  actualizarUrlAdjunto(detalleId: string, adjuntoId: string, url: string): void {
+  actualizarUrlAdjunto(adjuntoId: string, url: string): void {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-    this.srv.actualizarAdjunto(carrito.id, detalleId, adjuntoId, { url }).subscribe({
-      next: (actualizado) => this.adjuntosPorDetalle.update((map) => ({
-        ...map,
-        [detalleId]: (map[detalleId] || []).map((a) => (a.id === adjuntoId ? actualizado : a)),
-      })),
+    this.srv.actualizarAdjunto(carrito.id, adjuntoId, { url }).subscribe({
+      next: (actualizado) => this.adjuntos.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar el enlace'),
     });
   }
 
-  onSeleccionArchivoAdjunto(event: Event, detalleId: string): void {
+  onSeleccionArchivoAdjunto(event: Event): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
-    if (archivo) this.procesarArchivoAdjunto(archivo, detalleId);
+    if (archivo) this.procesarArchivoAdjunto(archivo);
     input.value = '';
   }
 
-  onPasteAdjunto(event: ClipboardEvent, detalleId: string): void {
+  onPasteAdjunto(event: ClipboardEvent): void {
     this.errorArchivoAdjunto.set(null);
     const items = event.clipboardData?.items;
     if (!items) return;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith('image/')) {
         const archivo = items[i].getAsFile();
-        if (archivo) this.procesarArchivoAdjunto(archivo, detalleId);
+        if (archivo) this.procesarArchivoAdjunto(archivo);
         return;
       }
     }
     this.errorArchivoAdjunto.set('No se encontró ninguna imagen en el portapapeles.');
   }
 
-  private procesarArchivoAdjunto(archivo: File, detalleId: string): void {
+  private procesarArchivoAdjunto(archivo: File): void {
     this.errorArchivoAdjunto.set(null);
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
@@ -879,15 +857,15 @@ export class CarritosComponent implements OnInit {
       this.errorArchivoAdjunto.set('Solo se permiten archivos PDF, PNG o JPG.');
     } else if (archivo.size > this.MAX_ARCHIVO_ADJUNTO_BYTES) {
       this.errorArchivoAdjunto.set('El archivo supera el tamaño máximo permitido (3MB).');
-    } else if (this.adjuntos(detalleId).length >= this.MAX_ADJUNTOS_POR_LINEA) {
-      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS_POR_LINEA} archivos adjuntos.`);
+    } else if (this.adjuntos().length >= this.MAX_ADJUNTOS) {
+      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS} archivos adjuntos.`);
     } else {
       this.guardandoAdjunto.set(true);
       leerArchivoComoBase64(archivo).then((base64) => {
-        this.srv.crearAdjunto(carrito.id, detalleId, { imagen_base64: base64 }).subscribe({
+        this.srv.crearAdjunto(carrito.id, { imagen_base64: base64 }).subscribe({
           next: (nuevo) => {
             this.guardandoAdjunto.set(false);
-            this.agregarAdjuntoEntry(detalleId, nuevo);
+            this.agregarAdjuntoEntry(nuevo);
           },
           error: (err) => {
             this.guardandoAdjunto.set(false);
@@ -901,30 +879,24 @@ export class CarritosComponent implements OnInit {
     }
   }
 
-  actualizarDescripcionAdjunto(detalleId: string, adjuntoId: string, descripcion: string): void {
+  actualizarDescripcionAdjunto(adjuntoId: string, descripcion: string): void {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
-    this.srv.actualizarAdjunto(carrito.id, detalleId, adjuntoId, { descripcion }).subscribe({
-      next: (actualizado) => this.adjuntosPorDetalle.update((map) => ({
-        ...map,
-        [detalleId]: (map[detalleId] || []).map((a) => (a.id === adjuntoId ? actualizado : a)),
-      })),
+    this.srv.actualizarAdjunto(carrito.id, adjuntoId, { descripcion }).subscribe({
+      next: (actualizado) => this.adjuntos.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
     });
   }
 
-  async eliminarAdjunto(detalleId: string, adjuntoId: string): Promise<void> {
+  async eliminarAdjunto(adjuntoId: string): Promise<void> {
     const carrito = this.carritoSeleccionado();
     if (!carrito) return;
     const ok = await this.confirmPasswordSrv.confirmar(
       '¿Eliminar este adjunto?',
-      (password) => this.srv.eliminarAdjunto(carrito.id, detalleId, adjuntoId, password)
+      (password) => this.srv.eliminarAdjunto(carrito.id, adjuntoId, password)
     );
     if (!ok) return;
-    this.adjuntosPorDetalle.update((map) => ({
-      ...map,
-      [detalleId]: (map[detalleId] || []).filter((a) => a.id !== adjuntoId),
-    }));
+    this.adjuntos.update((arr) => arr.filter((a) => a.id !== adjuntoId));
     this.toast.exito('Adjunto eliminado correctamente.');
   }
 

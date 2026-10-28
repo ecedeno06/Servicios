@@ -94,20 +94,20 @@ export class CarritosService {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/cotizaciones/${cotizacionId}`, { body: { password } });
   }
 
-  // ADJUNTOS (archivos o enlaces de una linea, uno o mas)
-  listarAdjuntos(carritoId: string, detalleId: string): Observable<CarritoAdjunto[]> {
-    return this.http.get<CarritoAdjunto[]>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos`);
+  // ADJUNTOS (archivos o enlaces de la solicitud completa, uno o mas)
+  listarAdjuntos(carritoId: string): Observable<CarritoAdjunto[]> {
+    return this.http.get<CarritoAdjunto[]>(`${this.base}/${carritoId}/adjuntos`);
   }
 
-  crearAdjunto(carritoId: string, detalleId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
-    return this.http.post<CarritoAdjunto>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos`, data);
+  crearAdjunto(carritoId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
+    return this.http.post<CarritoAdjunto>(`${this.base}/${carritoId}/adjuntos`, data);
   }
 
-  actualizarAdjunto(carritoId: string, detalleId: string, adjuntoId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
-    return this.http.put<CarritoAdjunto>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos/${adjuntoId}`, data);
+  actualizarAdjunto(carritoId: string, adjuntoId: string, data: AdjuntoFormData): Observable<CarritoAdjunto> {
+    return this.http.put<CarritoAdjunto>(`${this.base}/${carritoId}/adjuntos/${adjuntoId}`, data);
   }
 
-  eliminarAdjunto(carritoId: string, detalleId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
-    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/detalles/${detalleId}/adjuntos/${adjuntoId}`, { body: { password } });
+  eliminarAdjunto(carritoId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${carritoId}/adjuntos/${adjuntoId}`, { body: { password } });
   }
 }

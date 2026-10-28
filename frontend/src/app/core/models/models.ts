@@ -661,11 +661,12 @@ export interface CarritoCotizacion {
   updated_at: string;
 }
 
-// Adjunto de una linea del carrito: un archivo (PDF/PNG/JPG en base64,
-// pegado o subido) o un enlace (url) -- puede haber mas de uno por linea.
+// Adjunto de la solicitud completa (no de una linea de equipo): un archivo
+// (PDF/PNG/JPG en base64, pegado o subido) o un enlace (url) -- puede
+// haber mas de uno por solicitud.
 export interface CarritoAdjunto {
   id: string;
-  carrito_detalle_id: string;
+  carrito_id: string;
   fecha: string;
   descripcion?: string | null;
   url?: string | null;

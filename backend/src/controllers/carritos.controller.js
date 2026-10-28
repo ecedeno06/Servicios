@@ -872,7 +872,7 @@ async function eliminarCotizacion(req, res, next) {
 
 // -------------------------------------------------------------
 // ADJUNTOS (archivos PDF/PNG/JPG en base64, pegados o subidos, o enlaces
-// url -- uno o mas por linea, mismo patron que equipo_adjuntos)
+// url -- uno o mas por SOLICITUD completa, no por linea de equipo)
 // -------------------------------------------------------------
 
 const MAX_ADJUNTOS = 20;
@@ -891,10 +891,10 @@ function bloqueadoPorEstado(carrito) {
 
 async function listarAdjuntos(req, res, next) {
   try {
-    if (!(await verificarDetalle(req))) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    if (!(await verificarCarrito(req))) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
     const { rows } = await pool.query(
-      `${SELECT_ADJUNTO} where a.carrito_detalle_id = $1 order by a.fecha desc, a.created_at desc`,
-      [req.params.detalleId]
+      `${SELECT_ADJUNTO} where a.carrito_id = $1 order by a.fecha desc, a.created_at desc`,
+      [req.params.id]
     );
     res.json(rows);
   } catch (err) { next(err); }
@@ -902,8 +902,8 @@ async function listarAdjuntos(req, res, next) {
 
 async function crearAdjunto(req, res, next) {
   try {
-    const carrito = await verificarDetalle(req);
-    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    const carrito = await verificarCarrito(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
     if (bloqueadoPorEstado(carrito)) {
       return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
     }
@@ -922,16 +922,16 @@ async function crearAdjunto(req, res, next) {
     }
 
     const { rows: cuenta } = await pool.query(
-      'select count(*)::int as n from carrito_adjuntos where carrito_detalle_id = $1', [req.params.detalleId]
+      'select count(*)::int as n from carrito_adjuntos where carrito_id = $1', [req.params.id]
     );
     if (cuenta[0].n >= MAX_ADJUNTOS) {
       return res.status(400).json({ mensaje: `No se permiten mas de ${MAX_ADJUNTOS} archivos adjuntos` });
     }
 
     const { rows } = await pool.query(
-      `insert into carrito_adjuntos (carrito_detalle_id, descripcion, url, imagen_base64, creado_por)
+      `insert into carrito_adjuntos (carrito_id, descripcion, url, imagen_base64, creado_por)
        values ($1, $2, $3, $4, $5) returning id`,
-      [req.params.detalleId, descripcion ? descripcion.trim() : null, url ? url.trim() : null, imagen_base64 || null, req.usuario.id]
+      [req.params.id, descripcion ? descripcion.trim() : null, url ? url.trim() : null, imagen_base64 || null, req.usuario.id]
     );
     const { rows: completo } = await pool.query(`${SELECT_ADJUNTO} where a.id = $1`, [rows[0].id]);
     res.status(201).json(completo[0]);
@@ -940,15 +940,15 @@ async function crearAdjunto(req, res, next) {
 
 async function actualizarAdjunto(req, res, next) {
   try {
-    const carrito = await verificarDetalle(req);
-    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    const carrito = await verificarCarrito(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
     if (bloqueadoPorEstado(carrito)) {
       return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
     }
 
     const { rows: adj } = await pool.query(
-      'select id, descripcion, url from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
-      [req.params.adjuntoId, req.params.detalleId]
+      'select id, descripcion, url from carrito_adjuntos where id = $1 and carrito_id = $2',
+      [req.params.adjuntoId, req.params.id]
     );
     if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
 
@@ -973,15 +973,15 @@ async function actualizarAdjunto(req, res, next) {
 
 async function eliminarAdjunto(req, res, next) {
   try {
-    const carrito = await verificarDetalle(req);
-    if (!carrito) return res.status(404).json({ mensaje: 'Carrito o linea no encontrada' });
+    const carrito = await verificarCarrito(req);
+    if (!carrito) return res.status(404).json({ mensaje: 'Carrito no encontrado' });
     if (bloqueadoPorEstado(carrito)) {
       return res.status(400).json({ mensaje: 'Los adjuntos de un carrito "Aprobado" o "Cerrado" no se pueden editar' });
     }
 
     const { rowCount } = await pool.query(
-      'delete from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
-      [req.params.adjuntoId, req.params.detalleId]
+      'delete from carrito_adjuntos where id = $1 and carrito_id = $2',
+      [req.params.adjuntoId, req.params.id]
     );
     if (!rowCount) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
     res.json({ ok: true, mensaje: 'Adjunto eliminado correctamente' });
