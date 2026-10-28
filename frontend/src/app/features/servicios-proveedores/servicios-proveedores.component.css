@@ -31,6 +31,10 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  scrollbar-width: none;
+}
+.modal-card-scroll .modal-scroll-body::-webkit-scrollbar {
+  display: none;
 }
 
 /* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
