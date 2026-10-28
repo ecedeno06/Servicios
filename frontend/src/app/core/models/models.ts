@@ -430,6 +430,19 @@ export interface ImagenServicioProveedor {
   created_at: string;
 }
 
+// Adjunto de un incidente: a diferencia de ImagenServicioProveedor (los
+// demas "adjuntos"), tambien puede ser solo un enlace (url), sin archivo.
+export interface IncidenteAdjunto {
+  id: string;
+  fecha: string;
+  descripcion?: string | null;
+  imagen_base64?: string | null;
+  url?: string | null;
+  creado_por: string;
+  creado_por_nombre?: string;
+  created_at: string;
+}
+
 // Catalogo con CRUD (Configuracion > Estados de Servicio) -- reemplaza la
 // lista fija que antes vivia en el frontend. 'estado' en ServicioProveedor
 // sigue siendo texto (sincronizado con el nombre de este catalogo al
@@ -722,6 +735,7 @@ export interface IncidenteNota {
   estado_nuevo?: EstadoIncidente | null;
   imagen_base64?: string | null;
   descripcion_adjunto?: string | null;
+  url?: string | null;
   creado_por: string;
   creado_por_nombre?: string;
   created_at: string;

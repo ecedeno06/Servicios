@@ -17,6 +17,7 @@ import {
   FacturaServicioProveedor,
   FormaPagoFactura,
   ImagenServicioProveedor,
+  IncidenteAdjunto,
   IncidenteNota,
   Proveedor,
   SectorProveedorItem,
@@ -945,7 +946,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // factura (guardado/borrado inmediato, reutiliza abrirAdjunto/
   // tipoArchivoLabel/tamanoArchivo ya genericos). Solo visible una vez
   // que se eligio un incidente existente para editar.
-  adjuntosIncidenteActual = signal<ImagenServicioProveedor[]>([]);
+  adjuntosIncidenteActual = signal<IncidenteAdjunto[]>([]);
   guardandoAdjuntoIncidente = signal(false);
   errorArchivoAdjuntoIncidente = signal<string | null>(null);
 
@@ -970,6 +971,44 @@ export class ServiciosProveedoresComponent implements OnInit {
     this.serviciosSrv.actualizarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId, { descripcion }).subscribe({
       next: (actualizado) => this.adjuntosIncidenteActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la descripción'),
+    });
+  }
+
+  actualizarUrlAdjuntoIncidente(adjuntoId: string, url: string): void {
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteSeleccionado();
+    if (!servicio || !incidente) return;
+    this.serviciosSrv.actualizarAdjuntoIncidente(servicio.id, incidente.id, adjuntoId, { url }).subscribe({
+      next: (actualizado) => this.adjuntosIncidenteActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar el enlace'),
+    });
+  }
+
+  // Adjunto como enlace (sin archivo) -- un input + boton, igual que en
+  // carritos.component.ts#agregarEnlaceAdjunto.
+  nuevoEnlaceAdjuntoIncidente = signal('');
+
+  agregarEnlaceAdjuntoIncidente(): void {
+    this.errorArchivoAdjuntoIncidente.set(null);
+    const servicio = this.servicioEdicion();
+    const incidente = this.incidenteSeleccionado();
+    const url = this.nuevoEnlaceAdjuntoIncidente().trim();
+    if (!servicio || !incidente || !url) return;
+    if (this.adjuntosIncidenteActual().length >= this.MAX_IMAGENES) {
+      this.errorArchivoAdjuntoIncidente.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+      return;
+    }
+    this.guardandoAdjuntoIncidente.set(true);
+    this.serviciosSrv.crearAdjuntoIncidente(servicio.id, incidente.id, { url }).subscribe({
+      next: (nuevo) => {
+        this.guardandoAdjuntoIncidente.set(false);
+        this.adjuntosIncidenteActual.update((arr) => [nuevo, ...arr]);
+        this.nuevoEnlaceAdjuntoIncidente.set('');
+      },
+      error: (err) => {
+        this.guardandoAdjuntoIncidente.set(false);
+        this.errorArchivoAdjuntoIncidente.set(err.error?.mensaje || 'No se pudo guardar el enlace.');
+      },
     });
   }
 
@@ -1044,13 +1083,14 @@ export class ServiciosProveedoresComponent implements OnInit {
   notaForm = this.fb.group({
     nota: [''],
     estado_nuevo: [''],
+    url: [''],
   });
 
   abrirNotasIncidente(inc: ServicioIncidente): void {
     const servicio = this.servicioEdicion();
     if (!servicio) return;
     this.incidenteNotasSeleccionado.set(inc);
-    this.notaForm.reset({ nota: '', estado_nuevo: '' });
+    this.notaForm.reset({ nota: '', estado_nuevo: '', url: '' });
     this.archivoNotaBase64.set(null);
     this.archivoNotaNombre.set(null);
     this.errorNota.set(null);
@@ -1129,9 +1169,10 @@ export class ServiciosProveedoresComponent implements OnInit {
     const nota = (val.nota || '').trim();
     const estadoNuevo = val.estado_nuevo || undefined;
     const archivo = this.archivoNotaBase64();
+    const url = (val.url || '').trim();
 
-    if (!nota && !estadoNuevo && !archivo) {
-      this.errorNota.set('Agrega una nota, un cambio de estado o un documento.');
+    if (!nota && !estadoNuevo && !archivo && !url) {
+      this.errorNota.set('Agrega una nota, un cambio de estado, un documento o una url.');
       return;
     }
 
@@ -1141,6 +1182,7 @@ export class ServiciosProveedoresComponent implements OnInit {
       nota: nota || undefined,
       estado_nuevo: estadoNuevo,
       imagen_base64: archivo || undefined,
+      url: url || undefined,
     }).subscribe({
       next: ({ nota: nuevaNota, incidente: incidenteActualizado }) => {
         this.guardandoNota.set(false);
@@ -1148,7 +1190,7 @@ export class ServiciosProveedoresComponent implements OnInit {
         this.incidenteNotasSeleccionado.set(incidenteActualizado);
         this.incidentesServicioActual.update((arr) => arr.map((i) => (i.id === incidenteActualizado.id ? incidenteActualizado : i)));
         if (this.incidenteSeleccionado()?.id === incidenteActualizado.id) this.incidenteSeleccionado.set(incidenteActualizado);
-        this.notaForm.reset({ nota: '', estado_nuevo: '' });
+        this.notaForm.reset({ nota: '', estado_nuevo: '', url: '' });
         this.archivoNotaBase64.set(null);
         this.archivoNotaNombre.set(null);
         this.cargarDatos();
@@ -1670,7 +1712,7 @@ export class ServiciosProveedoresComponent implements OnInit {
   // -------------------------------------------------------------------
   modalIncidentesInfoAbierta = signal(false);
   servicioIncidentesInfoActual = signal<ServicioProveedor | null>(null);
-  incidentesInfoModal = signal<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]>([]);
+  incidentesInfoModal = signal<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: IncidenteAdjunto[] })[]>([]);
   cargandoIncidentesInfoModal = signal(false);
 
   abrirModalIncidentesInfo(s: ServicioProveedor): void {

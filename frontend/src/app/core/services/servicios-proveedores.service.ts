@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos, ImagenServicioProveedor, ServicioIncidente, IncidenteNota } from '../models/models';
+import { ServicioProveedor, FacturaServicioProveedor, ReporteServicioPagos, ImagenServicioProveedor, IncidenteAdjunto, ServicioIncidente, IncidenteNota } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ServiciosProveedoresService {
@@ -104,8 +104,8 @@ export class ServiciosProveedoresService {
   // Version "todo en uno" (incidentes + notas + adjuntos de cada uno) para
   // el popup de solo lectura "Eventos, Notas y Adjuntos" -- una sola
   // peticion en vez de pedir notas/adjuntos por separado por incidente.
-  listarIncidentesConDetalle(servicioId: string): Observable<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]> {
-    return this.http.get<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: ImagenServicioProveedor[] })[]>(`${this.base}/${servicioId}/incidentes-info`);
+  listarIncidentesConDetalle(servicioId: string): Observable<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: IncidenteAdjunto[] })[]> {
+    return this.http.get<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: IncidenteAdjunto[] })[]>(`${this.base}/${servicioId}/incidentes-info`);
   }
 
   crearIncidente(servicioId: string, data: Partial<ServicioIncidente>): Observable<ServicioIncidente> {
@@ -120,17 +120,17 @@ export class ServiciosProveedoresService {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${servicioId}/incidentes/${incidenteId}`, { body: { password } });
   }
 
-  // ADJUNTOS DE INCIDENTE (imagenes/documentos)
-  listarAdjuntosIncidente(servicioId: string, incidenteId: string): Observable<ImagenServicioProveedor[]> {
-    return this.http.get<ImagenServicioProveedor[]>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`);
+  // ADJUNTOS DE INCIDENTE (imagenes/documentos o enlaces)
+  listarAdjuntosIncidente(servicioId: string, incidenteId: string): Observable<IncidenteAdjunto[]> {
+    return this.http.get<IncidenteAdjunto[]>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`);
   }
 
-  crearAdjuntoIncidente(servicioId: string, incidenteId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
-    return this.http.post<ImagenServicioProveedor>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`, data);
+  crearAdjuntoIncidente(servicioId: string, incidenteId: string, data: { descripcion?: string; imagen_base64?: string; url?: string }): Observable<IncidenteAdjunto> {
+    return this.http.post<IncidenteAdjunto>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos`, data);
   }
 
-  actualizarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string, data: { descripcion?: string }): Observable<ImagenServicioProveedor> {
-    return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`, data);
+  actualizarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string, data: { descripcion?: string; url?: string }): Observable<IncidenteAdjunto> {
+    return this.http.put<IncidenteAdjunto>(`${this.base}/${servicioId}/incidentes/${incidenteId}/adjuntos/${adjuntoId}`, data);
   }
 
   eliminarAdjuntoIncidente(servicioId: string, incidenteId: string, adjuntoId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
@@ -145,7 +145,7 @@ export class ServiciosProveedoresService {
   crearNotaIncidente(
     servicioId: string,
     incidenteId: string,
-    data: { nota?: string; estado_nuevo?: string; imagen_base64?: string; descripcion_adjunto?: string }
+    data: { nota?: string; estado_nuevo?: string; imagen_base64?: string; descripcion_adjunto?: string; url?: string }
   ): Observable<{ nota: IncidenteNota; incidente: ServicioIncidente }> {
     return this.http.post<{ nota: IncidenteNota; incidente: ServicioIncidente }>(`${this.base}/${servicioId}/incidentes/${incidenteId}/notas`, data);
   }

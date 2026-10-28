@@ -735,6 +735,19 @@
                   <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjuntoIncidente()" (click)="inputArchivoAdjuntoIncidente.click()">
                     {{ guardandoAdjuntoIncidente() ? 'Subiendo...' : '+ Adjuntar archivo' }}
                   </button>
+                  <input
+                    class="input"
+                    type="text"
+                    style="width: 200px;"
+                    placeholder="https://... (enlace)"
+                    [ngModel]="nuevoEnlaceAdjuntoIncidente()"
+                    (ngModelChange)="nuevoEnlaceAdjuntoIncidente.set($event)"
+                    [ngModelOptions]="{standalone: true}"
+                    (keydown.enter)="agregarEnlaceAdjuntoIncidente()"
+                  />
+                  <button type="button" class="btn btn-outline btn-sm" [disabled]="!nuevoEnlaceAdjuntoIncidente().trim() || guardandoAdjuntoIncidente()" (click)="agregarEnlaceAdjuntoIncidente()">
+                    + Enlace
+                  </button>
                 </div>
               </div>
 
@@ -744,7 +757,11 @@
 
               @for (img of adjuntosIncidenteActual(); track img.id) {
                 <div class="card" style="margin-bottom: 10px; padding: 12px;">
-                  <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                  @if (img.imagen_base64) {
+                    <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                  } @else {
+                    <strong class="text-sm">Enlace</strong>
+                  }
                   <div class="text-muted text-sm" style="margin-top: 2px;">
                     {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                   </div>
@@ -752,8 +769,17 @@
                     <label style="font-size: 11px;">Descripción</label>
                     <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Captura de pantalla, evidencia..." (blur)="actualizarDescripcionAdjuntoIncidente(img.id, $any($event.target).value)"></textarea>
                   </div>
+                  <div class="form-group" style="margin-top: 8px;">
+                    <label style="font-size: 11px;">URL</label>
+                    <input class="input" type="text" [value]="img.url || ''" placeholder="https://..." (blur)="actualizarUrlAdjuntoIncidente(img.id, $any($event.target).value)" />
+                  </div>
                   <div class="flex items-center gap-8" style="margin-top: 8px;">
-                    <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                    @if (img.imagen_base64) {
+                      <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                    }
+                    @if (img.url) {
+                      <a class="btn btn-outline btn-sm" [href]="img.url" target="_blank" rel="noopener">Abrir enlace</a>
+                    }
                     <button type="button" class="btn btn-danger btn-sm" (click)="eliminarAdjuntoIncidente(img.id)">Eliminar</button>
                   </div>
                 </div>
@@ -1013,6 +1039,11 @@
             </div>
           </div>
 
+          <div class="form-group" style="margin-top: 10px;">
+            <label>URL (opcional)</label>
+            <input class="input" type="text" formControlName="url" placeholder="https://..." />
+          </div>
+
           @if (errorNota()) {
             <div class="error-text" style="margin-top: 8px;">{{ errorNota() }}</div>
           }
@@ -1054,6 +1085,14 @@
                   <button type="button" class="btn-icon" (click)="abrirAdjunto(n.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
                   </button>
+                </div>
+              }
+              @if (n.url) {
+                <div class="flex items-center gap-8" style="margin-top: 8px; justify-content: space-between;">
+                  <span class="text-sm" style="overflow-wrap: anywhere;">{{ n.url }}</span>
+                  <a [href]="n.url" target="_blank" rel="noopener" class="btn-icon" title="Abrir enlace" aria-label="Abrir enlace">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                  </a>
                 </div>
               }
             </div>
@@ -1544,7 +1583,11 @@
                     @for (img of inc.adjuntos; track img.id) {
                       <div class="flex items-center gap-8" style="justify-content: space-between;">
                         <div style="overflow-wrap: anywhere;">
-                          <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                          @if (img.imagen_base64) {
+                            <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                          } @else {
+                            <div class="text-sm"><strong>Enlace</strong> &middot; {{ img.url }}</div>
+                          }
                           <div class="text-muted text-sm" style="margin-top: 2px;">
                             {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                           </div>
@@ -1552,9 +1595,15 @@
                             <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
                           }
                         </div>
-                        <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-                        </button>
+                        @if (img.imagen_base64) {
+                          <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                          </button>
+                        } @else if (img.url) {
+                          <a [href]="img.url" target="_blank" rel="noopener" class="btn-icon" title="Abrir enlace" aria-label="Abrir enlace">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                          </a>
+                        }
                       </div>
                     }
                   </div>

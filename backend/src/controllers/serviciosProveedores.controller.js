@@ -680,15 +680,21 @@ async function listarAdjuntosIncidente(req, res, next) {
 
 async function crearAdjuntoIncidente(req, res, next) {
   try {
-    const { descripcion, imagen_base64 } = req.body;
+    const { descripcion, imagen_base64, url } = req.body;
 
     if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
 
-    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
-      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    const urlLimpia = url && url.trim() ? url.trim() : null;
+    if (!imagen_base64 && !urlLimpia) {
+      return res.status(400).json({ mensaje: 'Debe incluir un archivo o una url' });
     }
-    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
-      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+    if (imagen_base64) {
+      if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+        return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+      }
+      if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+        return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+      }
     }
 
     const { rows: cuenta } = await pool.query(
@@ -700,10 +706,10 @@ async function crearAdjuntoIncidente(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      `insert into incidente_adjuntos (incidente_id, descripcion, imagen_base64, creado_por)
-       values ($1, $2, $3, $4)
+      `insert into incidente_adjuntos (incidente_id, descripcion, imagen_base64, url, creado_por)
+       values ($1, $2, $3, $4, $5)
        returning id`,
-      [req.params.incidenteId, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+      [req.params.incidenteId, descripcion ? descripcion.trim() : null, imagen_base64 || null, urlLimpia, req.usuario.id]
     );
 
     const { rows: completo } = await pool.query(
@@ -719,19 +725,26 @@ async function crearAdjuntoIncidente(req, res, next) {
 
 async function actualizarAdjuntoIncidente(req, res, next) {
   try {
-    const { descripcion } = req.body;
-
     if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
 
     const { rows: adj } = await pool.query(
-      'select id from incidente_adjuntos where id = $1 and incidente_id = $2',
+      'select id, descripcion, url from incidente_adjuntos where id = $1 and incidente_id = $2',
       [req.params.adjuntoId, req.params.incidenteId]
     );
     if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
 
+    // Actualizacion parcial -- solo se tocan los campos que vienen en el
+    // body (editar la descripcion no debe borrar la url ya guardada).
+    const descripcion = req.body.descripcion !== undefined
+      ? (req.body.descripcion ? req.body.descripcion.trim() : null)
+      : adj[0].descripcion;
+    const url = req.body.url !== undefined
+      ? (req.body.url ? req.body.url.trim() : null)
+      : adj[0].url;
+
     await pool.query(
-      'update incidente_adjuntos set descripcion = $1 where id = $2',
-      [descripcion ? descripcion.trim() : null, req.params.adjuntoId]
+      'update incidente_adjuntos set descripcion = $1, url = $2 where id = $3',
+      [descripcion, url, req.params.adjuntoId]
     );
 
     const { rows: completo } = await pool.query(
@@ -782,13 +795,14 @@ async function listarNotasIncidente(req, res, next) {
 
 async function crearNotaIncidente(req, res, next) {
   try {
-    const { nota, estado_nuevo, imagen_base64, descripcion_adjunto } = req.body;
+    const { nota, estado_nuevo, imagen_base64, descripcion_adjunto, url } = req.body;
 
     if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
 
     const notaLimpia = nota && nota.trim() ? nota.trim() : null;
-    if (!notaLimpia && !estado_nuevo && !imagen_base64) {
-      return res.status(400).json({ mensaje: 'Agrega una nota, un cambio de estado o un documento' });
+    const urlLimpia = url && url.trim() ? url.trim() : null;
+    if (!notaLimpia && !estado_nuevo && !imagen_base64 && !urlLimpia) {
+      return res.status(400).json({ mensaje: 'Agrega una nota, un cambio de estado, un documento o una url' });
     }
     if (estado_nuevo && !ESTADOS_INCIDENTE.includes(estado_nuevo)) {
       return res.status(400).json({ mensaje: 'Estado de incidente invalido' });
@@ -817,8 +831,8 @@ async function crearNotaIncidente(req, res, next) {
 
     const { rows } = await pool.query(
       `insert into incidente_notas
-         (incidente_id, nota, estado_anterior, estado_nuevo, imagen_base64, descripcion_adjunto, creado_por)
-       values ($1, $2, $3, $4, $5, $6, $7)
+         (incidente_id, nota, estado_anterior, estado_nuevo, imagen_base64, descripcion_adjunto, url, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)
        returning id`,
       [
         req.params.incidenteId,
@@ -827,6 +841,7 @@ async function crearNotaIncidente(req, res, next) {
         estado_nuevo || null,
         imagen_base64 || null,
         descripcion_adjunto ? descripcion_adjunto.trim() : null,
+        urlLimpia,
         req.usuario.id,
       ]
     );
