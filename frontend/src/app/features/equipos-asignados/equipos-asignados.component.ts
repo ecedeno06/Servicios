@@ -16,6 +16,7 @@ import { MultiSelectFilterComponent } from '../../core/components/multi-select-f
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
+import { MenuService } from '../../core/services/menu.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
   { valor: 'en_uso', etiqueta: 'En uso' },
@@ -398,7 +399,8 @@ export class EquiposAsignadosComponent implements OnInit {
     private checklistPdfSrv: ChecklistEquipoPdfService,
     public auth: AuthService,
     private toast: ToastService,
-    private confirmPasswordSrv: ConfirmPasswordService
+    private confirmPasswordSrv: ConfirmPasswordService,
+    public menu: MenuService
   ) {}
 
   ngOnInit(): void {
@@ -727,6 +729,19 @@ export class EquiposAsignadosComponent implements OnInit {
 
   abrirUrlEquipo(url: string): void {
     window.open(url, '_blank', 'noopener');
+  }
+
+  // Boton "+ Nuevo" del listado: limpia el formulario y lleva la vista
+  // hasta el, con el foco ya puesto en Categoria -- evita tener que bajar
+  // a buscarlo a mano cada vez. El setTimeout espera a que Angular
+  // termine de re-renderizar el reset del form antes de buscar el <select>.
+  nuevoYEnfocarCategoria(): void {
+    this.nuevo();
+    setTimeout(() => {
+      const select = this.elRef.nativeElement.querySelector<HTMLSelectElement>('#equipoCategoriaSelect');
+      select?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      select?.focus();
+    });
   }
 
   nuevo(): void {

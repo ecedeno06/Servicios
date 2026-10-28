@@ -32,6 +32,9 @@
 <div class="page-header">
   <div class="desc">{{ equiposFiltrados().length }} de {{ equipos().length }} equipo(s). Haz clic en una fila para editarla.</div>
   <div class="flex items-center gap-8">
+    @if (menu.tienePermiso('equipos_asignados', 'crear')) {
+      <button type="button" class="btn btn-accent" (click)="nuevoYEnfocarCategoria()">+ Nuevo</button>
+    }
     <input
       class="input"
       style="max-width:280px;"
@@ -324,7 +327,7 @@
     <div class="form-grid">
       <div class="form-group">
         <label>Categoria *</label>
-        <select class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
+        <select id="equipoCategoriaSelect" class="input" formControlName="categoria_id" (change)="onCategoriaChange()">
           <option value="" disabled>Selecciona una categoria</option>
           @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
         </select>
