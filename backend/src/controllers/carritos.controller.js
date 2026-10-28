@@ -947,15 +947,24 @@ async function actualizarAdjunto(req, res, next) {
     }
 
     const { rows: adj } = await pool.query(
-      'select id from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
+      'select id, descripcion, url from carrito_adjuntos where id = $1 and carrito_detalle_id = $2',
       [req.params.adjuntoId, req.params.detalleId]
     );
     if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
 
-    const { descripcion, url } = req.body;
+    // Actualizacion parcial -- solo se tocan los campos que vienen en el
+    // body (editar la descripcion no debe borrar la url ya guardada, ni
+    // viceversa).
+    const descripcion = req.body.descripcion !== undefined
+      ? (req.body.descripcion ? req.body.descripcion.trim() : null)
+      : adj[0].descripcion;
+    const url = req.body.url !== undefined
+      ? (req.body.url ? req.body.url.trim() : null)
+      : adj[0].url;
+
     await pool.query(
       'update carrito_adjuntos set descripcion = $1, url = $2 where id = $3',
-      [descripcion ? descripcion.trim() : null, url ? url.trim() : null, req.params.adjuntoId]
+      [descripcion, url, req.params.adjuntoId]
     );
     const { rows: completo } = await pool.query(`${SELECT_ADJUNTO} where a.id = $1`, [req.params.adjuntoId]);
     res.json(completo[0]);

@@ -803,6 +803,53 @@ export class CarritosComponent implements OnInit {
     this.adjuntosPorDetalle.update((map) => ({ ...map, [detalleId]: [adjunto, ...(map[detalleId] || [])] }));
   }
 
+  // Adjunto como enlace (sin archivo) -- un input + boton por linea, en vez
+  // de un popup, ya que es un solo campo.
+  nuevoEnlacePorDetalle = signal<Record<string, string>>({});
+
+  enlaceTexto(detalleId: string): string {
+    return this.nuevoEnlacePorDetalle()[detalleId] || '';
+  }
+
+  setEnlaceTexto(detalleId: string, valor: string): void {
+    this.nuevoEnlacePorDetalle.update((map) => ({ ...map, [detalleId]: valor }));
+  }
+
+  agregarEnlaceAdjunto(detalleId: string): void {
+    this.errorArchivoAdjunto.set(null);
+    const carrito = this.carritoSeleccionado();
+    const url = this.enlaceTexto(detalleId).trim();
+    if (!carrito || !url) return;
+    if (this.adjuntos(detalleId).length >= this.MAX_ADJUNTOS_POR_LINEA) {
+      this.errorArchivoAdjunto.set(`Se alcanzó el máximo de ${this.MAX_ADJUNTOS_POR_LINEA} archivos adjuntos.`);
+      return;
+    }
+    this.guardandoAdjunto.set(true);
+    this.srv.crearAdjunto(carrito.id, detalleId, { url }).subscribe({
+      next: (nuevo) => {
+        this.guardandoAdjunto.set(false);
+        this.agregarAdjuntoEntry(detalleId, nuevo);
+        this.setEnlaceTexto(detalleId, '');
+      },
+      error: (err) => {
+        this.guardandoAdjunto.set(false);
+        this.errorArchivoAdjunto.set(err.error?.mensaje || 'No se pudo guardar el enlace.');
+      },
+    });
+  }
+
+  actualizarUrlAdjunto(detalleId: string, adjuntoId: string, url: string): void {
+    const carrito = this.carritoSeleccionado();
+    if (!carrito) return;
+    this.srv.actualizarAdjunto(carrito.id, detalleId, adjuntoId, { url }).subscribe({
+      next: (actualizado) => this.adjuntosPorDetalle.update((map) => ({
+        ...map,
+        [detalleId]: (map[detalleId] || []).map((a) => (a.id === adjuntoId ? actualizado : a)),
+      })),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar el enlace'),
+    });
+  }
+
   onSeleccionArchivoAdjunto(event: Event, detalleId: string): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
