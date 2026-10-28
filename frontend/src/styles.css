@@ -350,6 +350,11 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; }
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.main::-webkit-scrollbar {
+  display: none;
 }
 
 .topbar {
