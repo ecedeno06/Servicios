@@ -560,6 +560,9 @@ export class EquiposAsignadosComponent implements OnInit {
       no_factura: e.no_factura ?? '',
       url: e.url ?? '',
     });
+    // La categoria de un equipo ya creado no se cambia desde aca -- solo
+    // queda habilitada al partir de cero con el boton "+ Nuevo".
+    this.form.get('categoria_id')?.disable();
     this.cargarHistorial(e.id);
     this.errorArchivoImagen.set(null);
     this.cargarAdjuntos(e.id);
@@ -757,6 +760,7 @@ export class EquiposAsignadosComponent implements OnInit {
       mac_address: '', ip_fija: '', hardware_address: '',
       precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '', url: '',
     });
+    this.form.get('categoria_id')?.enable();
   }
 
   guardar(): void {
