@@ -1541,7 +1541,7 @@
                     {{ (inc.fecha_incidente | date:'d-MMM-y h:mm a') | lowercase }}
                     @if (inc.no_ticket_fabricante) { &middot; Ticket: {{ inc.no_ticket_fabricante }} }
                   </div>
-                  <div class="text-sm" style="margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(inc.descripcion)"></div>
+                  <div class="text-sm evento-descripcion" style="margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(inc.descripcion)"></div>
                 </div>
                 <span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)" style="flex-shrink: 0;">{{ inc.estado }}</span>
               </div>

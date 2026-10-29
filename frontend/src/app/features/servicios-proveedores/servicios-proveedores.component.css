@@ -200,3 +200,14 @@
 .notas-historial-list::-webkit-scrollbar {
   display: none;
 }
+
+/* Descripcion de un evento en el popup "Eventos, Notas y Adjuntos": resaltada
+   en negrilla, 2px mas grande que el .text-sm base (12.5px) y en azul con
+   sombra luminosa, para distinguirla del resto del historico (pedido
+   explicito). */
+.evento-descripcion {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #2563eb;
+  text-shadow: 0 0 8px rgba(37, 99, 235, 0.55);
+}
