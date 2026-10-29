@@ -211,3 +211,23 @@
   color: #2563eb;
   text-shadow: 0 0 8px rgba(37, 99, 235, 0.55);
 }
+
+/* Icono de nota delante del texto de cada entrada del historico (pedido
+   explicito), en el popup "Eventos, Notas y Adjuntos". */
+.nota-linea {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 2px;
+}
+.nota-linea-texto {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.nota-icono {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-muted);
+}

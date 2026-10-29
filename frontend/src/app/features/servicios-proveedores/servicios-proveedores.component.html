@@ -1561,12 +1561,21 @@
                         }
                         @if (n.nota) {
                           @if (n.url) {
-                            <a class="text-sm" style="margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere; display: block;" [href]="n.url" target="_blank" rel="noopener">{{ n.nota }}</a>
+                            <a class="text-sm nota-linea" [href]="n.url" target="_blank" rel="noopener">
+                              <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                              <span class="nota-linea-texto">{{ n.nota }}</span>
+                            </a>
                           } @else {
-                            <div class="text-sm" style="margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(n.nota)"></div>
+                            <div class="text-sm nota-linea">
+                              <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                              <span class="nota-linea-texto" [innerHTML]="textoConEnlaces(n.nota)"></span>
+                            </div>
                           }
                         } @else if (n.url) {
-                          <a class="text-sm" style="margin-top: 2px; display: block;" [href]="n.url" target="_blank" rel="noopener">Ver enlace</a>
+                          <a class="text-sm nota-linea" [href]="n.url" target="_blank" rel="noopener">
+                            <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                            <span class="nota-linea-texto">Ver enlace</span>
+                          </a>
                         }
                         @if (n.imagen_base64) {
                           <div class="flex items-center gap-8" style="margin-top: 4px; justify-content: space-between;">
