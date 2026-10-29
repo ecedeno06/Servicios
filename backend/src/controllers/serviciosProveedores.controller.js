@@ -728,23 +728,30 @@ async function actualizarAdjuntoIncidente(req, res, next) {
     if (!(await verificarIncidente(req))) return res.status(404).json({ mensaje: 'Incidente no encontrado' });
 
     const { rows: adj } = await pool.query(
-      'select id, descripcion, url from incidente_adjuntos where id = $1 and incidente_id = $2',
+      'select id from incidente_adjuntos where id = $1 and incidente_id = $2',
       [req.params.adjuntoId, req.params.incidenteId]
     );
     if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
 
     // Actualizacion parcial -- solo se tocan los campos que vienen en el
-    // body (editar la descripcion no debe borrar la url ya guardada).
-    const descripcion = req.body.descripcion !== undefined
+    // body (editar la descripcion no debe borrar la url ya guardada, ni
+    // viceversa). UPDATE atomico con CASE (en vez de leer el valor actual
+    // y reescribirlo) para que editar descripcion y url casi al mismo
+    // tiempo (dos requests separados, uno por cada blur) no pueda pisar
+    // el valor que el otro acaba de guardar.
+    const tieneDescripcion = req.body.descripcion !== undefined;
+    const descripcion = tieneDescripcion
       ? (req.body.descripcion ? req.body.descripcion.trim() : null)
-      : adj[0].descripcion;
-    const url = req.body.url !== undefined
-      ? (req.body.url ? req.body.url.trim() : null)
-      : adj[0].url;
+      : null;
+    const tieneUrl = req.body.url !== undefined;
+    const url = tieneUrl ? (req.body.url ? req.body.url.trim() : null) : null;
 
     await pool.query(
-      'update incidente_adjuntos set descripcion = $1, url = $2 where id = $3',
-      [descripcion, url, req.params.adjuntoId]
+      `update incidente_adjuntos
+         set descripcion = case when $1 then $2::text else descripcion end,
+             url = case when $3 then $4::text else url end
+       where id = $5`,
+      [tieneDescripcion, descripcion, tieneUrl, url, req.params.adjuntoId]
     );
 
     const { rows: completo } = await pool.query(
