@@ -1542,7 +1542,13 @@
                     @if (inc.no_ticket_fabricante) { &middot; Ticket: {{ inc.no_ticket_fabricante }} }
                   </div>
                   <div class="descripcion-linea" style="margin-top: 4px;">
-                    <svg class="descripcion-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-7.5 8-13a8 8 0 1 0-16 0c0 5.5 8 13 8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                    <svg class="descripcion-icono" viewBox="0 0 24 24">
+                      <g fill="#1E9E4A">
+                        <rect x="7" y="2" width="10" height="2" rx="0.5"/>
+                        <path d="M9 4h6v6l3 3v2H6v-2l3-3z"/>
+                        <rect x="11.25" y="15" width="1.5" height="7" rx="0.5"/>
+                      </g>
+                    </svg>
                     <span class="text-sm evento-descripcion descripcion-texto" [innerHTML]="textoConEnlaces(inc.descripcion)"></span>
                   </div>
                 </div>
