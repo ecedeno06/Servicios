@@ -1541,7 +1541,10 @@
                     {{ (inc.fecha_incidente | date:'d-MMM-y h:mm a') | lowercase }}
                     @if (inc.no_ticket_fabricante) { &middot; Ticket: {{ inc.no_ticket_fabricante }} }
                   </div>
-                  <div class="text-sm evento-descripcion" style="margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(inc.descripcion)"></div>
+                  <div class="descripcion-linea" style="margin-top: 4px;">
+                    <svg class="descripcion-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-7.5 8-13a8 8 0 1 0-16 0c0 5.5 8 13 8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                    <span class="text-sm evento-descripcion descripcion-texto" [innerHTML]="textoConEnlaces(inc.descripcion)"></span>
+                  </div>
                 </div>
                 <span class="badge" [class]="claseBadgeEstadoIncidente(inc.estado)" style="flex-shrink: 0;">{{ inc.estado }}</span>
               </div>
@@ -1561,21 +1564,12 @@
                         }
                         @if (n.nota) {
                           @if (n.url) {
-                            <a class="text-sm nota-linea" [href]="n.url" target="_blank" rel="noopener">
-                              <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                              <span class="nota-linea-texto">{{ n.nota }}</span>
-                            </a>
+                            <a class="text-sm" style="margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere; display: block;" [href]="n.url" target="_blank" rel="noopener">{{ n.nota }}</a>
                           } @else {
-                            <div class="text-sm nota-linea">
-                              <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                              <span class="nota-linea-texto" [innerHTML]="textoConEnlaces(n.nota)"></span>
-                            </div>
+                            <div class="text-sm" style="margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(n.nota)"></div>
                           }
                         } @else if (n.url) {
-                          <a class="text-sm nota-linea" [href]="n.url" target="_blank" rel="noopener">
-                            <svg class="nota-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                            <span class="nota-linea-texto">Ver enlace</span>
-                          </a>
+                          <a class="text-sm" style="margin-top: 2px; display: block;" [href]="n.url" target="_blank" rel="noopener">Ver enlace</a>
                         }
                         @if (n.imagen_base64) {
                           <div class="flex items-center gap-8" style="margin-top: 4px; justify-content: space-between;">
