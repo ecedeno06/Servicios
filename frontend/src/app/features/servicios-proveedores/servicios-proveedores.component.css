@@ -179,14 +179,20 @@
    componente como Equipos Asignados. */
 
 /* Modal "Notas e Historial" de un incidente: igual que .modal-card-scroll,
-   mas ancho que el .modal-card default (420px) y con el scroll del
-   historico oculto visualmente sin perder la funcionalidad (pedido
-   explicito). */
+   mas ancho que el .modal-card default (420px). El card completo se limita
+   a la altura de la pantalla (antes podia sobrepasar el margen superior e
+   inferior con varias notas) y solo la lista del historico scrollea,
+   dejando el formulario de arriba siempre visible -- con el scroll oculto
+   visualmente sin perder la funcionalidad (pedido explicito). */
 .modal-card-notas {
   max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
 }
 .notas-historial-list {
-  max-height: 320px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: none;
