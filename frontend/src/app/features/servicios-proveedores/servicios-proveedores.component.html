@@ -1600,11 +1600,14 @@
                         <div style="overflow-wrap: anywhere;">
                           @if (img.imagen_base64) {
                             <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                            @if (img.descripcion) {
+                              <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                            }
                           } @else {
-                            <div class="text-sm"><strong>Enlace</strong> &middot; <a class="adjunto-enlace" [href]="img.url" target="_blank" rel="noopener">{{ img.url }}</a></div>
-                          }
-                          @if (img.descripcion) {
-                            <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                            @if (img.descripcion) {
+                              <a class="text-sm adjunto-enlace" style="display: block;" [href]="img.url" target="_blank" rel="noopener">{{ img.descripcion }}</a>
+                            }
+                            <div class="text-sm" style="margin-top: 2px;"><strong>Enlace</strong> &middot; <a class="adjunto-enlace" [href]="img.url" target="_blank" rel="noopener">{{ img.url }}</a></div>
                           }
                           <div class="text-muted text-sm" style="margin-top: 2px;">
                             {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
