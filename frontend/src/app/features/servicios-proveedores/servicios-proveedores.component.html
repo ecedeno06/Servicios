@@ -1601,14 +1601,14 @@
                           @if (img.imagen_base64) {
                             <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
                           } @else {
-                            <div class="text-sm"><strong>Enlace</strong> &middot; {{ img.url }}</div>
+                            <div class="text-sm"><strong>Enlace</strong> &middot; <a class="adjunto-enlace" [href]="img.url" target="_blank" rel="noopener">{{ img.url }}</a></div>
+                          }
+                          @if (img.descripcion) {
+                            <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
                           }
                           <div class="text-muted text-sm" style="margin-top: 2px;">
                             {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                           </div>
-                          @if (img.descripcion) {
-                            <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
-                          }
                         </div>
                         @if (img.imagen_base64) {
                           <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
