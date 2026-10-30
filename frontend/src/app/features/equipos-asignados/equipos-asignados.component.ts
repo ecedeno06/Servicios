@@ -210,7 +210,7 @@ export class EquiposAsignadosComponent implements OnInit {
 
   private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
     const campos: (string | number | null | undefined)[] = [
-      e.categoria_nombre, e.producto_nombre, e.marca, e.modelo,
+      e.id, e.categoria_nombre, e.producto_nombre, e.marca, e.modelo,
       this.etiquetaEstado(e.estado), e.asignada_a,
       this.datePipe.transform(e.fecha_entrada, 'dd/MM/yyyy', 'UTC'),
       this.textoVidaUtil(e), e.procesador_nombre, e.memoria_ram, e.disco_duro,
