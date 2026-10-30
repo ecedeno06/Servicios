@@ -322,7 +322,7 @@
 }
 
 <div class="card mt-16">
-  <h2>{{ seleccionado() ? 'Editar equipo' : 'Nuevo equipo' }}</h2>
+  <h2>{{ seleccionado() ? 'Editar equipo · ' + idCorto(seleccionado()!.id) : 'Nuevo equipo' }}</h2>
   <form [formGroup]="form" (ngSubmit)="guardar()">
     <div class="form-grid">
       <div class="form-group">
