@@ -470,6 +470,17 @@ export class EquiposAsignadosComponent implements OnInit {
     return id.slice(0, 8).toUpperCase();
   }
 
+  textoCopiado = signal<string | null>(null);
+
+  copiarTexto(texto: string): void {
+    navigator.clipboard?.writeText(texto.trim()).then(() => {
+      this.textoCopiado.set(texto);
+      setTimeout(() => {
+        if (this.textoCopiado() === texto) this.textoCopiado.set(null);
+      }, 1500);
+    }).catch(() => {});
+  }
+
   claseEstado(estado: EstadoEquipo): string {
     switch (estado) {
       case 'en_uso': return 'badge-green';
