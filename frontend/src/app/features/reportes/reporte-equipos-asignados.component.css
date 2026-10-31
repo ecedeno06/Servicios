@@ -1,0 +1,30 @@
+/* Encabezados de columna: nombre ordenable (click alterna asc/desc) y el
+   filtro de esa columna, apilados dentro del mismo th -- mismo patron que
+   Reporte de Carrito / Reporte de Servicios / Equipos asignados. */
+.th-sortable { display: block; cursor: pointer; user-select: none; white-space: nowrap; margin-bottom: 6px; }
+.th-sortable:hover { color: var(--teal-600); }
+.orden-icono { font-size: 10px; display: inline-block; width: 10px; }
+
+/* El boton "Buscar" queda siempre en la misma fila que los campos de
+   filtro -- mismo criterio que .reporte-carrito-filtros-fila. */
+.reporte-equipos-filtros-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.reporte-equipos-campo-filtro {
+  flex: 1 1 130px;
+  min-width: 130px;
+}
+
+.reporte-equipos-boton-buscar {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Vida util vencida/por vencer -- mismos colores que la columna Estado en
+   Equipos Asignados (equipos-asignados.component.css). */
+.vida-util-vencida { color: var(--red-600); font-weight: 600; }
+.vida-util-por-vencer { color: var(--amber-500); font-weight: 600; }

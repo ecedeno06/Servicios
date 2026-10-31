@@ -1,0 +1,138 @@
+<div class="page-header">
+  <div>
+    <h1>Reporte de equipos asignados</h1>
+    <div class="desc">Inventario de equipos por periodo de entrada y estado, con sus especificaciones tecnicas</div>
+  </div>
+</div>
+
+<div class="card">
+  <form [formGroup]="filtroForm" (ngSubmit)="buscar()">
+    <div class="reporte-equipos-filtros-fila">
+      <div class="form-group reporte-equipos-campo-filtro">
+        <label>Desde *</label>
+        <input class="input" type="date" formControlName="fechaInicio" />
+      </div>
+      <div class="form-group reporte-equipos-campo-filtro">
+        <label>Hasta *</label>
+        <input class="input" type="date" formControlName="fechaFin" />
+      </div>
+      <div class="form-group reporte-equipos-campo-filtro">
+        <label>Estado</label>
+        <select class="input" formControlName="estado">
+          <option value="">Todos los estados</option>
+          @for (e of estados; track e.valor) { <option [value]="e.valor">{{ e.etiqueta }}</option> }
+        </select>
+      </div>
+
+      <div class="form-actions reporte-equipos-boton-buscar">
+        <button type="submit" class="btn btn-primary" [disabled]="filtroForm.invalid || cargando()">
+          {{ cargando() ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
+    </div>
+
+    @if (errorBuscar()) {
+      <div class="error-text mt-16">{{ errorBuscar() }}</div>
+    }
+  </form>
+</div>
+
+@if (buscado()) {
+  <div class="page-header mt-16">
+    <div>
+      <h2 style="margin:0;">Resultados</h2>
+      <div class="desc">{{ filasFiltradas().length }} de {{ equipos().length }} equipo(s) &middot; {{ totalSeleccionadas() }} seleccionado(s) para exportar</div>
+    </div>
+    <div class="flex items-center gap-8">
+      @if (hayFiltrosColumna()) {
+        <button type="button" class="btn btn-outline btn-sm" (click)="limpiarFiltrosColumna()">Limpiar filtros</button>
+      }
+      @if (errorPdf()) { <span class="error-text">{{ errorPdf() }}</span> }
+      @if (errorExcel()) { <span class="error-text">{{ errorExcel() }}</span> }
+      <button type="button" class="btn-icon" [title]="generandoExcel() ? 'Generando...' : 'Descargar Excel'" [disabled]="!totalSeleccionadas() || generandoExcel()" (click)="descargarExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </button>
+      <button type="button" class="btn-icon" [title]="generandoPdf() ? 'Generando...' : 'Imprimir PDF'" [disabled]="!totalSeleccionadas() || generandoPdf()" (click)="generarPdf()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap table-wrap-compact">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="th-narrow">
+            <input type="checkbox" [checked]="todasSeleccionadas()" (change)="toggleSeleccionarTodas()" title="Seleccionar todas" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('categoria')">Categoria <span class="orden-icono">{{ iconoOrden('categoria') }}</span></span>
+            <app-multi-select-filter [valores]="valoresCategoria()" [seleccionados]="filtroCategoria()" (seleccionadosChange)="filtroCategoria.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('marcaModelo')">Marca / Modelo <span class="orden-icono">{{ iconoOrden('marcaModelo') }}</span></span>
+            <app-multi-select-filter [valores]="valoresMarcaModelo()" [seleccionados]="filtroMarcaModelo()" (seleccionadosChange)="filtroMarcaModelo.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('estado')">Estado <span class="orden-icono">{{ iconoOrden('estado') }}</span></span>
+            <app-multi-select-filter [valores]="valoresEstadoCol()" [seleccionados]="filtroEstadoCol()" (seleccionadosChange)="filtroEstadoCol.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('asignadaA')">Asignado a <span class="orden-icono">{{ iconoOrden('asignadaA') }}</span></span>
+            <app-multi-select-filter [valores]="valoresAsignadaA()" [seleccionados]="filtroAsignadaA()" (seleccionadosChange)="filtroAsignadaA.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('entrada')">Entrada <span class="orden-icono">{{ iconoOrden('entrada') }}</span></span>
+            <app-multi-select-filter [valores]="valoresEntrada()" [seleccionados]="filtroEntrada()" [formatoValor]="formatoFecha" (seleccionadosChange)="filtroEntrada.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('vidaUtil')">Vida util <span class="orden-icono">{{ iconoOrden('vidaUtil') }}</span></span>
+            <app-multi-select-filter [valores]="valoresVidaUtil()" [seleccionados]="filtroVidaUtil()" (seleccionadosChange)="filtroVidaUtil.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('cpu')">CPU <span class="orden-icono">{{ iconoOrden('cpu') }}</span></span>
+            <app-multi-select-filter [valores]="valoresCpu()" [seleccionados]="filtroCpu()" (seleccionadosChange)="filtroCpu.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('ram')">RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></span>
+            <app-multi-select-filter [valores]="valoresRam()" [seleccionados]="filtroRam()" (seleccionadosChange)="filtroRam.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('disco')">Disk <span class="orden-icono">{{ iconoOrden('disco') }}</span></span>
+            <app-multi-select-filter [valores]="valoresDisco()" [seleccionados]="filtroDisco()" (seleccionadosChange)="filtroDisco.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('mac')">MAC <span class="orden-icono">{{ iconoOrden('mac') }}</span></span>
+            <app-multi-select-filter [valores]="valoresMac()" [seleccionados]="filtroMac()" (seleccionadosChange)="filtroMac.set($event)" />
+          </th>
+          <th>
+            <span class="th-sortable" (click)="ordenarPor('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrden('proveedor') }}</span></span>
+            <app-multi-select-filter [valores]="valoresProveedor()" [seleccionados]="filtroProveedor()" (seleccionadosChange)="filtroProveedor.set($event)" />
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of filasFiltradas(); track e.id) {
+          <tr>
+            <td class="th-narrow">
+              <input type="checkbox" [checked]="seleccionadas().has(e.id)" (change)="toggleSeleccion(e.id)" />
+            </td>
+            <td>{{ e.categoria_nombre }}</td>
+            <td>{{ e.marca }} {{ e.modelo }}</td>
+            <td><span class="badge" [class]="claseEstado(e.estado)">{{ etiquetaEstado(e) }}</span></td>
+            <td>{{ e.asignada_a || '-' }}</td>
+            <td>{{ e.fecha_entrada | date:'dd/MM/yyyy':'UTC' }}</td>
+            <td [class]="claseVidaUtil(e)">{{ textoVidaUtil(e) }}</td>
+            <td>{{ e.procesador_nombre || '-' }}</td>
+            <td>{{ e.memoria_ram || '-' }}</td>
+            <td>{{ e.disco_duro || '-' }}</td>
+            <td>{{ textoMac(e) }}</td>
+            <td>{{ e.proveedor_nombre || '-' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="12"><div class="empty-state">{{ hayFiltrosColumna() ? 'Ningun equipo coincide con los filtros de columna.' : 'Ningun equipo coincide con el filtro seleccionado.' }}</div></td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

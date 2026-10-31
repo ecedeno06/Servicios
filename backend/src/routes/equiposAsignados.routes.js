@@ -5,6 +5,7 @@ const { requireAuth, requireEmpresa, requirePermiso, requireSuperAdmin, requireP
 router.use(requireAuth, requireEmpresa);
 
 router.get('/', requirePermiso('equipos_asignados', 'ver'), ctrl.listar);
+router.get('/reporte', requirePermiso('equipos_asignados', 'ver'), ctrl.reporte);
 router.post('/', requirePermiso('equipos_asignados', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizar);
 router.delete('/:id', requirePermiso('equipos_asignados', 'eliminar'), requirePassword, ctrl.eliminar);

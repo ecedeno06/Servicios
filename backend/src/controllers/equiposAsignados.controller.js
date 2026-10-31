@@ -35,6 +35,26 @@ async function listar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /equipos-asignados/reporte?desde=&hasta=&estado=
+// Mismo patron que el reporte de carrito de compras: filtra por rango de
+// fecha (aqui fecha_entrada) y estado, devolviendo un arreglo plano (a
+// diferencia del carrito, un equipo no tiene lineas/detalle hijas).
+async function reporte(req, res, next) {
+  try {
+    const { desde, hasta, estado } = req.query;
+    const { rows } = await pool.query(
+      `${SELECT_BASE}
+       where ea.empresa_id = $1
+         and ($2::date is null or ea.fecha_entrada >= $2::date)
+         and ($3::date is null or ea.fecha_entrada <= $3::date)
+         and ($4::text is null or ea.estado = $4::text)
+       order by ea.fecha_entrada desc`,
+      [req.empresaId, desde || null, hasta || null, estado || null]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 async function crear(req, res, next) {
   try {
     const {
@@ -573,7 +593,7 @@ async function enviarChecklistPdfPorCorreo(req, res, next) {
 }
 
 module.exports = {
-  listar, crear, actualizar, eliminar, historial, eliminarHistorial, cambiarEstado,
+  listar, reporte, crear, actualizar, eliminar, historial, eliminarHistorial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,

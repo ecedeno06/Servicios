@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
@@ -10,6 +10,14 @@ export class EquiposAsignadosService {
   constructor(private http: HttpClient) {}
 
   listar(): Observable<EquipoAsignado[]> { return this.http.get<EquipoAsignado[]>(this.base); }
+
+  reporte(desde?: string, hasta?: string, estado?: string): Observable<EquipoAsignado[]> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    if (estado) params = params.set('estado', estado);
+    return this.http.get<EquipoAsignado[]>(`${this.base}/reporte`, { params });
+  }
   crear(data: any): Observable<EquipoAsignado> { return this.http.post<EquipoAsignado>(this.base, data); }
   actualizar(id: string, data: any): Observable<EquipoAsignado> { return this.http.put<EquipoAsignado>(`${this.base}/${id}`, data); }
   eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
