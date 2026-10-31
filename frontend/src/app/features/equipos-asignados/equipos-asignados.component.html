@@ -83,12 +83,16 @@
           <app-multi-select-filter [valores]="valoresCpu()" [seleccionados]="filtroCpu()" (seleccionadosChange)="filtroCpu.set($event)" />
         </th>
         <th>
-          <span class="th-sortable" (click)="ordenarPor('ram')">Memoria RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></span>
+          <span class="th-sortable" (click)="ordenarPor('ram')">RAM <span class="orden-icono">{{ iconoOrden('ram') }}</span></span>
           <app-multi-select-filter [valores]="valoresRam()" [seleccionados]="filtroRam()" (seleccionadosChange)="filtroRam.set($event)" />
         </th>
         <th>
-          <span class="th-sortable" (click)="ordenarPor('disco')">Disco duro <span class="orden-icono">{{ iconoOrden('disco') }}</span></span>
+          <span class="th-sortable" (click)="ordenarPor('disco')">Disk <span class="orden-icono">{{ iconoOrden('disco') }}</span></span>
           <app-multi-select-filter [valores]="valoresDisco()" [seleccionados]="filtroDisco()" (seleccionadosChange)="filtroDisco.set($event)" />
+        </th>
+        <th>
+          <span class="th-sortable" (click)="ordenarPor('mac')">MAC <span class="orden-icono">{{ iconoOrden('mac') }}</span></span>
+          <app-multi-select-filter [valores]="valoresMac()" [seleccionados]="filtroMac()" (seleccionadosChange)="filtroMac.set($event)" />
         </th>
         <th>
           <span class="th-sortable" (click)="ordenarPor('proveedor')">Proveedor <span class="orden-icono">{{ iconoOrden('proveedor') }}</span></span>
@@ -143,6 +147,7 @@
           <td>{{ e.procesador_nombre || '-' }}</td>
           <td>{{ e.memoria_ram || '-' }}</td>
           <td>{{ e.disco_duro || '-' }}</td>
+          <td>{{ textoMac(e) }}</td>
           <td>{{ e.proveedor_nombre || '-' }}</td>
           <!-- <td>{{ e.no_factura || '-' }}</td> -->
           <td class="table-actions">
@@ -152,7 +157,7 @@
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="11"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
+        <tr><td colspan="12"><div class="empty-state">{{ hayFiltros() ? 'Ningun equipo coincide con los filtros.' : 'No hay equipos registrados.' }}</div></td></tr>
       }
     </tbody>
   </table>

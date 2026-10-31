@@ -198,6 +198,7 @@ export class EquiposAsignadosComponent implements OnInit {
   filtroCpu = signal<Set<string>>(new Set());
   filtroRam = signal<Set<string>>(new Set());
   filtroDisco = signal<Set<string>>(new Set());
+  filtroMac = signal<Set<string>>(new Set());
   filtroProveedor = signal<Set<string>>(new Set());
   filtroNoFactura = signal<Set<string>>(new Set());
 
@@ -205,8 +206,15 @@ export class EquiposAsignadosComponent implements OnInit {
     this.busquedaGeneral() ||
     this.filtroCategoria().size || this.filtroMarcaModelo().size || this.filtroEstado().size || this.filtroAsignadaA().size ||
     this.filtroEntrada().size || this.filtroVidaUtil().size || this.filtroCpu().size || this.filtroRam().size || this.filtroDisco().size ||
-    this.filtroProveedor().size || this.filtroNoFactura().size
+    this.filtroMac().size || this.filtroProveedor().size || this.filtroNoFactura().size
   ));
+
+  // Mac Address + Hardware Address combinados en una sola columna/filtro
+  // "MAC" (pedido explicito).
+  textoMac(e: EquipoAsignado): string {
+    if (!e.mac_address && !e.hardware_address) return '-';
+    return `${e.mac_address ?? '-'} - ${e.hardware_address ?? '-'}`;
+  }
 
   private coincideBusquedaGeneral(e: EquipoAsignado, texto: string): boolean {
     const campos: (string | number | null | undefined)[] = [
@@ -236,6 +244,7 @@ export class EquiposAsignadosComponent implements OnInit {
   valoresCpu = computed(() => this.valoresUnicos(this.equipos().map((e) => e.procesador_nombre)));
   valoresRam = computed(() => this.valoresUnicos(this.equipos().map((e) => e.memoria_ram)));
   valoresDisco = computed(() => this.valoresUnicos(this.equipos().map((e) => e.disco_duro)));
+  valoresMac = computed(() => this.valoresUnicos(this.equipos().map((e) => this.textoMac(e)).filter((v) => v !== '-')));
   valoresProveedor = computed(() => this.valoresUnicos(this.equipos().map((e) => e.proveedor_nombre)));
   valoresNoFactura = computed(() => this.valoresUnicos(this.equipos().map((e) => e.no_factura)));
 
@@ -268,6 +277,7 @@ export class EquiposAsignadosComponent implements OnInit {
       case 'cpu': return (e.procesador_nombre ?? '').toLowerCase();
       case 'ram': return (e.memoria_ram ?? '').toLowerCase();
       case 'disco': return (e.disco_duro ?? '').toLowerCase();
+      case 'mac': return this.textoMac(e).toLowerCase();
       case 'proveedor': return (e.proveedor_nombre ?? '').toLowerCase();
       case 'noFactura': return (e.no_factura ?? '').toLowerCase();
       default: return '';
@@ -285,6 +295,7 @@ export class EquiposAsignadosComponent implements OnInit {
     const fCpu = this.filtroCpu();
     const fRam = this.filtroRam();
     const fDisco = this.filtroDisco();
+    const fMac = this.filtroMac();
     const fProveedor = this.filtroProveedor();
     const fNoFactura = this.filtroNoFactura();
     const filtrados = this.equipos().filter((e) => {
@@ -298,6 +309,7 @@ export class EquiposAsignadosComponent implements OnInit {
       if (fCpu.size && !fCpu.has(e.procesador_nombre ?? '')) return false;
       if (fRam.size && !fRam.has(e.memoria_ram ?? '')) return false;
       if (fDisco.size && !fDisco.has(e.disco_duro ?? '')) return false;
+      if (fMac.size && !fMac.has(this.textoMac(e))) return false;
       if (fProveedor.size && !fProveedor.has(e.proveedor_nombre ?? '')) return false;
       if (fNoFactura.size && !fNoFactura.has(e.no_factura ?? '')) return false;
       return true;
@@ -458,6 +470,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.filtroCpu.set(new Set());
     this.filtroRam.set(new Set());
     this.filtroDisco.set(new Set());
+    this.filtroMac.set(new Set());
     this.filtroProveedor.set(new Set());
     this.filtroNoFactura.set(new Set());
   }
