@@ -436,7 +436,7 @@ export class RegistroHorasComponent implements OnInit {
   // archivos de todos los comentarios cada vez que se abre un drawer/popup.
   private abrirAdjuntoLazy(registroId: string, comentarioId: string, adjuntoId: string): void {
     this.srv.obtenerAdjuntoComentario(registroId, comentarioId, adjuntoId).subscribe({
-      next: (completo) => this.abrirBase64(completo.imagen_base64),
+      next: (completo) => this.abrirBase64(completo.imagen_base64 || ''),
       error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo abrir el adjunto.'),
     });
   }

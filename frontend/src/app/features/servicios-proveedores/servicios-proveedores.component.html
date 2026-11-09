@@ -942,6 +942,19 @@
                 <button type="button" class="btn btn-outline btn-sm" [disabled]="guardandoAdjunto()" (click)="inputArchivoImagen.click()">
                   {{ guardandoAdjunto() ? 'Subiendo...' : '+ Adjuntar archivo' }}
                 </button>
+                <input
+                  class="input"
+                  type="text"
+                  style="width: 200px;"
+                  placeholder="https://... (enlace)"
+                  [ngModel]="nuevoEnlaceImagen()"
+                  (ngModelChange)="nuevoEnlaceImagen.set($event)"
+                  [ngModelOptions]="{standalone: true}"
+                  (keydown.enter)="agregarEnlaceImagen()"
+                />
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="!nuevoEnlaceImagen().trim() || guardandoAdjunto()" (click)="agregarEnlaceImagen()">
+                  + Enlace
+                </button>
               </div>
             }
           </div>
@@ -955,7 +968,11 @@
 
             @for (img of imagenesServicioActual(); track img.id) {
               <div class="card" style="margin-bottom: 10px; padding: 12px;">
-                <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                @if (img.imagen_base64) {
+                  <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                } @else {
+                  <strong class="text-sm">Enlace</strong>
+                }
                 <div class="text-muted text-sm" style="margin-top: 2px;">
                   {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                 </div>
@@ -963,8 +980,17 @@
                   <label style="font-size: 11px;">Descripción</label>
                   <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, contrato firmado..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)"></textarea>
                 </div>
+                <div class="form-group" style="margin-top: 8px;">
+                  <label style="font-size: 11px;">URL</label>
+                  <input class="input" type="text" [value]="img.url || ''" placeholder="https://..." (blur)="actualizarUrlAdjunto(img.id, $any($event.target).value)" />
+                </div>
                 <div class="flex items-center gap-8" style="margin-top: 8px;">
-                  <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                  @if (img.imagen_base64) {
+                    <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                  }
+                  @if (img.url) {
+                    <a class="btn btn-outline btn-sm" [href]="img.url" target="_blank" rel="noopener">Abrir enlace</a>
+                  }
                   <button type="button" class="btn btn-danger btn-sm" (click)="eliminarImagen(img.id)">Eliminar</button>
                 </div>
               </div>
@@ -1243,7 +1269,7 @@
 
                     @for (img of adjuntosFacturaActual(); track img.id) {
                       <div class="card" style="margin-bottom: 10px; padding: 12px;">
-                        <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                        <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64 || '') }} &middot; {{ tamanoArchivo(img.imagen_base64 || '') }}</strong>
                         <div class="text-muted text-sm" style="margin-top: 2px;">
                           {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                         </div>
@@ -1252,7 +1278,7 @@
                           <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Factura escaneada, comprobante..." (blur)="actualizarDescripcionAdjuntoFactura(img.id, $any($event.target).value, f)"></textarea>
                         </div>
                         <div class="flex items-center gap-8" style="margin-top: 8px;">
-                          <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+                          <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64 || '')">Ver / Descargar</button>
                           <button type="button" class="btn btn-danger btn-sm" (click)="eliminarAdjuntoFactura(img.id, f)">Eliminar</button>
                         </div>
                       </div>
@@ -1307,7 +1333,9 @@
             @for (img of imagenesObservacionModal(); track img.id) {
               <div class="flex items-center gap-8" style="justify-content: space-between;">
                 <div style="overflow-wrap: anywhere;">
-                  <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                  @if (img.imagen_base64) {
+                    <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                  }
                   <div class="text-muted text-sm" style="margin-top: 2px;">
                     {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                   </div>
@@ -1315,9 +1343,11 @@
                     <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
                   }
                 </div>
-                <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-                </button>
+                @if (img.imagen_base64) {
+                  <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                  </button>
+                }
               </div>
             }
           </div>
@@ -1484,7 +1514,9 @@
                   @for (img of f.adjuntos; track img.id) {
                     <div class="flex items-center gap-8" style="justify-content: space-between;">
                       <div style="overflow-wrap: anywhere;">
-                        <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                        @if (img.imagen_base64) {
+                          <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                        }
                         <div class="text-muted text-sm" style="margin-top: 2px;">
                           {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                         </div>
@@ -1492,9 +1524,11 @@
                           <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
                         }
                       </div>
-                      <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
-                      </button>
+                      @if (img.imagen_base64) {
+                        <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                        </button>
+                      }
                     </div>
                   }
                 </div>

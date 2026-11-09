@@ -913,7 +913,7 @@ async function listarAdjuntos(req, res, next) {
 
 async function crearAdjunto(req, res, next) {
   try {
-    const { descripcion, imagen_base64 } = req.body;
+    const { descripcion, imagen_base64, url } = req.body;
 
     const { rows: me } = await pool.query(
       'select id from servicios_proveedores where id = $1 and empresa_id = $2',
@@ -921,11 +921,17 @@ async function crearAdjunto(req, res, next) {
     );
     if (!me[0]) return res.status(404).json({ mensaje: 'Servicio no encontrado' });
 
-    if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
-      return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+    const urlLimpia = url && url.trim() ? url.trim() : null;
+    if (!imagen_base64 && !urlLimpia) {
+      return res.status(400).json({ mensaje: 'Debe incluir un archivo o una url' });
     }
-    if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
-      return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+    if (imagen_base64) {
+      if (typeof imagen_base64 !== 'string' || !IMAGEN_BASE64_PREFIJO.test(imagen_base64)) {
+        return res.status(400).json({ mensaje: 'Solo se permiten archivos PDF, PNG o JPG' });
+      }
+      if (imagen_base64.length > MAX_IMAGEN_BASE64_CHARS) {
+        return res.status(400).json({ mensaje: 'El archivo supera el tamano maximo permitido (3MB)' });
+      }
     }
 
     const { rows: cuenta } = await pool.query(
@@ -937,10 +943,10 @@ async function crearAdjunto(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      `insert into servicio_adjuntos (servicio_proveedor_id, descripcion, imagen_base64, creado_por)
-       values ($1, $2, $3, $4)
+      `insert into servicio_adjuntos (servicio_proveedor_id, descripcion, imagen_base64, url, creado_por)
+       values ($1, $2, $3, $4, $5)
        returning id`,
-      [req.params.id, descripcion ? descripcion.trim() : null, imagen_base64, req.usuario.id]
+      [req.params.id, descripcion ? descripcion.trim() : null, imagen_base64 || null, urlLimpia, req.usuario.id]
     );
 
     const { rows: completo } = await pool.query(
@@ -956,8 +962,6 @@ async function crearAdjunto(req, res, next) {
 
 async function actualizarAdjunto(req, res, next) {
   try {
-    const { descripcion } = req.body;
-
     const { rows: me } = await pool.query(
       'select id from servicios_proveedores where id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]
@@ -970,9 +974,22 @@ async function actualizarAdjunto(req, res, next) {
     );
     if (!adj[0]) return res.status(404).json({ mensaje: 'Adjunto no encontrado' });
 
+    // Actualizacion parcial atomica (CASE), igual que actualizarAdjuntoIncidente:
+    // editar descripcion y url casi al mismo tiempo (dos requests separados,
+    // uno por cada blur) no debe pisar el valor que el otro acaba de guardar.
+    const tieneDescripcion = req.body.descripcion !== undefined;
+    const descripcion = tieneDescripcion
+      ? (req.body.descripcion ? req.body.descripcion.trim() : null)
+      : null;
+    const tieneUrl = req.body.url !== undefined;
+    const url = tieneUrl ? (req.body.url ? req.body.url.trim() : null) : null;
+
     await pool.query(
-      'update servicio_adjuntos set descripcion = $1 where id = $2',
-      [descripcion ? descripcion.trim() : null, req.params.adjuntoId]
+      `update servicio_adjuntos
+         set descripcion = case when $1 then $2::text else descripcion end,
+             url = case when $3 then $4::text else url end
+       where id = $5`,
+      [tieneDescripcion, descripcion, tieneUrl, url, req.params.adjuntoId]
     );
 
     const { rows: completo } = await pool.query(

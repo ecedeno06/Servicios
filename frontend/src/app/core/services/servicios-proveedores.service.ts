@@ -67,11 +67,11 @@ export class ServiciosProveedoresService {
     return this.http.get<ImagenServicioProveedor[]>(`${this.base}/${servicioId}/adjuntos`);
   }
 
-  crearAdjunto(servicioId: string, data: { descripcion?: string; imagen_base64: string }): Observable<ImagenServicioProveedor> {
+  crearAdjunto(servicioId: string, data: { descripcion?: string; imagen_base64?: string; url?: string }): Observable<ImagenServicioProveedor> {
     return this.http.post<ImagenServicioProveedor>(`${this.base}/${servicioId}/adjuntos`, data);
   }
 
-  actualizarAdjunto(servicioId: string, adjuntoId: string, data: { descripcion?: string }): Observable<ImagenServicioProveedor> {
+  actualizarAdjunto(servicioId: string, adjuntoId: string, data: { descripcion?: string; url?: string }): Observable<ImagenServicioProveedor> {
     return this.http.put<ImagenServicioProveedor>(`${this.base}/${servicioId}/adjuntos/${adjuntoId}`, data);
   }
 

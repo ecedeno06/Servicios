@@ -415,13 +415,15 @@ export interface ContactoProveedor {
   cargo?: string;
 }
 
-// Adjunto (PDF/PNG/JPG en base64) de un servicio contratado. fecha y
-// creado_por se fijan al subir el archivo, no son editables en la UI.
+// Adjunto (PDF/PNG/JPG en base64, o un enlace/url) de un servicio
+// contratado. fecha y creado_por se fijan al subir el archivo, no son
+// editables en la UI.
 export interface ImagenServicioProveedor {
   id: string;
   fecha: string;
   descripcion?: string | null;
-  imagen_base64: string;
+  imagen_base64?: string | null;
+  url?: string | null;
   // Presente cuando el backend manda el encabezado recortado en vez del
   // contenido completo (ver Comentario.adjuntos en Registro de horas).
   tamano_bytes?: number;

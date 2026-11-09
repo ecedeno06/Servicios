@@ -696,6 +696,43 @@ export class ServiciosProveedoresComponent implements OnInit {
     });
   }
 
+  actualizarUrlAdjunto(adjuntoId: string, url: string): void {
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    this.serviciosSrv.actualizarAdjunto(servicio.id, adjuntoId, { url }).subscribe({
+      next: (actualizado) => this.imagenesServicioActual.update((arr) => arr.map((a) => (a.id === adjuntoId ? actualizado : a))),
+      error: (err) => this.toast.error(err.error?.mensaje || 'No se pudo actualizar la url'),
+    });
+  }
+
+  // Agregar un adjunto que es solo un enlace (sin archivo) -- mismo patron
+  // que agregarEnlaceAdjuntoIncidente.
+  nuevoEnlaceImagen = signal('');
+
+  agregarEnlaceImagen(): void {
+    this.errorArchivoImagen.set(null);
+    const servicio = this.servicioEdicion();
+    if (!servicio) return;
+    const url = this.nuevoEnlaceImagen().trim();
+    if (!url) return;
+    if (this.imagenesServicioActual().length >= this.MAX_IMAGENES) {
+      this.errorArchivoImagen.set(`Se alcanzó el máximo de ${this.MAX_IMAGENES} archivos adjuntos.`);
+      return;
+    }
+    this.guardandoAdjunto.set(true);
+    this.serviciosSrv.crearAdjunto(servicio.id, { url }).subscribe({
+      next: (nuevo) => {
+        this.guardandoAdjunto.set(false);
+        this.agregarImagenEntry(nuevo);
+        this.nuevoEnlaceImagen.set('');
+      },
+      error: (err) => {
+        this.guardandoAdjunto.set(false);
+        this.errorArchivoImagen.set(err.error?.mensaje || 'No se pudo guardar el enlace.');
+      },
+    });
+  }
+
   // Un <a href="data:..."> no alcanza: ademas del sanitizado de Angular
   // (ya resuelto con bypassSecurityTrustUrl), Chrome/Edge bloquean la
   // navegacion de nivel superior (pestana nueva) a un data: URI como

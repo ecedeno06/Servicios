@@ -538,7 +538,7 @@
 
         @for (img of imagenesEquipoActual(); track img.id) {
           <div class="card" style="margin-bottom: 10px; padding: 12px;">
-            <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+            <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64 || '') }} &middot; {{ tamanoArchivo(img.imagen_base64 || '') }}</strong>
             <div class="text-muted text-sm" style="margin-top: 2px;">
               {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
             </div>
@@ -547,7 +547,7 @@
               <textarea class="input" rows="1" style="min-height: 36px;" [value]="img.descripcion || ''" placeholder="Ej. Factura de compra, garantia..." (blur)="actualizarDescripcionAdjunto(img.id, $any($event.target).value)"></textarea>
             </div>
             <div class="flex items-center gap-8" style="margin-top: 8px;">
-              <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64 || '')">Ver / Descargar</button>
               <button type="button" class="btn btn-danger btn-sm" (click)="eliminarImagen(img.id)">Eliminar</button>
             </div>
           </div>
@@ -691,7 +691,7 @@
           <div class="card-adjunto-info" style="margin-bottom: 8px; padding: 10px;">
             <div class="flex items-center gap-8" style="justify-content: space-between; flex-wrap: wrap;">
               <div>
-                <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64) }} &middot; {{ tamanoArchivo(img.imagen_base64) }}</strong>
+                <strong class="text-sm">{{ tipoArchivoLabel(img.imagen_base64 || '') }} &middot; {{ tamanoArchivo(img.imagen_base64 || '') }}</strong>
                 <div class="text-muted text-sm" style="margin-top: 2px;">
                   {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
                 </div>
@@ -699,7 +699,7 @@
                   <div class="text-sm" style="margin-top: 4px; overflow-wrap: anywhere;" [innerHTML]="textoConEnlaces(img.descripcion)"></div>
                 }
               </div>
-              <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64)">Ver / Descargar</button>
+              <button type="button" class="btn btn-outline btn-sm" (click)="abrirAdjunto(img.imagen_base64 || '')">Ver / Descargar</button>
             </div>
           </div>
         }
