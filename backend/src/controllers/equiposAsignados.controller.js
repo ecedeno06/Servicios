@@ -39,6 +39,12 @@ function notificarAdministradores(empresaId, { asunto, html, texto }) {
     .catch((err) => console.error('No se pudo notificar a administradores por correo:', err.message));
 }
 
+// Mismo criterio que idCorto() en equipos-asignados.component.ts (boton de
+// copiar ID + categoria): los primeros 8 caracteres del UUID, en mayusculas.
+function idCorto(id) {
+  return id.slice(0, 8).toUpperCase();
+}
+
 const SELECT_BASE = `
   select
     ea.*,
@@ -127,10 +133,11 @@ async function crear(req, res, next) {
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
 
     notificarAdministradores(req.empresaId, {
-      asunto: `Nuevo equipo en inventario: ${completo[0].marca} ${completo[0].modelo}`,
-      texto: `Se agrego un nuevo equipo al inventario.\n\nProducto: ${completo[0].producto_nombre}\nMarca/Modelo: ${completo[0].marca} ${completo[0].modelo}\nEstado: ${estadoFinal}\nRegistrado por: ${req.usuario.nombre}`,
+      asunto: `Nuevo equipo en inventario: ${idCorto(completo[0].id)} - ${completo[0].marca} ${completo[0].modelo}`,
+      texto: `Se agrego un nuevo equipo al inventario.\n\nID: ${idCorto(completo[0].id)}\nProducto: ${completo[0].producto_nombre}\nMarca/Modelo: ${completo[0].marca} ${completo[0].modelo}\nEstado: ${estadoFinal}\nRegistrado por: ${req.usuario.nombre}`,
       html: `<p>Se agrego un nuevo equipo al inventario.</p>
         <ul>
+          <li><strong>ID:</strong> ${idCorto(completo[0].id)}</li>
           <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
           <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
           <li><strong>Estado:</strong> ${estadoFinal}</li>
@@ -218,10 +225,11 @@ async function actualizar(req, res, next) {
 
     if (estado !== estadoAnterior) {
       notificarAdministradores(req.empresaId, {
-        asunto: `Cambio de estado de equipo: ${completo[0].marca} ${completo[0].modelo}`,
-        texto: `El equipo ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
+        asunto: `Cambio de estado de equipo: ${idCorto(completo[0].id)} - ${completo[0].marca} ${completo[0].modelo}`,
+        texto: `El equipo ${idCorto(completo[0].id)} - ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
         html: `<p>Un equipo del inventario cambio de estado.</p>
           <ul>
+            <li><strong>ID:</strong> ${idCorto(completo[0].id)}</li>
             <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
             <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
             <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
@@ -309,10 +317,11 @@ async function cambiarEstado(req, res, next) {
 
     if (estado !== estadoAnterior) {
       notificarAdministradores(req.empresaId, {
-        asunto: `Cambio de estado de equipo: ${completo[0].marca} ${completo[0].modelo}`,
-        texto: `El equipo ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
+        asunto: `Cambio de estado de equipo: ${idCorto(completo[0].id)} - ${completo[0].marca} ${completo[0].modelo}`,
+        texto: `El equipo ${idCorto(completo[0].id)} - ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
         html: `<p>Un equipo del inventario cambio de estado.</p>
           <ul>
+            <li><strong>ID:</strong> ${idCorto(completo[0].id)}</li>
             <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
             <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
             <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
