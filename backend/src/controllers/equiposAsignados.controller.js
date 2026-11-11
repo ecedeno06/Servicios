@@ -39,6 +39,32 @@ function notificarAdministradores(empresaId, { asunto, html, texto }) {
     .catch((err) => console.error('No se pudo notificar a administradores por correo:', err.message));
 }
 
+const escHtml = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Correo "Cambio de estado de equipo" (editar y cambio rapido). Incluye a quien
+// quedo asignado y, si cambio, a quien lo tenia antes.
+function notificarCambioEstado(req, equipo, estadoAnterior, asignadaAnterior) {
+  const asignada = equipo.asignada_a || null;
+  const lineas = [
+    ['ID', idCorto(equipo.id)],
+    ['Producto', equipo.producto_nombre],
+    ['Marca/Modelo', `${equipo.marca} ${equipo.modelo}`],
+    ['Estado anterior', estadoAnterior],
+    ['Estado nuevo', equipo.estado],
+    ...(asignada ? [['Asignado a', asignada]] : []),
+    ...(asignadaAnterior && asignadaAnterior !== asignada ? [['Asignado antes a', asignadaAnterior]] : []),
+    ['Modificado por', req.usuario.nombre],
+  ];
+  notificarAdministradores(req.empresaId, {
+    asunto: `Cambio de estado de equipo: ${idCorto(equipo.id)} - ${equipo.marca} ${equipo.modelo}`,
+    texto: `Un equipo del inventario cambio de estado.\n\n${lineas.map(([k, x]) => `${k}: ${x}`).join('\n')}`,
+    html: `<p>Un equipo del inventario cambio de estado.</p>
+          <ul>
+            ${lineas.map(([k, x]) => `<li><strong>${k}:</strong> ${escHtml(x)}</li>`).join('\n            ')}
+          </ul>`,
+  });
+}
+
 // Mismo criterio que idCorto() en equipos-asignados.component.ts (boton de
 // copiar ID + categoria): los primeros 8 caracteres del UUID, en mayusculas.
 function idCorto(id) {
@@ -224,19 +250,7 @@ async function actualizar(req, res, next) {
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
 
     if (estado !== estadoAnterior) {
-      notificarAdministradores(req.empresaId, {
-        asunto: `Cambio de estado de equipo: ${idCorto(completo[0].id)} - ${completo[0].marca} ${completo[0].modelo}`,
-        texto: `El equipo ${idCorto(completo[0].id)} - ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
-        html: `<p>Un equipo del inventario cambio de estado.</p>
-          <ul>
-            <li><strong>ID:</strong> ${idCorto(completo[0].id)}</li>
-            <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
-            <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
-            <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
-            <li><strong>Estado nuevo:</strong> ${estado}</li>
-            <li><strong>Modificado por:</strong> ${req.usuario.nombre}</li>
-          </ul>`,
-      });
+      notificarCambioEstado(req, completo[0], estadoAnterior, asignadaAnterior);
     }
 
     res.json(completo[0]);
@@ -316,19 +330,7 @@ async function cambiarEstado(req, res, next) {
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
 
     if (estado !== estadoAnterior) {
-      notificarAdministradores(req.empresaId, {
-        asunto: `Cambio de estado de equipo: ${idCorto(completo[0].id)} - ${completo[0].marca} ${completo[0].modelo}`,
-        texto: `El equipo ${idCorto(completo[0].id)} - ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
-        html: `<p>Un equipo del inventario cambio de estado.</p>
-          <ul>
-            <li><strong>ID:</strong> ${idCorto(completo[0].id)}</li>
-            <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
-            <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
-            <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
-            <li><strong>Estado nuevo:</strong> ${estado}</li>
-            <li><strong>Modificado por:</strong> ${req.usuario.nombre}</li>
-          </ul>`,
-      });
+      notificarCambioEstado(req, completo[0], estadoAnterior, asignadaAnterior);
     }
 
     res.json(completo[0]);
