@@ -5,6 +5,40 @@ const MAX_ADJUNTOS = 20;
 const MAX_IMAGEN_BASE64_CHARS = 4 * 1024 * 1024; // ~4MB de texto base64 (~3MB de archivo real)
 const IMAGEN_BASE64_PREFIJO = /^data:(image\/png|image\/jpeg|application\/pdf);base64,/;
 
+// Cuenta de pruebas del super-admin -- no recibe las notificaciones de
+// inventario para no llenarle el buzon durante pruebas/QA.
+const ADMIN_CORREOS_EXCLUIDOS = ['admin@bluecorela.com'];
+
+async function obtenerCorreosAdministradores(empresaId) {
+  const { rows } = await pool.query(
+    `select distinct u.email
+       from usuarios u
+       where u.activo = true
+         and u.email <> all($2::text[])
+         and (
+           u.es_super_admin = true
+           or exists (
+             select 1 from usuarios_empresas_rol uer
+             where uer.usuario_id = u.id and uer.empresa_id = $1 and uer.rol = 'admin'
+           )
+         )`,
+    [empresaId, ADMIN_CORREOS_EXCLUIDOS]
+  );
+  return rows.map((r) => r.email);
+}
+
+// Notificacion "silenciosa": se dispara sin esperar (no bloquea la
+// respuesta al usuario) y si el envio falla solo se loguea -- nunca rompe
+// el flujo principal de agregar/cambiar estado de un equipo.
+function notificarAdministradores(empresaId, { asunto, html, texto }) {
+  obtenerCorreosAdministradores(empresaId)
+    .then((destinatarios) => {
+      if (!destinatarios.length) return null;
+      return enviarCorreo({ destinatario: destinatarios, asunto, html, texto });
+    })
+    .catch((err) => console.error('No se pudo notificar a administradores por correo:', err.message));
+}
+
 const SELECT_BASE = `
   select
     ea.*,
@@ -91,6 +125,19 @@ async function crear(req, res, next) {
     );
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
+
+    notificarAdministradores(req.empresaId, {
+      asunto: `Nuevo equipo en inventario: ${completo[0].marca} ${completo[0].modelo}`,
+      texto: `Se agrego un nuevo equipo al inventario.\n\nProducto: ${completo[0].producto_nombre}\nMarca/Modelo: ${completo[0].marca} ${completo[0].modelo}\nEstado: ${estadoFinal}\nRegistrado por: ${req.usuario.nombre}`,
+      html: `<p>Se agrego un nuevo equipo al inventario.</p>
+        <ul>
+          <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
+          <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
+          <li><strong>Estado:</strong> ${estadoFinal}</li>
+          <li><strong>Registrado por:</strong> ${req.usuario.nombre}</li>
+        </ul>`,
+    });
+
     res.status(201).json(completo[0]);
   } catch (err) { next(err); }
 }
@@ -168,6 +215,22 @@ async function actualizar(req, res, next) {
     }
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
+
+    if (estado !== estadoAnterior) {
+      notificarAdministradores(req.empresaId, {
+        asunto: `Cambio de estado de equipo: ${completo[0].marca} ${completo[0].modelo}`,
+        texto: `El equipo ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
+        html: `<p>Un equipo del inventario cambio de estado.</p>
+          <ul>
+            <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
+            <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
+            <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
+            <li><strong>Estado nuevo:</strong> ${estado}</li>
+            <li><strong>Modificado por:</strong> ${req.usuario.nombre}</li>
+          </ul>`,
+      });
+    }
+
     res.json(completo[0]);
   } catch (err) { next(err); }
 }
@@ -243,6 +306,22 @@ async function cambiarEstado(req, res, next) {
     }
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
+
+    if (estado !== estadoAnterior) {
+      notificarAdministradores(req.empresaId, {
+        asunto: `Cambio de estado de equipo: ${completo[0].marca} ${completo[0].modelo}`,
+        texto: `El equipo ${completo[0].producto_nombre} - ${completo[0].marca} ${completo[0].modelo} cambio de estado "${estadoAnterior}" a "${estado}".\nModificado por: ${req.usuario.nombre}`,
+        html: `<p>Un equipo del inventario cambio de estado.</p>
+          <ul>
+            <li><strong>Producto:</strong> ${completo[0].producto_nombre}</li>
+            <li><strong>Marca/Modelo:</strong> ${completo[0].marca} ${completo[0].modelo}</li>
+            <li><strong>Estado anterior:</strong> ${estadoAnterior}</li>
+            <li><strong>Estado nuevo:</strong> ${estado}</li>
+            <li><strong>Modificado por:</strong> ${req.usuario.nombre}</li>
+          </ul>`,
+      });
+    }
+
     res.json(completo[0]);
   } catch (err) { next(err); }
 }
