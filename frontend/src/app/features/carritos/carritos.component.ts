@@ -550,7 +550,9 @@ export class CarritosComponent implements OnInit {
     const espacio = producto.nombre.indexOf(' ');
     const marca = espacio === -1 ? producto.nombre : producto.nombre.slice(0, espacio);
     const modelo = espacio === -1 ? '' : producto.nombre.slice(espacio + 1);
-    this.detalleForm.patchValue({ marca, modelo });
+    // Precarga la URL del catalogo de productos si tiene una -- el usuario
+    // puede cambiarla o completarla a mano despues, el campo sigue editable.
+    this.detalleForm.patchValue({ marca, modelo, url: producto.url || '' });
   }
 
   guardarDetalle(): void {
