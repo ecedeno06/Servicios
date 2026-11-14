@@ -589,11 +589,10 @@ export class EquiposAsignadosComponent implements OnInit {
     // La categoria de un equipo ya creado no se cambia desde aca -- solo
     // queda habilitada al partir de cero con el boton "+ Nuevo".
     this.form.get('categoria_id')?.disable();
-    // El estado si se puede corregir en edicion (salvo pasar a "En uso",
-    // que el backend bloquea desde este formulario -- ver guardar()).
-    this.form.get('estado')?.enable();
-    // La asignacion de usuario es de solo lectura aca -- solo se cambia
-    // desde el boton de Accion rapida de la fila (abrirAccion/confirmarAccion).
+    // Estado y asignacion de usuario son de solo lectura aca -- ambos se
+    // cambian unicamente desde el boton de Accion rapida de la fila
+    // (abrirAccion/confirmarAccion), nunca desde este formulario.
+    this.form.get('estado')?.disable();
     this.form.get('asignada_a')?.disable();
     this.cargarHistorial(e.id);
     this.errorArchivoImagen.set(null);

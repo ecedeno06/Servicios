@@ -180,37 +180,28 @@ async function crear(req, res, next) {
 
 // El formulario del frontend siempre manda el registro completo (no es un
 // patch parcial), asi que aqui se reemplazan los campos tal cual vienen
-// -- sin coalesce -- para poder limpiar vida_util_meses/asignada_a/
-// observacion con null cuando el usuario los deja vacios.
+// -- sin coalesce -- para poder limpiar vida_util_meses/observacion con
+// null cuando el usuario los deja vacios. Estado y asignada_a NO se tocan
+// aca -- ambos son de solo lectura en este formulario y cambian
+// unicamente desde el boton de Accion rapida de la fila (cambiarEstado),
+// que es el que valida/loguea/notifica correctamente la transicion.
 async function actualizar(req, res, next) {
   try {
     const {
-      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, observacion,
+      producto_id, marca, modelo, fecha_entrada, vida_util_meses, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
       mac_address, ip_fija, hardware_address,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
     } = req.body;
-    if (!producto_id || !marca || !modelo || !estado) {
-      return res.status(400).json({ mensaje: 'producto_id, marca, modelo y estado son requeridos' });
+    if (!producto_id || !marca || !modelo) {
+      return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
     }
 
     const { rows: actual } = await pool.query(
-      'select estado, asignada_a from equipos_asignados where id = $1 and empresa_id = $2',
+      'select id from equipos_asignados where id = $1 and empresa_id = $2',
       [req.params.id, req.empresaId]
     );
     if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
-    const estadoAnterior = actual[0].estado;
-    const asignadaActual = actual[0].asignada_a;
-
-    // Este formulario ya no asigna a nadie (ni lo pide en el body) -- eso
-    // solo se hace desde el boton de Accion rapida de la fila. Por eso
-    // tampoco puede mover un equipo A "En uso" (requeriria asignar a
-    // alguien en el mismo paso); si se sale de "En uso" hacia otro
-    // estado, la asignacion se limpia, igual que hace cambiarEstado.
-    if (estado === 'en_uso' && estadoAnterior !== 'en_uso') {
-      return res.status(400).json({ mensaje: 'Para pasar a "En uso" usa el boton de Accion rapida de la fila' });
-    }
-    const asignadaFinal = (estadoAnterior === 'en_uso' && estado !== 'en_uso') ? null : asignadaActual;
 
     const { rows } = await pool.query(
       `update equipos_asignados set
@@ -219,28 +210,26 @@ async function actualizar(req, res, next) {
          modelo = $3,
          fecha_entrada = coalesce($4, fecha_entrada),
          vida_util_meses = $5,
-         estado = $6,
-         asignada_a = $7,
-         observacion = $8,
-         procesador_id = $9,
-         memoria_ram = $10,
-         disco_duro = $11,
-         numero_serie = $12,
-         numero_puertos = $13,
-         numero_puertos_hdmi = $14,
-         mac_address = $15,
-         ip_fija = $16,
-         hardware_address = $17,
-         precio_usd = $18,
-         locacion_pais = $19,
-         proveedor_id = $20,
-         no_factura = $21,
-         url = $22,
-         modificado_por = $23
-       where id = $24 and empresa_id = $25
+         observacion = $6,
+         procesador_id = $7,
+         memoria_ram = $8,
+         disco_duro = $9,
+         numero_serie = $10,
+         numero_puertos = $11,
+         numero_puertos_hdmi = $12,
+         mac_address = $13,
+         ip_fija = $14,
+         hardware_address = $15,
+         precio_usd = $16,
+         locacion_pais = $17,
+         proveedor_id = $18,
+         no_factura = $19,
+         url = $20,
+         modificado_por = $21
+       where id = $22 and empresa_id = $23
        returning id`,
       [
-        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaFinal, observacion || null,
+        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
         mac_address?.trim() || null, ip_fija?.trim() || null, hardware_address?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
@@ -248,23 +237,7 @@ async function actualizar(req, res, next) {
       ]
     );
 
-    // Un movimiento nuevo en el historico si el estado cambio (incluye el
-    // caso en que se limpio la asignacion por salir de "En uso") --
-    // editar otros campos, como observacion, no genera uno.
-    if (estado !== estadoAnterior || asignadaFinal !== asignadaActual) {
-      await pool.query(
-        `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, registrado_por)
-         values ($1, $2, $3, $4, $5, $6)`,
-        [req.params.id, estadoAnterior, estado, asignadaActual, asignadaFinal, req.usuario.id]
-      );
-    }
-
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
-
-    if (estado !== estadoAnterior) {
-      notificarCambioEstado(req, completo[0], estadoAnterior, asignadaActual);
-    }
-
     res.json(completo[0]);
   } catch (err) { next(err); }
 }

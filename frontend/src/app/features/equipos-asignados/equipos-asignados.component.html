@@ -419,6 +419,7 @@
         <select class="input" formControlName="estado">
           @for (op of estados; track op.valor) { <option [value]="op.valor">{{ op.etiqueta }}</option> }
         </select>
+        <div class="hint">Solo lectura -- se cambia desde el boton de Accion rapida (&vellip;) de la fila.</div>
       </div>
     </div>
 
