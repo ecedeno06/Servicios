@@ -589,6 +589,12 @@ export class EquiposAsignadosComponent implements OnInit {
     // La categoria de un equipo ya creado no se cambia desde aca -- solo
     // queda habilitada al partir de cero con el boton "+ Nuevo".
     this.form.get('categoria_id')?.disable();
+    // El estado si se puede corregir en edicion (salvo pasar a "En uso",
+    // que el backend bloquea desde este formulario -- ver guardar()).
+    this.form.get('estado')?.enable();
+    // La asignacion de usuario es de solo lectura aca -- solo se cambia
+    // desde el boton de Accion rapida de la fila (abrirAccion/confirmarAccion).
+    this.form.get('asignada_a')?.disable();
     this.cargarHistorial(e.id);
     this.errorArchivoImagen.set(null);
     this.cargarAdjuntos(e.id);
@@ -787,6 +793,10 @@ export class EquiposAsignadosComponent implements OnInit {
       precio_usd: '', locacion_pais: '', proveedor_id: '', no_factura: '', url: '',
     });
     this.form.get('categoria_id')?.enable();
+    // Equipo nuevo: siempre entra en Stock y sin asignar -- ambos se
+    // bloquean aca para que coincida con lo que exige el backend.
+    this.form.get('estado')?.disable();
+    this.form.get('asignada_a')?.disable();
   }
 
   guardar(): void {

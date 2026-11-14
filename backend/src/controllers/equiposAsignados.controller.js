@@ -124,7 +124,7 @@ async function reporte(req, res, next) {
 async function crear(req, res, next) {
   try {
     const {
-      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
+      producto_id, marca, modelo, fecha_entrada, vida_util_meses, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
       mac_address, ip_fija, hardware_address,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
@@ -132,16 +132,19 @@ async function crear(req, res, next) {
     if (!producto_id || !marca || !modelo) {
       return res.status(400).json({ mensaje: 'producto_id, marca y modelo son requeridos' });
     }
-    const estadoFinal = estado || 'stock';
+    // Todo equipo nuevo entra en Stock y sin asignar, sin excepcion -- el
+    // paso a "En uso" (y la asignacion a una persona) se hace despues,
+    // solo desde el boton de Accion rapida de la fila (ver cambiarEstado).
+    const estadoFinal = 'stock';
     const { rows } = await pool.query(
       `insert into equipos_asignados
          (empresa_id, producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
           procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi, mac_address, ip_fija, hardware_address,
           precio_usd, locacion_pais, proveedor_id, no_factura, url, creado_por)
-       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+       values ($1,$2,$3,$4, coalesce($5, current_date), $6, $7, null, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
        returning id`,
       [
-        req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, asignada_a || null, observacion || null,
+        req.empresaId, producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estadoFinal, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
         mac_address?.trim() || null, ip_fija?.trim() || null, hardware_address?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
@@ -152,8 +155,8 @@ async function crear(req, res, next) {
     // Primer movimiento del historico: sin estado ni asignacion anterior.
     await pool.query(
       `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, registrado_por)
-       values ($1, null, $2, null, $3, $4)`,
-      [rows[0].id, estadoFinal, asignada_a || null, req.usuario.id]
+       values ($1, null, $2, null, null, $3)`,
+      [rows[0].id, estadoFinal, req.usuario.id]
     );
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
@@ -182,7 +185,7 @@ async function crear(req, res, next) {
 async function actualizar(req, res, next) {
   try {
     const {
-      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, asignada_a, observacion,
+      producto_id, marca, modelo, fecha_entrada, vida_util_meses, estado, observacion,
       procesador_id, memoria_ram, disco_duro, numero_serie, numero_puertos, numero_puertos_hdmi,
       mac_address, ip_fija, hardware_address,
       precio_usd, locacion_pais, proveedor_id, no_factura, url,
@@ -197,8 +200,17 @@ async function actualizar(req, res, next) {
     );
     if (!actual[0]) return res.status(404).json({ mensaje: 'Equipo asignado no encontrado' });
     const estadoAnterior = actual[0].estado;
-    const asignadaAnterior = actual[0].asignada_a;
-    const asignadaNueva = asignada_a || null;
+    const asignadaActual = actual[0].asignada_a;
+
+    // Este formulario ya no asigna a nadie (ni lo pide en el body) -- eso
+    // solo se hace desde el boton de Accion rapida de la fila. Por eso
+    // tampoco puede mover un equipo A "En uso" (requeriria asignar a
+    // alguien en el mismo paso); si se sale de "En uso" hacia otro
+    // estado, la asignacion se limpia, igual que hace cambiarEstado.
+    if (estado === 'en_uso' && estadoAnterior !== 'en_uso') {
+      return res.status(400).json({ mensaje: 'Para pasar a "En uso" usa el boton de Accion rapida de la fila' });
+    }
+    const asignadaFinal = (estadoAnterior === 'en_uso' && estado !== 'en_uso') ? null : asignadaActual;
 
     const { rows } = await pool.query(
       `update equipos_asignados set
@@ -228,7 +240,7 @@ async function actualizar(req, res, next) {
        where id = $24 and empresa_id = $25
        returning id`,
       [
-        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaNueva, observacion || null,
+        producto_id, marca, modelo, fecha_entrada, vida_util_meses || null, estado, asignadaFinal, observacion || null,
         procesador_id || null, memoria_ram || null, disco_duro || null, numero_serie || null, numero_puertos ?? null, numero_puertos_hdmi ?? null,
         mac_address?.trim() || null, ip_fija?.trim() || null, hardware_address?.trim() || null,
         precio_usd ?? null, locacion_pais || null, proveedor_id || null, no_factura?.trim() || null, url?.trim() || null,
@@ -236,21 +248,21 @@ async function actualizar(req, res, next) {
       ]
     );
 
-    // Un movimiento nuevo en el historico si el estado cambio o si se
-    // reasigno a otra persona (aunque el estado se mantenga igual) --
+    // Un movimiento nuevo en el historico si el estado cambio (incluye el
+    // caso en que se limpio la asignacion por salir de "En uso") --
     // editar otros campos, como observacion, no genera uno.
-    if (estado !== estadoAnterior || asignadaNueva !== asignadaAnterior) {
+    if (estado !== estadoAnterior || asignadaFinal !== asignadaActual) {
       await pool.query(
         `insert into equipos_historial (equipo_asignado_id, estado_anterior, estado_nuevo, asignada_a_anterior, asignada_a, registrado_por)
          values ($1, $2, $3, $4, $5, $6)`,
-        [req.params.id, estadoAnterior, estado, asignadaAnterior, asignadaNueva, req.usuario.id]
+        [req.params.id, estadoAnterior, estado, asignadaActual, asignadaFinal, req.usuario.id]
       );
     }
 
     const { rows: completo } = await pool.query(`${SELECT_BASE} where ea.id = $1`, [rows[0].id]);
 
     if (estado !== estadoAnterior) {
-      notificarCambioEstado(req, completo[0], estadoAnterior, asignadaAnterior);
+      notificarCambioEstado(req, completo[0], estadoAnterior, asignadaActual);
     }
 
     res.json(completo[0]);
