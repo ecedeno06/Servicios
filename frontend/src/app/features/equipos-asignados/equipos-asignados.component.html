@@ -233,7 +233,7 @@
                     }
                   </label>
                   @if (item.notificacion_entrega) {
-                    <button type="button" class="btn-icon" title="Enviar notificacion de entrega por correo" aria-label="Enviar notificacion de entrega por correo" [disabled]="!item.completado" (click)="enviarNotificacionEntrega(item)">
+                    <button type="button" class="btn-icon" title="Enviar notificacion de entrega por correo" aria-label="Enviar notificacion de entrega por correo" [disabled]="!item.completado" (click)="abrirNotificacionEntrega(item)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
                     </button>
                   }
@@ -246,6 +246,40 @@
                 }
               </div>
             }
+          </div>
+        }
+
+        @if (notificacionEntregaItem(); as niItem) {
+          <div class="card mt-16" style="padding: 12px;">
+            <h3 class="text-sm" style="margin: 0 0 8px;">Notificacion de entrega</h3>
+            <p class="text-muted text-sm" style="margin: 0 0 8px;">{{ niItem.descripcion }}</p>
+            @if (cargandoDestinatariosNotificacion()) {
+              <p class="text-muted text-sm">Cargando destinatarios...</p>
+            } @else {
+              @for (d of destinatariosNotificacion(); track d.email) {
+                <div class="flex items-center gap-6" style="margin-bottom: 4px;">
+                  <label class="flex items-center gap-6" style="cursor: pointer; flex: 1;">
+                    <input type="checkbox" [checked]="d.marcado" (change)="toggleDestinatarioNotificacion(d.email)" />
+                    <span class="text-sm">{{ d.email }}</span>
+                  </label>
+                  <button type="button" class="btn-link text-sm" title="Quitar" (click)="quitarDestinatarioNotificacion(d.email)">&times;</button>
+                </div>
+              } @empty {
+                <p class="text-muted text-sm">No hay destinatarios sugeridos (administradores/RRHH). Agrega uno manualmente.</p>
+              }
+
+              <div class="flex items-center gap-6 mt-8">
+                <input class="input" type="email" placeholder="Agregar correo adicional" [ngModel]="nuevoDestinatarioNotificacion()" (ngModelChange)="nuevoDestinatarioNotificacion.set($event)" (keydown.enter)="$event.preventDefault(); agregarDestinatarioNotificacion()" />
+                <button type="button" class="btn btn-outline btn-sm" (click)="agregarDestinatarioNotificacion()">+ Agregar</button>
+              </div>
+            }
+
+            <div class="form-actions mt-16">
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="enviandoNotificacionEntrega()" (click)="confirmarNotificacionEntrega()">
+                {{ enviandoNotificacionEntrega() ? 'Enviando...' : 'Confirmar y enviar' }}
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" [disabled]="enviandoNotificacionEntrega()" (click)="cerrarNotificacionEntrega()">Cancelar</button>
+            </div>
           </div>
         }
 

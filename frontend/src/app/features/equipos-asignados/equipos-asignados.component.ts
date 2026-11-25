@@ -16,7 +16,6 @@ import { MultiSelectFilterComponent } from '../../core/components/multi-select-f
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
-import { ConfirmService } from '../../core/services/confirm.service';
 import { MenuService } from '../../core/services/menu.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
@@ -413,7 +412,6 @@ export class EquiposAsignadosComponent implements OnInit {
     public auth: AuthService,
     private toast: ToastService,
     private confirmPasswordSrv: ConfirmPasswordService,
-    private confirmSrv: ConfirmService,
     public menu: MenuService
   ) {}
 
@@ -1041,28 +1039,95 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
+  // ---------- Dialogo de "Notificacion de entrega" ----------
   // Boton-icono de correo junto al item (solo items con "Notificacion de
   // entrega" activada, habilitado solo cuando el item ya esta marcado como
-  // completado) -- unico disparador del envio, ya no ocurre automaticamente
-  // al tildar el checkbox.
-  async enviarNotificacionEntrega(item: EquipoChecklistItem): Promise<void> {
+  // completado). Al abrirse, precarga administradores + RRHH como
+  // destinatarios ya marcados -- el usuario puede destildar algunos o
+  // agregar correos adicionales antes de confirmar.
+  notificacionEntregaItem = signal<EquipoChecklistItem | null>(null);
+  destinatariosNotificacion = signal<{ email: string; marcado: boolean }[]>([]);
+  nuevoDestinatarioNotificacion = signal('');
+  cargandoDestinatariosNotificacion = signal(false);
+  enviandoNotificacionEntrega = signal(false);
+
+  abrirNotificacionEntrega(item: EquipoChecklistItem): void {
     const equipo = this.checklistEquipoActual();
     const ejecucion = this.checklistEjecucionActual();
     if (!equipo || !ejecucion || !item.completado) return;
 
-    const ok = await this.confirmSrv.confirmar(
-      '¿Enviar el checklist en PDF por correo a administradores y Recursos Humanos?',
-      { titulo: 'Notificacion de entrega', textoAceptar: 'Enviar', peligroso: false }
-    );
-    if (!ok) return;
+    this.notificacionEntregaItem.set(item);
+    this.nuevoDestinatarioNotificacion.set('');
+    this.destinatariosNotificacion.set([]);
+    this.cargandoDestinatariosNotificacion.set(true);
+    this.srv.destinatariosNotificacionEntrega(equipo.id, ejecucion.id).subscribe({
+      next: (res) => {
+        this.cargandoDestinatariosNotificacion.set(false);
+        this.destinatariosNotificacion.set(res.destinatarios.map((email) => ({ email, marcado: true })));
+      },
+      error: (err) => {
+        this.cargandoDestinatariosNotificacion.set(false);
+        this.toast.error(err?.error?.mensaje || 'No se pudieron cargar los destinatarios');
+        this.notificacionEntregaItem.set(null);
+      },
+    });
+  }
 
+  cerrarNotificacionEntrega(): void {
+    if (this.enviandoNotificacionEntrega()) return;
+    this.notificacionEntregaItem.set(null);
+  }
+
+  toggleDestinatarioNotificacion(email: string): void {
+    this.destinatariosNotificacion.update((arr) => arr.map((d) => (d.email === email ? { ...d, marcado: !d.marcado } : d)));
+  }
+
+  quitarDestinatarioNotificacion(email: string): void {
+    this.destinatariosNotificacion.update((arr) => arr.filter((d) => d.email !== email));
+  }
+
+  private readonly EMAIL_REGEX_NOTIFICACION = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  agregarDestinatarioNotificacion(): void {
+    const email = this.nuevoDestinatarioNotificacion().trim();
+    if (!email || !this.EMAIL_REGEX_NOTIFICACION.test(email)) {
+      this.toast.advertencia('Ingresa un correo valido.');
+      return;
+    }
+    if (this.destinatariosNotificacion().some((d) => d.email.toLowerCase() === email.toLowerCase())) {
+      this.nuevoDestinatarioNotificacion.set('');
+      return;
+    }
+    this.destinatariosNotificacion.update((arr) => [...arr, { email, marcado: true }]);
+    this.nuevoDestinatarioNotificacion.set('');
+  }
+
+  confirmarNotificacionEntrega(): void {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    if (!equipo || !ejecucion || this.enviandoNotificacionEntrega()) return;
+
+    const destinatarios = this.destinatariosNotificacion().filter((d) => d.marcado).map((d) => d.email);
+    if (!destinatarios.length) {
+      this.toast.advertencia('Selecciona al menos un destinatario.');
+      return;
+    }
     const datos = this.construirDatosChecklistPdf();
     if (!datos) return;
+
+    this.enviandoNotificacionEntrega.set(true);
     this.checklistPdfSrv.generar(datos)
       .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
-      .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipo.id, ejecucion.id, { pdfBase64 })))
-      .then(() => this.toast.exito('Checklist enviado a administradores y Recursos Humanos.'))
-      .catch((err) => this.toast.error(err?.error?.mensaje || 'No se pudo enviar la notificacion de entrega del checklist.'));
+      .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipo.id, ejecucion.id, { pdfBase64, destinatarios })))
+      .then(() => {
+        this.enviandoNotificacionEntrega.set(false);
+        this.notificacionEntregaItem.set(null);
+        this.toast.exito('Checklist enviado correctamente.');
+      })
+      .catch((err) => {
+        this.enviandoNotificacionEntrega.set(false);
+        this.toast.error(err?.error?.mensaje || 'No se pudo enviar la notificacion de entrega del checklist.');
+      });
   }
 
   private construirDatosChecklistPdf(): ChecklistPdfData | null {

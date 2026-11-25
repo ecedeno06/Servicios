@@ -693,12 +693,25 @@ async function enviarChecklistPdfPorCorreo(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// POST /:id/checklist/:ejecucionId/notificar-entrega  { pdfBase64 }
-// Se dispara automaticamente desde el frontend (no a pedido explicito del
-// usuario) cuando se marca como completado un item de checklist con
+// GET /:id/checklist/:ejecucionId/notificar-entrega/destinatarios
+// Lista sugerida (administradores/super-admin + rol RRHH de la empresa)
+// para prellenar, ya marcados, los checkboxes del dialogo de
+// "Notificacion de entrega" -- el usuario puede destildar algunos o
+// agregar correos adicionales antes de confirmar el envio.
+async function destinatariosEntregaChecklist(req, res, next) {
+  try {
+    if (!(await verificarEjecucion(req))) return res.status(404).json({ mensaje: 'Checklist no encontrado' });
+    const destinatarios = await obtenerCorreosEntregaChecklist(req.empresaId);
+    res.json({ destinatarios });
+  } catch (err) { next(err); }
+}
+
+// POST /:id/checklist/:ejecucionId/notificar-entrega  { pdfBase64, destinatarios }
+// Se dispara desde el dialogo de confirmacion del frontend (checkboxes +
+// agregar adicional) cuando se completa un item de checklist con
 // "Notificacion de entrega" activada -- el PDF ya viene armado del lado
-// del frontend (pdfmake), este endpoint solo lo manda por correo a
-// administradores/super-admin + el rol RRHH de la empresa.
+// del frontend (pdfmake); este endpoint valida los destinatarios elegidos
+// y lo manda por correo.
 async function notificarEntregaChecklist(req, res, next) {
   try {
     if (!(await verificarEjecucion(req))) return res.status(404).json({ mensaje: 'Checklist no encontrado' });
@@ -708,8 +721,16 @@ async function notificarEntregaChecklist(req, res, next) {
       return res.status(400).json({ mensaje: 'pdfBase64 es requerido' });
     }
 
-    const destinatarios = await obtenerCorreosEntregaChecklist(req.empresaId);
-    if (!destinatarios.length) return res.json({ ok: true, mensaje: 'Sin destinatarios configurados' });
+    const destinatarios = Array.isArray(req.body?.destinatarios)
+      ? [...new Set(req.body.destinatarios.map((d) => String(d).trim()).filter(Boolean))]
+      : [];
+    if (!destinatarios.length) {
+      return res.status(400).json({ mensaje: 'Selecciona al menos un destinatario' });
+    }
+    const invalido = destinatarios.find((d) => !EMAIL_REGEX.test(d));
+    if (invalido) {
+      return res.status(400).json({ mensaje: `Correo invalido: ${invalido}` });
+    }
 
     await enviarCorreo({
       destinatario: destinatarios,
@@ -719,7 +740,7 @@ async function notificarEntregaChecklist(req, res, next) {
       attachments: [{ nombre: 'checklist-equipo.pdf', contentBase64: pdfBase64, contentType: 'application/pdf' }],
     });
 
-    res.json({ ok: true, mensaje: 'Checklist enviado a administradores y RRHH' });
+    res.json({ ok: true, mensaje: 'Checklist enviado correctamente' });
   } catch (err) { next(err); }
 }
 
@@ -728,5 +749,5 @@ module.exports = {
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,
-  enviarChecklistPdfPorCorreo, notificarEntregaChecklist,
+  enviarChecklistPdfPorCorreo, destinatariosEntregaChecklist, notificarEntregaChecklist,
 };

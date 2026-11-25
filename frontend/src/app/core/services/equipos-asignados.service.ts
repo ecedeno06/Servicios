@@ -81,10 +81,16 @@ export class EquiposAsignadosService {
     return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/enviar-pdf`, data);
   }
 
-  // Disparado automaticamente (no a pedido del usuario) al completar un
-  // item de checklist marcado con "Notificacion de entrega" -- el backend
-  // resuelve solo los destinatarios (administradores + RRHH).
-  notificarEntregaChecklist(equipoId: string, ejecucionId: string, data: { pdfBase64: string }): Observable<{ ok: boolean; mensaje: string }> {
+  // Lista sugerida (administradores + RRHH) para prellenar, ya marcados,
+  // los checkboxes del dialogo de "Notificacion de entrega".
+  destinatariosNotificacionEntrega(equipoId: string, ejecucionId: string): Observable<{ destinatarios: string[] }> {
+    return this.http.get<{ destinatarios: string[] }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/notificar-entrega/destinatarios`);
+  }
+
+  // Disparado desde el dialogo de confirmacion (checkboxes + agregar
+  // adicional) al completar un item de checklist marcado con "Notificacion
+  // de entrega".
+  notificarEntregaChecklist(equipoId: string, ejecucionId: string, data: { pdfBase64: string; destinatarios: string[] }): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/notificar-entrega`, data);
   }
 }
