@@ -1086,6 +1086,7 @@ export class EquiposAsignadosComponent implements OnInit {
       empresaNombre: empresa?.empresa_nombre ?? '',
       empresaLogo: empresa?.empresa_logo ?? null,
       equipo: `${equipo.marca} ${equipo.modelo}` + (equipo.numero_serie ? ` (SN:${equipo.numero_serie})` : ''),
+      equipoIdCorto: this.idCorto(equipo.id),
       categoria: equipo.categoria_nombre,
       asignadoA: ejecucion.asignado_a || undefined,
       fechaEjecucion: formatearFecha(ejecucion.fecha),

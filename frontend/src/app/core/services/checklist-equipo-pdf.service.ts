@@ -35,6 +35,7 @@ export interface ChecklistPdfData {
   empresaNombre?: string;
   empresaLogo?: string | null; // data URI base64
   equipo: string; // "marca modelo"
+  equipoIdCorto?: string; // mismo criterio que idCorto() -- primeros 8 del UUID, mayusculas
   categoria?: string;
   asignadoA?: string;
   fechaEjecucion: string; // ya formateada
@@ -182,7 +183,13 @@ export class ChecklistEquipoPdfService {
 
       footer: (currentPage: number, pageCount: number) => ({
         columns: [
-          { text: `Generado el ${data.fechaGeneracion}` + (data.generadoPor ? ` · ${data.generadoPor}` : ''), style: 'pie', margin: [40, 0, 0, 0] },
+          {
+            stack: [
+              { text: `Equipo: ${data.equipoIdCorto || '-'} · Asignado a: ${data.asignadoA || 'Sin asignar'}`, style: 'pie' },
+              { text: `Generado el ${data.fechaGeneracion}` + (data.generadoPor ? ` · ${data.generadoPor}` : ''), style: 'pie' },
+            ],
+            margin: [40, 0, 0, 0],
+          },
           { text: `${currentPage} / ${pageCount}`, style: 'pie', alignment: 'right', margin: [0, 0, 40, 0] },
         ],
       }),
