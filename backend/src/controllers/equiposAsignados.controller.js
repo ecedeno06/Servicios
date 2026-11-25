@@ -39,6 +39,30 @@ function notificarAdministradores(empresaId, { asunto, html, texto }) {
     .catch((err) => console.error('No se pudo notificar a administradores por correo:', err.message));
 }
 
+async function obtenerCorreosRRHH(empresaId) {
+  const { rows } = await pool.query(
+    `select distinct u.email
+       from usuarios u
+       join usuarios_empresas_rol uer on uer.usuario_id = u.id
+       where u.activo = true
+         and u.email <> all($2::text[])
+         and uer.empresa_id = $1 and uer.rol = 'rrhh'`,
+    [empresaId, ADMIN_CORREOS_EXCLUIDOS]
+  );
+  return rows.map((r) => r.email);
+}
+
+// Destinatarios de la "Notificacion de entrega" del checklist: administradores
+// + super-admin (mismo criterio que notificarAdministradores) + el rol RRHH
+// de la empresa -- sin duplicados si alguien tiene ambos.
+async function obtenerCorreosEntregaChecklist(empresaId) {
+  const [admins, rrhh] = await Promise.all([
+    obtenerCorreosAdministradores(empresaId),
+    obtenerCorreosRRHH(empresaId),
+  ]);
+  return Array.from(new Set([...admins, ...rrhh]));
+}
+
 const escHtml = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Correo "Cambio de estado de equipo" (editar y cambio rapido). Incluye a quien
@@ -552,6 +576,7 @@ async function obtenerChecklistEjecucion(req, res, next) {
          c.id as checklist_id,
          c.descripcion,
          c.url,
+         c.notificacion_entrega,
          coalesce(i.completado, false) as completado,
          i.fecha_completado,
          um.nombre as modificado_por_nombre
@@ -623,6 +648,7 @@ async function actualizarChecklistEjecucionItem(req, res, next) {
          c.id as checklist_id,
          c.descripcion,
          c.url,
+         c.notificacion_entrega,
          i.completado,
          i.fecha_completado,
          um.nombre as modificado_por_nombre
@@ -667,10 +693,40 @@ async function enviarChecklistPdfPorCorreo(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// POST /:id/checklist/:ejecucionId/notificar-entrega  { pdfBase64 }
+// Se dispara automaticamente desde el frontend (no a pedido explicito del
+// usuario) cuando se marca como completado un item de checklist con
+// "Notificacion de entrega" activada -- el PDF ya viene armado del lado
+// del frontend (pdfmake), este endpoint solo lo manda por correo a
+// administradores/super-admin + el rol RRHH de la empresa.
+async function notificarEntregaChecklist(req, res, next) {
+  try {
+    if (!(await verificarEjecucion(req))) return res.status(404).json({ mensaje: 'Checklist no encontrado' });
+
+    const pdfBase64 = req.body?.pdfBase64;
+    if (!pdfBase64 || typeof pdfBase64 !== 'string') {
+      return res.status(400).json({ mensaje: 'pdfBase64 es requerido' });
+    }
+
+    const destinatarios = await obtenerCorreosEntregaChecklist(req.empresaId);
+    if (!destinatarios.length) return res.json({ ok: true, mensaje: 'Sin destinatarios configurados' });
+
+    await enviarCorreo({
+      destinatario: destinatarios,
+      asunto: 'Checklist de equipo -- Notificacion de entrega',
+      texto: 'Se completo un item de checklist marcado para "Notificacion de entrega". Se adjunta el checklist en PDF.',
+      html: '<p>Se completo un item de checklist marcado para "Notificacion de entrega". Se adjunta el checklist en PDF.</p>',
+      attachments: [{ nombre: 'checklist-equipo.pdf', contentBase64: pdfBase64, contentType: 'application/pdf' }],
+    });
+
+    res.json({ ok: true, mensaje: 'Checklist enviado a administradores y RRHH' });
+  } catch (err) { next(err); }
+}
+
 module.exports = {
   listar, reporte, crear, actualizar, eliminar, historial, eliminarHistorial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,
-  enviarChecklistPdfPorCorreo,
+  enviarChecklistPdfPorCorreo, notificarEntregaChecklist,
 };

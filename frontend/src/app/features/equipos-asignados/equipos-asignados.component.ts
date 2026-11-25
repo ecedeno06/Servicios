@@ -1031,12 +1031,30 @@ export class EquiposAsignadosComponent implements OnInit {
           ...det,
           items: det.items.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)),
         });
+        // Si el item recien completado tiene "Notificacion de entrega"
+        // activada, se envia el checklist completo en PDF a administradores
+        // + RRHH -- en segundo plano, sin interrumpir al usuario.
+        if (actualizado.completado && actualizado.notificacion_entrega) {
+          this.notificarEntregaChecklistSiAplica(equipo.id, ejecucion.id);
+        }
       },
       error: (err) => {
         this.guardandoChecklistItem.set(null);
         this.toast.error(err?.error?.mensaje || 'No se pudo guardar el checklist');
       },
     });
+  }
+
+  // Envio "silencioso": no bloquea ni le muestra nada al usuario mientras
+  // ocurre; si falla, solo se loguea -- no debe interrumpir el flujo de
+  // marcar items del checklist.
+  private notificarEntregaChecklistSiAplica(equipoId: string, ejecucionId: string): void {
+    const datos = this.construirDatosChecklistPdf();
+    if (!datos) return;
+    this.checklistPdfSrv.generar(datos)
+      .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
+      .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipoId, ejecucionId, { pdfBase64 })))
+      .catch((err) => console.error('No se pudo enviar la notificacion de entrega del checklist:', err));
   }
 
   private construirDatosChecklistPdf(): ChecklistPdfData | null {

@@ -33,14 +33,14 @@ async function obtenerPorId(req, res, next) {
 
 async function crear(req, res, next) {
   try {
-    const { descripcion, observacion, responsable, url, activo } = req.body;
+    const { descripcion, observacion, responsable, url, activo, notificacion_entrega } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
 
     const { rows } = await pool.query(
-      `insert into checklists (empresa_id, descripcion, observacion, responsable, url, activo, creado_por)
-       values ($1, $2, $3, $4, $5, $6, $7)
+      `insert into checklists (empresa_id, descripcion, observacion, responsable, url, activo, notificacion_entrega, creado_por)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)
        returning id`,
       [
         req.empresaId,
@@ -49,6 +49,7 @@ async function crear(req, res, next) {
         responsable ? responsable.trim() : null,
         url ? url.trim() : null,
         activo ?? true,
+        !!notificacion_entrega,
         req.usuario.id,
       ]
     );
@@ -60,7 +61,7 @@ async function crear(req, res, next) {
 
 async function actualizar(req, res, next) {
   try {
-    const { descripcion, observacion, responsable, url, activo } = req.body;
+    const { descripcion, observacion, responsable, url, activo, notificacion_entrega } = req.body;
     if (!descripcion) {
       return res.status(400).json({ mensaje: 'La descripcion es requerida' });
     }
@@ -78,14 +79,16 @@ async function actualizar(req, res, next) {
          responsable = $3,
          url = $4,
          activo = $5,
-         modificado_por = $6
-       where id = $7 and empresa_id = $8`,
+         notificacion_entrega = $6,
+         modificado_por = $7
+       where id = $8 and empresa_id = $9`,
       [
         descripcion.trim(),
         observacion ? observacion.trim() : null,
         responsable ? responsable.trim() : null,
         url ? url.trim() : null,
         activo ?? true,
+        !!notificacion_entrega,
         req.usuario.id,
         req.params.id,
         req.empresaId,

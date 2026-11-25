@@ -475,6 +475,7 @@ export interface ChecklistItem {
   responsable?: string | null;
   url?: string | null;
   activo: boolean;
+  notificacion_entrega: boolean;
   creado_por: string;
   creado_por_nombre?: string;
   modificado_por?: string | null;
@@ -507,6 +508,7 @@ export interface EquipoChecklistItem {
   checklist_id: string;
   descripcion: string;
   url?: string | null;
+  notificacion_entrega: boolean;
   completado: boolean;
   fecha_completado?: string | null;
   modificado_por_nombre?: string | null;

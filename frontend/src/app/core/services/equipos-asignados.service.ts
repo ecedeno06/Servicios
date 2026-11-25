@@ -80,4 +80,11 @@ export class EquiposAsignadosService {
   enviarChecklistPdfPorCorreo(equipoId: string, ejecucionId: string, data: { destinatario: string; pdfBase64: string }): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/enviar-pdf`, data);
   }
+
+  // Disparado automaticamente (no a pedido del usuario) al completar un
+  // item de checklist marcado con "Notificacion de entrega" -- el backend
+  // resuelve solo los destinatarios (administradores + RRHH).
+  notificarEntregaChecklist(equipoId: string, ejecucionId: string, data: { pdfBase64: string }): Observable<{ ok: boolean; mensaje: string }> {
+    return this.http.post<{ ok: boolean; mensaje: string }>(`${this.base}/${equipoId}/checklist/${ejecucionId}/notificar-entrega`, data);
+  }
 }
