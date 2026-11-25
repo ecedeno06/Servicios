@@ -223,14 +223,21 @@
           <div style="max-height: 360px; overflow-y: auto; margin-top: 8px;">
             @for (item of ejecucion.items; track item.checklist_id) {
               <div class="card" style="margin-bottom: 8px; padding: 10px;" [style.opacity]="guardandoChecklistItem() === item.checklist_id ? 0.6 : 1">
-                <label class="flex items-center gap-6" style="cursor: pointer;">
-                  <input type="checkbox" [checked]="item.completado" (change)="toggleCompletadoChecklistItem(item)" />
-                  @if (item.url) {
-                    <a [href]="item.url" target="_blank" rel="noopener" class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'" (click)="$event.stopPropagation()">{{ item.descripcion }}</a>
-                  } @else {
-                    <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
+                <div class="flex items-center" style="justify-content: space-between; gap: 8px;">
+                  <label class="flex items-center gap-6" style="cursor: pointer;">
+                    <input type="checkbox" [checked]="item.completado" (change)="toggleCompletadoChecklistItem(item)" />
+                    @if (item.url) {
+                      <a [href]="item.url" target="_blank" rel="noopener" class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'" (click)="$event.stopPropagation()">{{ item.descripcion }}</a>
+                    } @else {
+                      <span class="text-sm" [style.text-decoration]="item.completado ? 'line-through' : 'none'">{{ item.descripcion }}</span>
+                    }
+                  </label>
+                  @if (item.notificacion_entrega) {
+                    <button type="button" class="btn-icon" title="Enviar notificacion de entrega por correo" aria-label="Enviar notificacion de entrega por correo" [disabled]="!item.completado" (click)="enviarNotificacionEntrega(item)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                    </button>
                   }
-                </label>
+                </div>
                 @if (item.completado && item.fecha_completado) {
                   <div class="text-muted text-sm" style="margin-top: 4px;">
                     Completado el {{ (item.fecha_completado | date:'d-MMM-y h:mm a') | lowercase }}

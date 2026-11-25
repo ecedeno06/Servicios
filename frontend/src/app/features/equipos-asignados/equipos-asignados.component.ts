@@ -1033,13 +1033,6 @@ export class EquiposAsignadosComponent implements OnInit {
           ...det,
           items: det.items.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)),
         });
-        // Si el item recien completado tiene "Notificacion de entrega"
-        // activada, se pide confirmar antes de mandar el checklist en PDF
-        // a administradores + RRHH (el item ya quedo marcado de todos
-        // modos, se confirme o no el envio del correo).
-        if (actualizado.completado && actualizado.notificacion_entrega) {
-          this.confirmarYNotificarEntregaChecklist(equipo.id, ejecucion.id);
-        }
       },
       error: (err) => {
         this.guardandoChecklistItem.set(null);
@@ -1048,9 +1041,17 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  private async confirmarYNotificarEntregaChecklist(equipoId: string, ejecucionId: string): Promise<void> {
+  // Boton-icono de correo junto al item (solo items con "Notificacion de
+  // entrega" activada, habilitado solo cuando el item ya esta marcado como
+  // completado) -- unico disparador del envio, ya no ocurre automaticamente
+  // al tildar el checkbox.
+  async enviarNotificacionEntrega(item: EquipoChecklistItem): Promise<void> {
+    const equipo = this.checklistEquipoActual();
+    const ejecucion = this.checklistEjecucionActual();
+    if (!equipo || !ejecucion || !item.completado) return;
+
     const ok = await this.confirmSrv.confirmar(
-      'Este item esta marcado con "Notificacion de Entrega". ¿Enviar el checklist en PDF por correo a administradores y Recursos Humanos?',
+      '¿Enviar el checklist en PDF por correo a administradores y Recursos Humanos?',
       { titulo: 'Notificacion de entrega', textoAceptar: 'Enviar', peligroso: false }
     );
     if (!ok) return;
@@ -1059,7 +1060,7 @@ export class EquiposAsignadosComponent implements OnInit {
     if (!datos) return;
     this.checklistPdfSrv.generar(datos)
       .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
-      .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipoId, ejecucionId, { pdfBase64 })))
+      .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipo.id, ejecucion.id, { pdfBase64 })))
       .then(() => this.toast.exito('Checklist enviado a administradores y Recursos Humanos.'))
       .catch((err) => this.toast.error(err?.error?.mensaje || 'No se pudo enviar la notificacion de entrega del checklist.'));
   }
