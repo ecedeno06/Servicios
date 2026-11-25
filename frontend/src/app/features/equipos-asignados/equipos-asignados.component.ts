@@ -16,6 +16,7 @@ import { MultiSelectFilterComponent } from '../../core/components/multi-select-f
 import { leerArchivoComoBase64 } from '../../core/utils/imagen.util';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { MenuService } from '../../core/services/menu.service';
 
 const ESTADOS: { valor: EstadoEquipo; etiqueta: string }[] = [
@@ -412,6 +413,7 @@ export class EquiposAsignadosComponent implements OnInit {
     public auth: AuthService,
     private toast: ToastService,
     private confirmPasswordSrv: ConfirmPasswordService,
+    private confirmSrv: ConfirmService,
     public menu: MenuService
   ) {}
 
@@ -1032,10 +1034,11 @@ export class EquiposAsignadosComponent implements OnInit {
           items: det.items.map((i) => (i.checklist_id === actualizado.checklist_id ? actualizado : i)),
         });
         // Si el item recien completado tiene "Notificacion de entrega"
-        // activada, se envia el checklist completo en PDF a administradores
-        // + RRHH -- en segundo plano, sin interrumpir al usuario.
+        // activada, se pide confirmar antes de mandar el checklist en PDF
+        // a administradores + RRHH (el item ya quedo marcado de todos
+        // modos, se confirme o no el envio del correo).
         if (actualizado.completado && actualizado.notificacion_entrega) {
-          this.notificarEntregaChecklistSiAplica(equipo.id, ejecucion.id);
+          this.confirmarYNotificarEntregaChecklist(equipo.id, ejecucion.id);
         }
       },
       error: (err) => {
@@ -1045,16 +1048,20 @@ export class EquiposAsignadosComponent implements OnInit {
     });
   }
 
-  // Envio "silencioso": no bloquea ni le muestra nada al usuario mientras
-  // ocurre; si falla, solo se loguea -- no debe interrumpir el flujo de
-  // marcar items del checklist.
-  private notificarEntregaChecklistSiAplica(equipoId: string, ejecucionId: string): void {
+  private async confirmarYNotificarEntregaChecklist(equipoId: string, ejecucionId: string): Promise<void> {
+    const ok = await this.confirmSrv.confirmar(
+      'Este item esta marcado con "Notificacion de Entrega". ¿Enviar el checklist en PDF por correo a administradores y Recursos Humanos?',
+      { titulo: 'Notificacion de entrega', textoAceptar: 'Enviar', peligroso: false }
+    );
+    if (!ok) return;
+
     const datos = this.construirDatosChecklistPdf();
     if (!datos) return;
     this.checklistPdfSrv.generar(datos)
       .then((doc) => new Promise<string>((resolve) => doc.getBase64((b64: string) => resolve(b64))))
       .then((pdfBase64) => firstValueFrom(this.srv.notificarEntregaChecklist(equipoId, ejecucionId, { pdfBase64 })))
-      .catch((err) => console.error('No se pudo enviar la notificacion de entrega del checklist:', err));
+      .then(() => this.toast.exito('Checklist enviado a administradores y Recursos Humanos.'))
+      .catch((err) => this.toast.error(err?.error?.mensaje || 'No se pudo enviar la notificacion de entrega del checklist.'));
   }
 
   private construirDatosChecklistPdf(): ChecklistPdfData | null {
