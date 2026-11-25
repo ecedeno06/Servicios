@@ -212,6 +212,7 @@
           {{ equipoChk.marca }} {{ equipoChk.modelo }}
           &middot; Asignado a {{ ejecucion.asignado_a || 'Sin asignar' }}
           &middot; {{ (ejecucion.fecha | date:'d-MMM-y h:mm a') | lowercase }}
+          &middot; {{ checklistPorcentaje() }}% completado
         </p>
 
         @if (cargandoChecklist()) {

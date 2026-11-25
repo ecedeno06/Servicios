@@ -911,6 +911,15 @@ export class EquiposAsignadosComponent implements OnInit {
   mostrandoNuevoChecklist = signal(false);
   guardandoNuevoChecklist = signal(false);
 
+  // % completado del checklist abierto (redondeado), para el encabezado
+  // del detalle -- 0 si todavia no hay items activos en el catalogo.
+  checklistPorcentaje = computed(() => {
+    const items = this.checklistEjecucionActual()?.items ?? [];
+    if (items.length === 0) return 0;
+    const completados = items.filter((i) => i.completado).length;
+    return Math.round((completados / items.length) * 100);
+  });
+
   nuevoChecklistForm = this.fb.group({
     asignado_a: [''],
     fecha: [''],
