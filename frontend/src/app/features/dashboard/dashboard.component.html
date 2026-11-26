@@ -43,6 +43,21 @@
     </div>
   }
 
+  @if (equiposPorTipo().length) {
+    <div class="card widget-card">
+      <h3 class="widget-title">Equipos Asignados por tipo</h3>
+      <div class="widget-sub">Cantidad de equipos por categoria</div>
+      <div class="mini-tiles">
+        @for (fila of equiposPorTipo(); track fila.label) {
+          <div class="mini-tile">
+            <span class="mini-tile-value">{{ fila.count }}</span>
+            <span class="mini-tile-label">{{ fila.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
   @if (carritoPorEstado().length) {
     <div class="card widget-card">
       <h3 class="widget-title">Carrito de Compras</h3>

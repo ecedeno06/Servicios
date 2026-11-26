@@ -40,7 +40,7 @@
 .fill-vendida { background: var(--green-600); }
 
 /* ---- Carrito de Compras (mini tiles) ---- */
-.mini-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mini-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
 .mini-tile {
   display: flex;
   flex-direction: column;
