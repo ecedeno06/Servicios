@@ -52,39 +52,24 @@ export class DashboardComponent implements OnInit {
   totalContratadas = computed(() => this.consumo().reduce((acc, f) => acc + Number(f.horas_contratadas), 0));
   totalEjecutadas = computed(() => this.consumo().reduce((acc, f) => acc + Number(f.horas_ejecutadas), 0));
 
-  // Equipos Asignados por estado real (no se inventa un bucket "Asignados":
-  // la asignacion a usuario es un campo aparte, ver equiposConAsignacion).
-  equiposPorEstado = computed(() => {
-    const total = this.equipos().length;
-    const conteos = new Map<EstadoEquipo, number>();
-    for (const e of this.equipos()) conteos.set(e.estado, (conteos.get(e.estado) ?? 0) + 1);
-    return (Object.keys(ESTADO_EQUIPO_LABEL) as EstadoEquipo[])
-      .map((estado) => ({
-        estado,
-        label: ESTADO_EQUIPO_LABEL[estado],
-        count: conteos.get(estado) ?? 0,
-        pct: total ? Math.round(((conteos.get(estado) ?? 0) / total) * 100) : 0,
-      }))
-      .filter((f) => f.count > 0);
-  });
   totalEquipos = computed(() => this.equipos().length);
   equiposConAsignacion = computed(() => this.equipos().filter((e) => !!e.asignada_a).length);
 
   // Equipos Asignados por tipo (categoria del producto, ej. Laptop,
-  // Monitor...) -- dimension aparte del estado, en pastillas. Filtrable por
-  // estado via el <select> del encabezado del widget.
+  // Monitor...), en barras, filtrable por estado via el <select> del
+  // encabezado del widget (un solo widget -- ya no hay uno separado por
+  // estado, ese filtro reemplaza esa vista).
   estadoEquipoOpciones = Object.entries(ESTADO_EQUIPO_LABEL) as [EstadoEquipo, string][];
   filtroEstadoTipo = signal<EstadoEquipo | ''>('');
 
   equiposPorTipo = computed(() => {
     const filtro = this.filtroEstadoTipo();
+    const filtrados = filtro ? this.equipos().filter((e) => e.estado === filtro) : this.equipos();
+    const total = filtrados.length;
     const conteos = new Map<string, number>();
-    for (const e of this.equipos()) {
-      if (filtro && e.estado !== filtro) continue;
-      conteos.set(e.categoria_nombre, (conteos.get(e.categoria_nombre) ?? 0) + 1);
-    }
+    for (const e of filtrados) conteos.set(e.categoria_nombre, (conteos.get(e.categoria_nombre) ?? 0) + 1);
     return [...conteos.entries()]
-      .map(([label, count]) => ({ label, count }))
+      .map(([label, count]) => ({ label, count, pct: total ? Math.round((count / total) * 100) : 0 }))
       .sort((a, b) => b.count - a.count);
   });
 

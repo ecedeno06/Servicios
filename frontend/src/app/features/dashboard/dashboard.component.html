@@ -29,26 +29,10 @@
 <div class="widgets-grid">
   @if (totalEquipos() > 0) {
     <div class="card widget-card">
-      <h3 class="widget-title">Equipos por estado</h3>
-      <div class="widget-sub">{{ totalEquipos() }} equipos en total &middot; {{ equiposConAsignacion() }} con usuario asignado</div>
-      <div class="estado-list">
-        @for (fila of equiposPorEstado(); track fila.estado) {
-          <div class="estado-row">
-            <span class="estado-label">{{ fila.label }}</span>
-            <div class="estado-bar"><div class="estado-fill" [ngClass]="'fill-' + fila.estado" [style.width.%]="fila.pct"></div></div>
-            <span class="estado-count">{{ fila.count }}</span>
-          </div>
-        }
-      </div>
-    </div>
-  }
-
-  @if (totalEquipos() > 0) {
-    <div class="card widget-card">
       <div class="widget-header">
         <div>
           <h3 class="widget-title">Equipos por tipo</h3>
-          <div class="widget-sub">Cantidad de equipos por categoria</div>
+          <div class="widget-sub">{{ totalEquipos() }} equipos en total &middot; {{ equiposConAsignacion() }} con usuario asignado</div>
         </div>
         <select class="input widget-filter" [ngModel]="filtroEstadoTipo()" (ngModelChange)="filtroEstadoTipo.set($event)">
           <option value="">Todos los estados</option>
@@ -57,15 +41,16 @@
           }
         </select>
       </div>
-      <div class="mini-tiles">
+      <div class="estado-list">
         @for (fila of equiposPorTipo(); track fila.label) {
           <a
-            class="mini-tile mini-tile-link"
+            class="estado-row estado-row-link"
             [routerLink]="['/equipos-asignados']"
             [queryParams]="{ categoria: fila.label, estado: filtroEstadoTipo() || null }"
           >
-            <span class="mini-tile-value">{{ fila.count }}</span>
-            <span class="mini-tile-label">{{ fila.label }}</span>
+            <span class="estado-label">{{ fila.label }}</span>
+            <div class="estado-bar"><div class="estado-fill fill-tipo" [style.width.%]="fila.pct"></div></div>
+            <span class="estado-count">{{ fila.count }}</span>
           </a>
         } @empty {
           <p class="text-muted text-sm">Ningun equipo en ese estado.</p>
