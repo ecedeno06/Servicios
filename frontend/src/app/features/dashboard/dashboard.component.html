@@ -59,10 +59,14 @@
       </div>
       <div class="mini-tiles">
         @for (fila of equiposPorTipo(); track fila.label) {
-          <div class="mini-tile">
+          <a
+            class="mini-tile mini-tile-link"
+            [routerLink]="['/equipos-asignados']"
+            [queryParams]="{ categoria: fila.label, estado: filtroEstadoTipo() || null }"
+          >
             <span class="mini-tile-value">{{ fila.count }}</span>
             <span class="mini-tile-label">{{ fila.label }}</span>
-          </div>
+          </a>
         } @empty {
           <p class="text-muted text-sm">Ningun equipo en ese estado.</p>
         }

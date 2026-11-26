@@ -67,6 +67,14 @@
 .mini-tile-value { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text-heading); }
 .mini-tile-label { font-size: 11px; color: var(--text-muted); text-align: center; }
 
+.mini-tile-link {
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.mini-tile-link:hover { background: var(--teal-100); }
+.mini-tile-link:hover .mini-tile-value { color: var(--teal-600); }
+
 /* ---- Horas por semana (barras verticales) ---- */
 .week-chart { display: flex; align-items: flex-end; gap: 10px; height: 110px; }
 .week-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; height: 100%; justify-content: flex-end; }

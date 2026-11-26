@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, computed, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -412,7 +413,8 @@ export class EquiposAsignadosComponent implements OnInit {
     public auth: AuthService,
     private toast: ToastService,
     private confirmPasswordSrv: ConfirmPasswordService,
-    public menu: MenuService
+    public menu: MenuService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -422,6 +424,15 @@ export class EquiposAsignadosComponent implements OnInit {
     this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data));
     this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
     this.checklistsSrv.listar().subscribe((data) => this.checklistItems.set(data));
+
+    // Llegada desde una pastilla del Dashboard ("Equipos Asignados por
+    // tipo") con ?categoria=...&estado=... -- precarga los filtros por
+    // columna (mismo mecanismo que usa el usuario a mano desde la tabla).
+    const qp = this.route.snapshot.queryParamMap;
+    const categoria = qp.get('categoria');
+    const estado = qp.get('estado') as EstadoEquipo | null;
+    if (categoria) this.filtroCategoria.set(new Set([categoria]));
+    if (estado) this.filtroEstado.set(new Set([this.etiquetaEstado(estado)]));
   }
 
   // Disparado solo por la interaccion real del usuario con el <select>
