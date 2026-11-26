@@ -6,69 +6,164 @@
 </div>
 
 <div class="tabs">
-  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'roles'" (click)="pestanaActiva.set('roles')">Roles</button>
-  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'menus'" (click)="pestanaActiva.set('menus')">Menus</button>
-  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'matriz'" (click)="pestanaActiva.set('matriz')">Matriz de permisos</button>
+  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'roles'" (click)="pestanaActiva.set('roles')">Roles y permisos</button>
+  <button type="button" class="tab-btn" [class.active]="pestanaActiva() === 'menus'" (click)="pestanaActiva.set('menus')">Catalogo de pantallas</button>
 </div>
 
 @if (pestanaActiva() === 'roles') {
-  <div class="page-header mt-16">
-    <div class="desc">{{ roles().length }} rol(es). Haz clic en una fila para editarla.</div>
-  </div>
+  <div class="roles-grid mt-16">
+    <!-- Columna izquierda: listado de roles -->
+    <section class="card roles-list-card">
+      <div class="roles-list-header">
+        <div class="roles-list-title">
+          <span class="roles-list-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+          </span>
+          <h2>Roles del sistema</h2>
+        </div>
+        <span class="badge badge-slate">{{ roles().length }} definido(s)</span>
+      </div>
+      <p class="text-muted text-sm">Selecciona un rol para ver o editar sus permisos.</p>
 
-  <div class="table-wrap table-wrap-compact">
-    <table class="data-table">
-      <thead>
-        <tr><th>Codigo</th><th>Nombre</th><th>Tipo</th></tr>
-      </thead>
-      <tbody>
+      <div class="roles-list mt-8">
         @for (r of roles(); track r.id) {
-          <tr class="row-clickable" [class.row-selected]="rolSeleccionado()?.id === r.id" (click)="seleccionarRol(r)">
-            <td>{{ r.codigo }}</td>
-            <td>{{ r.nombre }}</td>
-            <td>
-              @if (r.es_sistema) {
-                <span class="badge badge-slate">De sistema</span>
-              } @else {
-                <span class="badge badge-green">Custom</span>
-              }
-            </td>
-          </tr>
+          <button type="button" class="role-row" [class.role-row-active]="rolSeleccionado()?.id === r.id" (click)="seleccionarRol(r)">
+            <span class="role-row-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3a9 9 0 0 0-9 9v3a9 9 0 0 0 18 0v-3a9 9 0 0 0-9-9z"/></svg>
+            </span>
+            <span class="role-row-info">
+              <span class="role-row-nombre">{{ r.nombre }}</span>
+              <span class="role-row-codigo">{{ r.codigo }}</span>
+            </span>
+            @if (r.es_sistema) {
+              <span class="badge badge-slate role-row-badge">De sistema</span>
+            } @else {
+              <span class="badge badge-green role-row-badge">Custom</span>
+            }
+          </button>
         } @empty {
-          <tr><td colspan="3"><div class="empty-state">No hay roles registrados.</div></td></tr>
+          <div class="empty-state">No hay roles registrados.</div>
         }
-      </tbody>
-    </table>
+      </div>
+
+      <button type="button" class="btn btn-outline w-full mt-16" (click)="nuevoRol()">+ Crear nuevo rol</button>
+    </section>
+
+    <!-- Columna derecha: metadatos del rol seleccionado -->
+    <section class="card role-edit-card">
+      <div class="role-edit-header">
+        <div class="role-edit-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3a9 9 0 0 0-9 9v3a9 9 0 0 0 18 0v-3a9 9 0 0 0-9-9z"/></svg>
+        </div>
+        <div>
+          <span class="role-edit-kicker">{{ rolSeleccionado() ? 'Configuracion del rol' : 'Nuevo rol' }}</span>
+          <h2>{{ rolSeleccionado()?.nombre || 'Nuevo rol' }}</h2>
+        </div>
+      </div>
+
+      <form [formGroup]="formRol" (ngSubmit)="guardarRol()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Codigo *</label>
+            <input class="input" formControlName="codigo" placeholder="Ej: auditor" [attr.disabled]="rolSeleccionado() ? true : null" />
+            <div class="hint">{{ rolSeleccionado() ? 'No se puede cambiar despues de crear el rol.' : 'Solo minusculas/numeros/guion bajo.' }}</div>
+          </div>
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input class="input" formControlName="nombre" placeholder="Ej: Auditor" />
+          </div>
+        </div>
+
+        @if (rolSeleccionado(); as rol) {
+          <div class="role-metrics">
+            <div class="role-metric">
+              <span class="role-metric-label">Pantallas con acceso</span>
+              <span class="role-metric-value">{{ modulosConAcceso() }} <span class="role-metric-unit">/ {{ totalModulosMatriz() }}</span></span>
+            </div>
+            <div class="role-metric">
+              <span class="role-metric-label">Tipo de rol</span>
+              <span class="role-metric-value">{{ rol.es_sistema ? 'De sistema' : 'Custom' }}</span>
+              @if (rol.es_sistema) { <span class="text-muted text-sm">No se puede eliminar</span> }
+            </div>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="formRol.invalid">Guardar</button>
+          @if (rolSeleccionado()) {
+            @if (!rolSeleccionado()!.es_sistema) {
+              <button type="button" class="btn btn-danger" (click)="eliminarRol()">Eliminar</button>
+            }
+            <button type="button" class="btn btn-outline" (click)="nuevoRol()">Nuevo rol</button>
+          }
+        </div>
+        @if (rolSeleccionado()?.es_sistema) {
+          <p class="text-muted text-sm mt-8">Este rol es de sistema: su codigo no se puede cambiar ni se puede eliminar.</p>
+        }
+      </form>
+    </section>
   </div>
 
-  <div class="card mt-16">
-    <h2>{{ rolSeleccionado() ? 'Editar rol' : 'Nuevo rol' }}</h2>
-    <form [formGroup]="formRol" (ngSubmit)="guardarRol()">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Codigo *</label>
-          <input class="input" formControlName="codigo" placeholder="Ej: auditor" [attr.disabled]="rolSeleccionado() ? true : null" />
-          <div class="hint">Solo minusculas/numeros/guion bajo. No se puede cambiar despues de crear el rol.</div>
+  @if (rolSeleccionado(); as rol) {
+    <section class="card mt-16 matriz-card">
+      <div class="matriz-header">
+        <div>
+          <h3>Matriz de permisos</h3>
+          <p class="text-muted text-sm">Ajusta el acceso de <strong>{{ rol.nombre }}</strong> a cada pantalla.</p>
         </div>
-        <div class="form-group">
-          <label>Nombre *</label>
-          <input class="input" formControlName="nombre" placeholder="Ej: Auditor" />
+        <button type="button" class="btn btn-outline" (click)="marcarTodosVer()">Marcar todos "Ver"</button>
+      </div>
+
+      <div class="table-wrap mt-16">
+        <table class="data-table matriz-table">
+          <thead>
+            <tr>
+              <th>Pantalla</th>
+              @for (p of permisosCatalogo(); track p.id) { <th style="text-align:center;">{{ p.nombre }}</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filasMatriz(); track fila.menu.id) {
+              @if (fila.tipo === 'categoria') {
+                <tr class="matriz-categoria">
+                  <td [attr.colspan]="permisosCatalogo().length + 1">{{ fila.menu.nombre }}</td>
+                </tr>
+              } @else {
+                <tr>
+                  <td [class.matriz-row-indent]="fila.indentado">{{ fila.menu.nombre }}</td>
+                  @for (p of permisosCatalogo(); track p.id) {
+                    <td style="text-align:center;">
+                      <input type="checkbox" [checked]="estaConcedido(+fila.menu.id, p.id)" (change)="alternarConcesion(+fila.menu.id, p.id)" />
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    @if (matrizSucia()) {
+      <div class="matriz-unsaved-bar">
+        <div class="matriz-unsaved-info">
+          <span class="matriz-unsaved-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </span>
+          <div>
+            <p class="matriz-unsaved-title">Cambios sin guardar</p>
+            <p class="matriz-unsaved-sub">{{ cambiosPendientes() }} permiso(s) modificado(s) en "{{ rol.nombre }}"</p>
+          </div>
+        </div>
+        <div class="matriz-unsaved-actions">
+          <button type="button" class="btn-ghost-dark" (click)="descartarCambiosMatriz()">Descartar cambios</button>
+          <button type="button" class="btn btn-accent" [disabled]="guardandoMatriz()" (click)="guardarMatriz()">
+            {{ guardandoMatriz() ? 'Guardando...' : 'Guardar cambios de permisos' }}
+          </button>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="formRol.invalid">Guardar</button>
-        @if (rolSeleccionado()) {
-          @if (!rolSeleccionado()!.es_sistema) {
-            <button type="button" class="btn btn-danger" (click)="eliminarRol()">Eliminar</button>
-          }
-          <button type="button" class="btn btn-outline" (click)="nuevoRol()">Nuevo rol</button>
-        }
-      </div>
-      @if (rolSeleccionado()?.es_sistema) {
-        <p class="text-muted text-sm mt-8">Este rol es de sistema: su codigo no se puede cambiar ni se puede eliminar.</p>
-      }
-    </form>
-  </div>
+    }
+  }
 }
 
 @if (pestanaActiva() === 'menus') {
@@ -153,48 +248,4 @@
       </form>
     </div>
   }
-}
-
-@if (pestanaActiva() === 'matriz') {
-  <div class="card mt-16">
-    <div class="form-group" style="max-width:320px;">
-      <label>Rol</label>
-      <select class="input" [ngModel]="rolMatrizId()" (ngModelChange)="onCambiarRolMatriz($event)">
-        <option [ngValue]="null">Selecciona un rol</option>
-        @for (r of roles(); track r.id) { <option [ngValue]="r.id">{{ r.nombre }}</option> }
-      </select>
-    </div>
-
-    @if (rolMatrizActivo(); as rol) {
-      <div class="table-wrap mt-16">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Pantalla</th>
-              @for (p of permisosCatalogo(); track p.id) { <th style="text-align:center;">{{ p.nombre }}</th> }
-            </tr>
-          </thead>
-          <tbody>
-            @for (m of menusPlano(); track m.id) {
-              <tr>
-                <td>{{ m.nombre }}</td>
-                @for (p of permisosCatalogo(); track p.id) {
-                  <td style="text-align:center;">
-                    <input type="checkbox" [checked]="estaConcedido(+m.id, p.id)" (change)="alternarConcesion(+m.id, p.id)" />
-                  </td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <div class="form-actions mt-16">
-        <button type="button" class="btn btn-primary" [disabled]="guardandoMatriz()" (click)="guardarMatriz()">
-          {{ guardandoMatriz() ? 'Guardando...' : 'Guardar matriz de "' + rol.nombre + '"' }}
-        </button>
-      </div>
-    } @else {
-      <p class="text-muted text-sm mt-16">Elegi un rol para ver y editar su matriz de permisos.</p>
-    }
-  </div>
 }

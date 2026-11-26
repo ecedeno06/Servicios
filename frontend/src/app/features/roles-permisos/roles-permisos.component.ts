@@ -9,7 +9,8 @@ import { MenuItem, Permiso, RolCatalogo } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmPasswordService } from '../../core/services/confirm-password.service';
 
-type Pestana = 'roles' | 'menus' | 'matriz';
+type Pestana = 'roles' | 'menus';
+type FilaMatriz = { tipo: 'categoria'; menu: MenuItem } | { tipo: 'item'; menu: MenuItem; indentado: boolean };
 
 @Component({
   selector: 'app-roles-permisos',
@@ -42,16 +43,46 @@ export class RolesPermisosComponent implements OnInit {
     activo: [true],
   });
 
-  // ---------- Matriz ----------
-  rolMatrizId = signal<number | null>(null);
+  // ---------- Matriz (se carga/edita para el rol seleccionado a la izquierda) ----------
   concedidos = signal<Set<string>>(new Set());
   // Foto de lo que ya estaba concedido al cargar el rol -- para poder armar
   // un detalle de que cambio exactamente al guardar (ver guardarMatriz()),
-  // en vez de solo avisar "matriz actualizada" sin decir que se toco.
+  // y para saber si hay cambios sin guardar (ver matrizSucia/cambiosPendientes).
   concedidosOriginal = signal<Set<string>>(new Set());
   guardandoMatriz = signal(false);
 
-  rolMatrizActivo = computed(() => this.roles().find((r) => r.id === this.rolMatrizId()) ?? null);
+  // Arma las filas de la matriz respetando el arbol real (padre_id): un menu
+  // sin ruta propia que tiene hijos (hoy solo "Reportes") es un encabezado de
+  // categoria sin checkboxes propios -- nunca se le exige permiso en el
+  // backend, asi que asignarselo no haria nada.
+  filasMatriz = computed<FilaMatriz[]>(() => {
+    const todos = this.menusPlano();
+    const raices = todos.filter((m) => !m.padre_id).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    const filas: FilaMatriz[] = [];
+    for (const raiz of raices) {
+      const hijos = todos.filter((m) => Number(m.padre_id) === Number(raiz.id)).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+      if (hijos.length) {
+        filas.push({ tipo: 'categoria', menu: raiz });
+        for (const h of hijos) filas.push({ tipo: 'item', menu: h, indentado: true });
+      } else {
+        filas.push({ tipo: 'item', menu: raiz, indentado: false });
+      }
+    }
+    return filas;
+  });
+
+  totalModulosMatriz = computed(() => this.filasMatriz().filter((f) => f.tipo === 'item').length);
+  modulosConAcceso = computed(() => new Set([...this.concedidos()].map((c) => c.split('-')[0])).size);
+
+  cambiosPendientes = computed(() => {
+    const antes = this.concedidosOriginal();
+    const despues = this.concedidos();
+    let n = 0;
+    for (const c of despues) if (!antes.has(c)) n++;
+    for (const c of antes) if (!despues.has(c)) n++;
+    return n;
+  });
+  matrizSucia = computed(() => this.cambiosPendientes() > 0);
 
   constructor(
     private fb: FormBuilder,
@@ -78,11 +109,14 @@ export class RolesPermisosComponent implements OnInit {
     if (yaSeleccionado) { this.nuevoRol(); return; }
     this.rolSeleccionado.set(r);
     this.formRol.reset({ codigo: r.codigo, nombre: r.nombre });
+    this.cargarMatrizDeRol(r.id);
   }
 
   nuevoRol(): void {
     this.rolSeleccionado.set(null);
     this.formRol.reset({ codigo: '', nombre: '' });
+    this.concedidos.set(new Set());
+    this.concedidosOriginal.set(new Set());
   }
 
   guardarRol(): void {
@@ -92,7 +126,15 @@ export class RolesPermisosComponent implements OnInit {
     // El codigo queda fijo tras crear el rol (lo reusan usuarios_empresas_rol/JWT).
     const req = actual ? this.rolesSrv.actualizar(actual.id, { nombre: nombre! }) : this.rolesSrv.crear({ codigo: codigo!, nombre: nombre! });
     req.subscribe({
-      next: () => { this.nuevoRol(); this.cargarRoles(); },
+      next: (rolGuardado) => {
+        this.cargarRoles();
+        if (actual) {
+          this.rolSeleccionado.set(rolGuardado);
+          this.formRol.reset({ codigo: rolGuardado.codigo, nombre: rolGuardado.nombre });
+        } else {
+          this.nuevoRol();
+        }
+      },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el rol'),
     });
   }
@@ -167,10 +209,7 @@ export class RolesPermisosComponent implements OnInit {
   }
 
   // ---------- Matriz ----------
-  onCambiarRolMatriz(valor: string): void {
-    const rolId = Number(valor) || null;
-    this.rolMatrizId.set(rolId);
-    if (!rolId) { this.concedidos.set(new Set()); this.concedidosOriginal.set(new Set()); return; }
+  cargarMatrizDeRol(rolId: number): void {
     this.matrizSrv.obtenerDeRol(rolId).subscribe((data) => {
       const set = new Set(data.map((c) => `${c.menu_id}-${c.permiso_id}`));
       this.concedidos.set(set);
@@ -188,6 +227,23 @@ export class RolesPermisosComponent implements OnInit {
     if (set.has(clave)) set.delete(clave);
     else set.add(clave);
     this.concedidos.set(set);
+  }
+
+  // Marca el permiso "Ver" en todas las pantallas (atajo habitual al armar
+  // un rol nuevo desde cero: casi siempre se quiere que vea todo antes de
+  // afinar que puede crear/editar/eliminar).
+  marcarTodosVer(): void {
+    const verId = this.permisosCatalogo().find((p) => p.codigo === 'ver')?.id;
+    if (!verId) return;
+    const set = new Set(this.concedidos());
+    for (const fila of this.filasMatriz()) {
+      if (fila.tipo === 'item') set.add(`${fila.menu.id}-${verId}`);
+    }
+    this.concedidos.set(set);
+  }
+
+  descartarCambiosMatriz(): void {
+    this.concedidos.set(new Set(this.concedidosOriginal()));
   }
 
   // Arma "Menu (permiso), Menu (permiso)" a partir de claves "menuId-permisoId",
@@ -218,16 +274,16 @@ export class RolesPermisosComponent implements OnInit {
   }
 
   guardarMatriz(): void {
-    const rolId = this.rolMatrizId();
-    if (!rolId) return;
+    const rol = this.rolSeleccionado();
+    if (!rol) return;
     const concesiones = Array.from(this.concedidos()).map((clave) => {
       const [menuId, permisoId] = clave.split('-').map(Number);
       return { menuId, permisoId };
     });
-    const rolNombre = this.rolMatrizActivo()?.nombre ?? '';
+    const rolNombre = rol.nombre;
     const detalle = this.describirCambiosMatriz();
     this.guardandoMatriz.set(true);
-    this.matrizSrv.guardarDeRol(rolId, concesiones).subscribe({
+    this.matrizSrv.guardarDeRol(rol.id, concesiones).subscribe({
       next: () => {
         this.guardandoMatriz.set(false);
         this.concedidosOriginal.set(new Set(this.concedidos()));
