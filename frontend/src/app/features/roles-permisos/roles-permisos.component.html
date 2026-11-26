@@ -168,26 +168,49 @@
 
 @if (pestanaActiva() === 'menus') {
   <div class="page-header mt-16">
-    <div class="desc">{{ menusPlano().length }} pantalla(s). Reordena/renombra/oculta, o agrega una nueva entrada al catalogo.</div>
-    <button type="button" class="btn btn-primary" (click)="nuevoMenu()">+ Nuevo menu</button>
+    <div class="desc"><strong>{{ menusFiltrados().length }}</strong> de {{ menusPlano().length }} pantalla(s). Reordena con las flechas, renombra/oculta, o agrega una nueva entrada al catalogo.</div>
+    <div class="flex items-center gap-8">
+      <input
+        class="input menu-search"
+        type="text"
+        placeholder="Buscar por codigo, nombre o ruta..."
+        [ngModel]="filtroMenuTexto()"
+        (ngModelChange)="filtroMenuTexto.set($event)"
+      />
+      <button type="button" class="btn btn-primary" (click)="nuevoMenu()">+ Nuevo menu</button>
+    </div>
   </div>
 
   <div class="table-wrap table-wrap-compact">
-    <table class="data-table">
+    <table class="data-table menu-table">
       <thead>
-        <tr><th>Codigo</th><th>Nombre</th><th>Ruta</th><th>Orden</th><th>Estado</th></tr>
+        <tr><th class="menu-col-orden"></th><th>Codigo</th><th>Nombre</th><th>Ruta</th><th>Orden</th><th>Estado</th></tr>
       </thead>
       <tbody>
-        @for (m of menusPlano(); track m.id) {
+        @for (m of menusFiltrados(); track m.id) {
           <tr class="row-clickable" [class.row-selected]="menuSeleccionado()?.id === m.id" (click)="seleccionarMenu(m)">
-            <td>{{ m.codigo }}</td>
+            <td class="menu-col-orden">
+              <div class="menu-reorder">
+                <button type="button" class="menu-reorder-btn" title="Subir" [disabled]="esPrimeroEnOrden(m)" (click)="$event.stopPropagation(); moverMenu(m, -1)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                </button>
+                <button type="button" class="menu-reorder-btn" title="Bajar" [disabled]="esUltimoEnOrden(m)" (click)="$event.stopPropagation(); moverMenu(m, 1)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              </div>
+            </td>
+            <td><code class="codigo-chip">{{ m.codigo }}</code></td>
             <td>{{ m.nombre }}</td>
-            <td>{{ m.ruta || '-' }}</td>
-            <td>{{ m.orden }}</td>
-            <td><span class="badge" [class.badge-green]="m.activo" [class.badge-slate]="!m.activo">{{ m.activo ? 'Activo' : 'Inactivo' }}</span></td>
+            <td class="menu-ruta">{{ m.ruta || '-' }}</td>
+            <td><span class="orden-chip">{{ m.orden }}</span></td>
+            <td>
+              <span class="estado-pill" [class.estado-pill-activo]="m.activo" [class.estado-pill-inactivo]="!m.activo">
+                <span class="estado-pill-dot"></span>{{ m.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
           </tr>
         } @empty {
-          <tr><td colspan="5"><div class="empty-state">No hay menus registrados.</div></td></tr>
+          <tr><td [attr.colspan]="6"><div class="empty-state">{{ filtroMenuTexto() ? 'Ningun menu coincide con la busqueda.' : 'No hay menus registrados.' }}</div></td></tr>
         }
       </tbody>
     </table>

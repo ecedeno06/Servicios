@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { RolesService } from '../../core/services/roles.service';
 import { MenusAdminService } from '../../core/services/menusAdmin.service';
 import { PermisosCatalogoService } from '../../core/services/permisosCatalogo.service';
@@ -33,6 +34,7 @@ export class RolesPermisosComponent implements OnInit {
   // ---------- Menus (ver nota de alcance mas abajo en guardarMenu/nuevoMenu) ----------
   menuSeleccionado = signal<MenuItem | null>(null);
   creandoMenu = signal(false);
+  filtroMenuTexto = signal('');
   formMenu = this.fb.group({
     codigo: ['', Validators.required],
     nombre: ['', Validators.required],
@@ -41,6 +43,14 @@ export class RolesPermisosComponent implements OnInit {
     padre_id: [''],
     orden: [0],
     activo: [true],
+  });
+
+  menusOrdenados = computed(() => [...this.menusPlano()].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)));
+  menusFiltrados = computed(() => {
+    const texto = this.filtroMenuTexto().trim().toLowerCase();
+    const lista = this.menusOrdenados();
+    if (!texto) return lista;
+    return lista.filter((m) => [m.codigo, m.nombre, m.ruta].some((v) => (v ?? '').toLowerCase().includes(texto)));
   });
 
   // ---------- Matriz (se carga/edita para el rol seleccionado a la izquierda) ----------
@@ -205,6 +215,45 @@ export class RolesPermisosComponent implements OnInit {
     req.subscribe({
       next: () => { this.cancelarMenu(); this.cargarMenus(); },
       error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo guardar el menu'),
+    });
+  }
+
+  esPrimeroEnOrden(m: MenuItem): boolean {
+    const lista = this.menusOrdenados();
+    return lista.length > 0 && lista[0].id === m.id;
+  }
+
+  esUltimoEnOrden(m: MenuItem): boolean {
+    const lista = this.menusOrdenados();
+    return lista.length > 0 && lista[lista.length - 1].id === m.id;
+  }
+
+  // Sube/baja un menu intercambiando su "orden" con el del vecino en ese
+  // sentido (dentro de la lista ya ordenada) -- dos PUT, uno por cada lado
+  // del intercambio. El backend no hace coalesce de "ruta"/"padre_id" (ver
+  // menus.controller.js), asi que hay que reenviar esos campos tal cual
+  // estan hoy o el update los pisaria con null.
+  moverMenu(m: MenuItem, direccion: -1 | 1): void {
+    const lista = this.menusOrdenados();
+    const idx = lista.findIndex((x) => x.id === m.id);
+    const vecino = lista[idx + direccion];
+    if (!vecino) return;
+
+    const payload = (item: MenuItem, nuevoOrden: number) => ({
+      nombre: item.nombre,
+      ruta: item.ruta ?? undefined,
+      icono: item.icono ?? undefined,
+      padre_id: item.padre_id ?? null,
+      orden: nuevoOrden,
+      activo: item.activo ?? true,
+    });
+
+    forkJoin([
+      this.menusSrv.actualizar(Number(m.id), payload(m, vecino.orden ?? 0)),
+      this.menusSrv.actualizar(Number(vecino.id), payload(vecino, m.orden ?? 0)),
+    ]).subscribe({
+      next: () => this.cargarMenus(),
+      error: (err) => this.toast.error(err?.error?.mensaje || 'No se pudo reordenar'),
     });
   }
 
