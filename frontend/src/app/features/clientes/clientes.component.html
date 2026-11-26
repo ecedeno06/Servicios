@@ -1,6 +1,9 @@
 <div class="page-header">
   <div>
-    <h1>Clientes</h1>
+    <div class="flex items-center gap-8">
+      <h1>Clientes</h1>
+      <span class="badge badge-slate">{{ clientes().length }} registrado(s)</span>
+    </div>
     <div class="desc">Empresas o personas a quienes se les presta el servicio</div>
   </div>
   @if (menu.tienePermiso('clientes','editar')) {
@@ -8,7 +11,30 @@
   }
 </div>
 
-<div class="table-wrap">
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="label">Total clientes</div>
+    <div class="value">{{ clientes().length }}</div>
+    <div class="sub">{{ totalActivos() }} activo(s) &middot; {{ totalInactivos() }} inactivo(s)</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Clientes activos</div>
+    <div class="value">{{ totalActivos() }}</div>
+    <div class="sub">{{ pctActivos() }}% del total</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Sin datos de contacto</div>
+    <div class="value">{{ sinContacto() }}</div>
+    <div class="sub">Sin email ni telefono registrado</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Nuevos este mes</div>
+    <div class="value">{{ nuevosEsteMes() }}</div>
+    <div class="sub">Creados en {{ mesActualTexto }}</div>
+  </div>
+</div>
+
+<div class="table-wrap mt-16">
   <table class="data-table">
     <thead>
       <tr>
@@ -30,7 +56,11 @@
         </th>
         <th class="th-narrow">
           <span class="th-sortable" (click)="ordenarPor('activo')">Estado{{ indicadorOrden('activo') }}</span>
-          <input class="input input-th-filtro" type="text" placeholder="Filtrar..." [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" />
+          <select class="input input-th-filtro" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+            <option value="">Todos</option>
+            <option value="activo">Activo ({{ totalActivos() }})</option>
+            <option value="inactivo">Inactivo ({{ totalInactivos() }})</option>
+          </select>
         </th>
         <th>
           @if (hayFiltros()) { <button class="btn btn-outline btn-sm" (click)="limpiarFiltros()">Limpiar</button> }
@@ -40,11 +70,36 @@
     <tbody>
       @for (c of clientesOrdenados(); track c.id) {
         <tr>
-          <td>{{ c.nombre }}</td>
-          <td>{{ c.identificacion || '-' }}</td>
-          <td>{{ c.email || '-' }}</td>
-          <td>{{ c.telefono || '-' }}</td>
-          <td><span class="badge" [class.badge-green]="c.activo" [class.badge-slate]="!c.activo">{{ c.activo ? 'Activo' : 'Inactivo' }}</span></td>
+          <td>
+            <div class="cliente-nombre-cell">
+              <span class="avatar-chip" [ngClass]="colorAvatar(c)">{{ iniciales(c.nombre) }}</span>
+              {{ c.nombre }}
+            </div>
+          </td>
+          <td>
+            @if (c.identificacion) { <code class="codigo-chip">{{ c.identificacion }}</code> } @else { - }
+          </td>
+          <td>
+            @if (c.email) {
+              <a class="cliente-contacto" [href]="'mailto:' + c.email">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path></svg>
+                {{ c.email }}
+              </a>
+            } @else { - }
+          </td>
+          <td>
+            @if (c.telefono) {
+              <span class="cliente-contacto">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                {{ c.telefono }}
+              </span>
+            } @else { - }
+          </td>
+          <td>
+            <span class="badge" [class.badge-green]="c.activo" [class.badge-slate]="!c.activo">
+              <span class="badge-dot"></span>{{ c.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
           <td class="table-actions">
             @if (menu.tienePermiso('clientes','editar')) {
               <button class="btn btn-outline btn-sm" (click)="abrirEditar(c)">Editar</button>

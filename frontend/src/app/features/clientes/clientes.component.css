@@ -1,0 +1,35 @@
+.stat-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+.cliente-nombre-cell { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--text-heading); }
+
+.avatar-chip {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.avatar-teal { background: var(--teal-100); color: var(--teal-600); }
+.avatar-indigo { background: #e0e7ff; color: #4338ca; }
+.avatar-amber { background: var(--amber-100); color: var(--amber-500); }
+.avatar-sky { background: #e0f2fe; color: #0369a1; }
+.avatar-slate { background: var(--bg-surface-muted); color: var(--text-muted); }
+
+.codigo-chip {
+  font-family: monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-body);
+  background: var(--bg-surface-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+}
+
+.cliente-contacto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-body);
+}
+a.cliente-contacto:hover { color: var(--teal-600); }

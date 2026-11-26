@@ -204,8 +204,8 @@
             <td class="menu-ruta">{{ m.ruta || '-' }}</td>
             <td><span class="orden-chip">{{ m.orden }}</span></td>
             <td>
-              <span class="estado-pill" [class.estado-pill-activo]="m.activo" [class.estado-pill-inactivo]="!m.activo">
-                <span class="estado-pill-dot"></span>{{ m.activo ? 'Activo' : 'Inactivo' }}
+              <span class="badge" [class.badge-green]="m.activo" [class.badge-slate]="!m.activo">
+                <span class="badge-dot"></span>{{ m.activo ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
           </tr>

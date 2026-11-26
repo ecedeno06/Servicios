@@ -30,6 +30,15 @@ export class ClientesComponent implements OnInit {
     !!(this.filtroNombre() || this.filtroIdentificacion() || this.filtroEmail() || this.filtroTelefono() || this.filtroEstado())
   );
 
+  // ---------- Metricas rapidas (derivadas de los clientes ya cargados, sin pedir nada nuevo) ----------
+  totalActivos = computed(() => this.clientes().filter((c) => c.activo).length);
+  totalInactivos = computed(() => this.clientes().length - this.totalActivos());
+  pctActivos = computed(() => (this.clientes().length ? Math.round((this.totalActivos() / this.clientes().length) * 100) : 0));
+  sinContacto = computed(() => this.clientes().filter((c) => !c.email && !c.telefono).length);
+  private readonly inicioMesActual = (() => { const hoy = new Date(); return new Date(hoy.getFullYear(), hoy.getMonth(), 1); })();
+  nuevosEsteMes = computed(() => this.clientes().filter((c) => c.created_at && new Date(c.created_at) >= this.inicioMesActual).length);
+  mesActualTexto = new Date().toLocaleDateString('es', { month: 'long', year: 'numeric' });
+
   limpiarFiltros(): void {
     this.filtroNombre.set('');
     this.filtroIdentificacion.set('');
@@ -141,5 +150,23 @@ export class ClientesComponent implements OnInit {
 
     this.toast.exito(`Cliente "${c.nombre}" eliminado correctamente.`);
     this.cargar();
+  }
+
+  iniciales(nombre: string): string {
+    return (nombre || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join('');
+  }
+
+  // Variedad visual del chip de iniciales -- no tiene significado, solo
+  // distingue filas a simple vista (hash estable sobre el id del cliente).
+  private readonly paletaAvatar = ['avatar-teal', 'avatar-indigo', 'avatar-amber', 'avatar-sky', 'avatar-slate'];
+  colorAvatar(c: Cliente): string {
+    let hash = 0;
+    for (const ch of c.id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+    return this.paletaAvatar[hash % this.paletaAvatar.length];
   }
 }

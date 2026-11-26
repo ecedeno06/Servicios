@@ -841,6 +841,7 @@ table.data-table {
 .badge-red { background: var(--red-100); color: var(--red-600); }
 .badge-slate { background: var(--bg-surface-muted); color: var(--text-muted); }
 .badge-red-solid { background: var(--red-600); color: white; text-align: center; }
+.badge-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 6px; }
 
 /* Recuadro de "pegar" para adjuntar una imagen/documento (Servicios,
    Incidentes, Equipos Asignados) -- mismo patron que .selector-foto-paste
