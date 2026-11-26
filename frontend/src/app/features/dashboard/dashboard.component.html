@@ -26,6 +26,72 @@
   </div>
 </div>
 
+<div class="widgets-grid">
+  @if (totalEquipos() > 0) {
+    <div class="card widget-card">
+      <h3 class="widget-title">Equipos Asignados por estado</h3>
+      <div class="widget-sub">{{ totalEquipos() }} equipos en total &middot; {{ equiposConAsignacion() }} con usuario asignado</div>
+      <div class="estado-list">
+        @for (fila of equiposPorEstado(); track fila.estado) {
+          <div class="estado-row">
+            <span class="estado-label">{{ fila.label }}</span>
+            <div class="estado-bar"><div class="estado-fill" [ngClass]="'fill-' + fila.estado" [style.width.%]="fila.pct"></div></div>
+            <span class="estado-count">{{ fila.count }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (carritoPorEstado().length) {
+    <div class="card widget-card">
+      <h3 class="widget-title">Carrito de Compras</h3>
+      <div class="widget-sub">Solicitudes activas (no incluye cerradas)</div>
+      <div class="mini-tiles">
+        @for (fila of carritoPorEstado(); track fila.estado) {
+          <div class="mini-tile">
+            <span class="mini-tile-value">{{ fila.count }}</span>
+            <span class="mini-tile-label">{{ fila.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (horasPorSemana().length) {
+    <div class="card widget-card">
+      <h3 class="widget-title">Horas registradas por semana</h3>
+      <div class="widget-sub">Ultimas 6 semanas (lunes a domingo)</div>
+      <div class="week-chart">
+        @for (s of horasPorSemana(); track s.label) {
+          <div class="week-col">
+            <div class="week-bar-track"><div class="week-bar-fill" [style.height.%]="s.pct"></div></div>
+            <span class="week-value">{{ s.horas | number:'1.0-0' }}</span>
+            <span class="week-label">{{ s.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (actividadReciente().length) {
+    <div class="card widget-card">
+      <h3 class="widget-title">Actividad reciente del inventario</h3>
+      <div class="activity-list">
+        @for (m of actividadReciente(); track m.id) {
+          <div class="activity-item">
+            <div class="activity-main">
+              <span class="activity-equipo">{{ m.equipo_marca }} {{ m.equipo_modelo }}</span>
+              <span class="activity-fecha">{{ m.fecha_cambio | date:'dd/MM HH:mm' }}</span>
+            </div>
+            <div class="activity-desc">{{ descripcionMovimiento(m) }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
 <h2>Consumo de horas por contrato y servicio</h2>
 <p class="desc mt-16" style="margin-bottom:10px;">Bolsas de horas cerca de agotarse aparecen en amarillo o rojo</p>
 

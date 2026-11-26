@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo } from '../models/models';
+import { EquipoAsignado, EquipoChecklistEjecucion, EquipoChecklistEjecucionDetalle, EquipoChecklistItem, EstadoEquipo, ImagenServicioProveedor, MovimientoEquipo, MovimientoEquipoReciente } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class EquiposAsignadosService {
@@ -22,6 +22,12 @@ export class EquiposAsignadosService {
   actualizar(id: string, data: any): Observable<EquipoAsignado> { return this.http.put<EquipoAsignado>(`${this.base}/${id}`, data); }
   eliminar(id: string, password: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`, { body: { password } }); }
   historial(id: string): Observable<MovimientoEquipo[]> { return this.http.get<MovimientoEquipo[]>(`${this.base}/${id}/historial`); }
+
+  // Actividad reciente de TODA la empresa (panel del dashboard) -- no de un
+  // equipo en particular.
+  historialReciente(limit = 10): Observable<MovimientoEquipoReciente[]> {
+    return this.http.get<MovimientoEquipoReciente[]>(`${this.base}/historial-reciente`, { params: { limit } });
+  }
   eliminarHistorial(id: string, historialId: string, password: string): Observable<{ ok: boolean; mensaje: string }> {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/historial/${historialId}`, { body: { password } });
   }

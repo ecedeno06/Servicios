@@ -209,6 +209,11 @@ export interface MovimientoEquipo {
   fecha_cambio: string;
 }
 
+export interface MovimientoEquipoReciente extends MovimientoEquipo {
+  equipo_marca: string;
+  equipo_modelo: string;
+}
+
 export interface UsuarioForm {
   nombre?: string;
   email: string;

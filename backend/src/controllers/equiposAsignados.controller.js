@@ -367,6 +367,28 @@ async function historial(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/equipos-asignados/historial-reciente?limit=10
+// Version "de toda la empresa" de historial() -- para el panel de
+// "Actividad reciente del inventario" del dashboard, que no tiene un
+// equipo particular en pantalla.
+async function historialReciente(req, res, next) {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+    const { rows } = await pool.query(
+      `select h.*, u.nombre as registrado_por_nombre,
+         ea.marca as equipo_marca, ea.modelo as equipo_modelo
+       from equipos_historial h
+       join equipos_asignados ea on ea.id = h.equipo_asignado_id
+       join usuarios u on u.id = h.registrado_por
+       where ea.empresa_id = $1
+       order by h.fecha_cambio desc
+       limit $2`,
+      [req.empresaId, limit]
+    );
+    res.json(rows);
+  } catch (err) { next(err); }
+}
+
 // DELETE /api/equipos-asignados/:id/historial/:historialId
 // Solo super-admin (ver routes.js) -- borrar un movimiento del historico
 // rompe la trazabilidad, asi que se restringe mas alla del permiso normal
@@ -745,7 +767,7 @@ async function notificarEntregaChecklist(req, res, next) {
 }
 
 module.exports = {
-  listar, reporte, crear, actualizar, eliminar, historial, eliminarHistorial, cambiarEstado,
+  listar, reporte, crear, actualizar, eliminar, historial, historialReciente, eliminarHistorial, cambiarEstado,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,
