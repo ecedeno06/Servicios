@@ -43,16 +43,28 @@
     </div>
   }
 
-  @if (equiposPorTipo().length) {
+  @if (totalEquipos() > 0) {
     <div class="card widget-card">
-      <h3 class="widget-title">Equipos Asignados por tipo</h3>
-      <div class="widget-sub">Cantidad de equipos por categoria</div>
+      <div class="widget-header">
+        <div>
+          <h3 class="widget-title">Equipos Asignados por tipo</h3>
+          <div class="widget-sub">Cantidad de equipos por categoria</div>
+        </div>
+        <select class="input widget-filter" [ngModel]="filtroEstadoTipo()" (ngModelChange)="filtroEstadoTipo.set($event)">
+          <option value="">Todos los estados</option>
+          @for (op of estadoEquipoOpciones; track op[0]) {
+            <option [value]="op[0]">{{ op[1] }}</option>
+          }
+        </select>
+      </div>
       <div class="mini-tiles">
         @for (fila of equiposPorTipo(); track fila.label) {
           <div class="mini-tile">
             <span class="mini-tile-value">{{ fila.count }}</span>
             <span class="mini-tile-label">{{ fila.label }}</span>
           </div>
+        } @empty {
+          <p class="text-muted text-sm">Ningun equipo en ese estado.</p>
         }
       </div>
     </div>

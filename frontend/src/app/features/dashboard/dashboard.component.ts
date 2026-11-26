@@ -71,10 +71,18 @@ export class DashboardComponent implements OnInit {
   equiposConAsignacion = computed(() => this.equipos().filter((e) => !!e.asignada_a).length);
 
   // Equipos Asignados por tipo (categoria del producto, ej. Laptop,
-  // Monitor...) -- dimension aparte del estado, en pastillas.
+  // Monitor...) -- dimension aparte del estado, en pastillas. Filtrable por
+  // estado via el <select> del encabezado del widget.
+  estadoEquipoOpciones = Object.entries(ESTADO_EQUIPO_LABEL) as [EstadoEquipo, string][];
+  filtroEstadoTipo = signal<EstadoEquipo | ''>('');
+
   equiposPorTipo = computed(() => {
+    const filtro = this.filtroEstadoTipo();
     const conteos = new Map<string, number>();
-    for (const e of this.equipos()) conteos.set(e.categoria_nombre, (conteos.get(e.categoria_nombre) ?? 0) + 1);
+    for (const e of this.equipos()) {
+      if (filtro && e.estado !== filtro) continue;
+      conteos.set(e.categoria_nombre, (conteos.get(e.categoria_nombre) ?? 0) + 1);
+    }
     return [...conteos.entries()]
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count);

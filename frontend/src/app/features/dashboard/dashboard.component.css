@@ -24,6 +24,20 @@
   margin: 2px 0 14px;
 }
 
+.widget-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.widget-filter {
+  width: auto;
+  max-width: 150px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
 /* ---- Equipos por estado (barras horizontales) ---- */
 .estado-list { display: flex; flex-direction: column; gap: 8px; }
 .estado-row { display: grid; grid-template-columns: 96px 1fr 28px; align-items: center; gap: 8px; }
