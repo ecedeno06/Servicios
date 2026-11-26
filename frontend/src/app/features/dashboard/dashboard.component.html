@@ -29,7 +29,7 @@
 <div class="widgets-grid">
   @if (totalEquipos() > 0) {
     <div class="card widget-card">
-      <h3 class="widget-title">Equipos Asignados por estado</h3>
+      <h3 class="widget-title">Equipos por estado</h3>
       <div class="widget-sub">{{ totalEquipos() }} equipos en total &middot; {{ equiposConAsignacion() }} con usuario asignado</div>
       <div class="estado-list">
         @for (fila of equiposPorEstado(); track fila.estado) {
@@ -47,7 +47,7 @@
     <div class="card widget-card">
       <div class="widget-header">
         <div>
-          <h3 class="widget-title">Equipos Asignados por tipo</h3>
+          <h3 class="widget-title">Equipos por tipo</h3>
           <div class="widget-sub">Cantidad de equipos por categoria</div>
         </div>
         <select class="input widget-filter" [ngModel]="filtroEstadoTipo()" (ngModelChange)="filtroEstadoTipo.set($event)">
