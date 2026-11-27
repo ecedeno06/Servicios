@@ -1650,6 +1650,30 @@ export class ServiciosProveedoresComponent implements OnInit {
     }));
   });
 
+  // Agrupa en "tarjetas" (etiqueta + url) las lineas no vacias donde una
+  // linea de texto va seguida de una linea que es URL -- convencion que ya
+  // se usa a mano al escribir la Observacion (ej. "Acceso al MDM" en una
+  // linea y la URL en la siguiente). Lo que no calza con ese patron (texto
+  // suelto, o una URL sin etiqueta antes) se deja igual que antes, como
+  // "sueltas", para no perder ni romper observaciones viejas que no siguen
+  // esa convencion.
+  tarjetasEnlacesObservacion = computed(() => {
+    const lineas = this.lineasObservacionModal().filter((l) => l.texto.trim() !== '');
+    const tarjetas: { etiqueta: string; url: string }[] = [];
+    const sueltas: { texto: string; esUrl: boolean }[] = [];
+    for (let i = 0; i < lineas.length; i++) {
+      const actual = lineas[i];
+      const siguiente = lineas[i + 1];
+      if (!actual.esUrl && siguiente?.esUrl) {
+        tarjetas.push({ etiqueta: actual.texto.replace(/:\s*$/, '').trim(), url: siguiente.texto.trim() });
+        i++;
+      } else {
+        sueltas.push(actual);
+      }
+    }
+    return { tarjetas, sueltas };
+  });
+
   textoCopiado = signal<string | null>(null);
 
   copiarTexto(texto: string): void {
