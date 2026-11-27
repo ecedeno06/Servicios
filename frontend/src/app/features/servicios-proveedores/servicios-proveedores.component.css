@@ -17,6 +17,14 @@
   height: 100%;
 }
 
+/* Badge de Sector con color estable por nombre (ver colorSector()). */
+.sector-sky { background: #e0f2fe; color: #0369a1; }
+.sector-indigo { background: #e0e7ff; color: #4338ca; }
+.sector-amber { background: var(--amber-100); color: var(--amber-500); }
+.sector-purple { background: #f3e8ff; color: #7e22ce; }
+.sector-teal { background: var(--teal-100); color: var(--teal-600); }
+.sector-rose { background: #ffe4e6; color: #be123c; }
+
 /* Modal "Incidentes, Notas y Adjuntos": con varios incidentes (cada uno
    con su propio historico de notas y adjuntos) el popup puede crecer
    mucho. El mecanismo de alto maximo/scroll (.modal-card-scroll +

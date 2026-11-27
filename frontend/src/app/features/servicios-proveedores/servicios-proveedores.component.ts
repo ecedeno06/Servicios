@@ -2097,6 +2097,17 @@ export class ServiciosProveedoresComponent implements OnInit {
     return secNombreLegacy || '-';
   }
 
+  // Variedad visual del badge de Sector -- el catalogo de sectores no tiene
+  // un campo de color propio, asi que se deriva un color estable (siempre
+  // el mismo para el mismo nombre) con un hash simple, solo para distinguir
+  // sectores a simple vista en la tabla.
+  private readonly paletaSector = ['sector-sky', 'sector-indigo', 'sector-amber', 'sector-purple', 'sector-teal', 'sector-rose'];
+  colorSector(nombre: string): string {
+    let hash = 0;
+    for (const ch of nombre) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+    return this.paletaSector[hash % this.paletaSector.length];
+  }
+
   // El color del badge viene del catalogo (join en el backend), no de un
   // switch fijo -- se gestiona en Configuracion > Estados de Servicio.
   estadoActivoPorDefecto(): string {

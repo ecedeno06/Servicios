@@ -200,7 +200,7 @@
                 <span>{{ s.proveedor_nombre }}</span>
               </span>
             </td>
-            <td><span class="badge badge-slate">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
+            <td><span class="badge" [ngClass]="colorSector(obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector))">{{ obtenerNombreSector(s.proveedor_sector_id, s.proveedor_sector) }}</span></td>
             <td>
               <span class="flex items-center gap-6">
                 @if (s.observacion) {
@@ -365,7 +365,7 @@
                 <div style="font-size: 11px; color: var(--text-muted);">{{ p.descripcion }}</div>
               }
             </td>
-            <td><span class="badge badge-slate">{{ obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector) }}</span></td>
+            <td><span class="badge" [ngClass]="colorSector(obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector))">{{ obtenerNombreSector(p.sector_id, p.sector_nombre || p.sector) }}</span></td>
             <td>
               {{ p.contactos[0]?.nombre || '-' }}
               @if (p.contactos.length > 1) {
