@@ -1751,10 +1751,16 @@ export class ServiciosProveedoresComponent implements OnInit {
   servicioIncidentesInfoActual = signal<ServicioProveedor | null>(null);
   incidentesInfoModal = signal<(ServicioIncidente & { notas: IncidenteNota[]; adjuntos: IncidenteAdjunto[] })[]>([]);
   cargandoIncidentesInfoModal = signal(false);
+  // Imagenes/enlaces generales del servicio (los de la seccion "Imagenes y
+  // Documentos" del formulario, no los de cada incidente) -- se muestran al
+  // final de este modal para que no haya que abrir el formulario de edicion
+  // solo para verlos (mismo fetch que usa el modal de Observacion).
+  imagenesIncidentesModal = signal<ImagenServicioProveedor[]>([]);
 
   abrirModalIncidentesInfo(s: ServicioProveedor): void {
     this.servicioIncidentesInfoActual.set(s);
     this.incidentesInfoModal.set([]);
+    this.imagenesIncidentesModal.set([]);
     this.modalIncidentesInfoAbierta.set(true);
     this.cargandoIncidentesInfoModal.set(true);
     this.serviciosSrv.listarIncidentesConDetalle(s.id).subscribe({
@@ -1764,12 +1770,14 @@ export class ServiciosProveedoresComponent implements OnInit {
       },
       error: () => this.cargandoIncidentesInfoModal.set(false),
     });
+    this.serviciosSrv.listarAdjuntos(s.id).subscribe((data) => this.imagenesIncidentesModal.set(data));
   }
 
   cerrarModalIncidentesInfo(): void {
     this.modalIncidentesInfoAbierta.set(false);
     this.servicioIncidentesInfoActual.set(null);
     this.incidentesInfoModal.set([]);
+    this.imagenesIncidentesModal.set([]);
   }
 
   // "EMPRESA - Servicio - No.Contrato" (cualquiera de las 3 partes se

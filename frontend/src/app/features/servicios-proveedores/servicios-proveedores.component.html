@@ -1013,7 +1013,7 @@
 <!-- MODAL: Notas e Historico de un Incidente (iconboton en la tabla de Incidentes) -->
 @if (modalNotasIncidenteAbierta()) {
   <div class="modal-overlay" (click)="cerrarModalNotasIncidente()">
-    <div class="modal-card modal-card-notas" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-card-notas modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>Notas e Historial</h2>
         <button type="button" class="close" (click)="cerrarModalNotasIncidente()">&times;</button>
@@ -1085,7 +1085,7 @@
       @if (cargandoNotasIncidente()) {
         <div class="desc" style="padding: 16px 0;">Cargando histórico...</div>
       } @else {
-        <div class="notas-historial-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="notas-historial-list modal-scroll-body" style="display: flex; flex-direction: column; gap: 12px;">
           @for (n of notasIncidenteActual(); track n.id) {
             <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
               <div class="flex items-center gap-8" style="justify-content: space-between;">
@@ -1301,12 +1301,13 @@
 <!-- MODAL: ver la Observacion de un servicio -->
 @if (modalObservacionAbierta()) {
   <div class="modal-overlay" (click)="cerrarModalObservacion()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>Observación</h2>
         <button type="button" class="close" (click)="cerrarModalObservacion()">&times;</button>
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioObservacionActual()?.servicio }}</p>
+      <div class="modal-scroll-body">
       <div style="display: flex; flex-direction: column; gap: 6px;">
         @for (linea of lineasObservacionModal(); track $index) {
           @if (linea.esUrl) {
@@ -1353,6 +1354,7 @@
           </div>
         </div>
       }
+      </div>
     </div>
   </div>
 }
@@ -1360,13 +1362,14 @@
 <!-- MODAL: ver los Contactos de un servicio (icono junto a Proveedor) -->
 @if (modalContactosAbierta()) {
   <div class="modal-overlay" (click)="cerrarModalContactos()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>Contactos</h2>
         <button type="button" class="close" (click)="cerrarModalContactos()">&times;</button>
       </div>
       <p class="text-muted text-sm" style="margin: 4px 0 14px;">{{ servicioContactosActual()?.proveedor_nombre }}</p>
 
+      <div class="modal-scroll-body">
       <div class="card" style="margin-bottom: 14px;">
         <label style="font-weight: 600; font-size: 12px;">Información de Contacto del Proveedor</label>
         <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
@@ -1460,6 +1463,7 @@
           }
         </div>
       </div>
+      </div>
 
       @if ((servicioContactosActual()?.contactos || []).length > 0 || (servicioContactosActual()?.proveedor_contactos || []).length > 0) {
         <div class="form-actions" style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
@@ -1481,7 +1485,7 @@
 <!-- MODAL: ver Facturas y sus adjuntos de un servicio (icono junto a Pagado) -->
 @if (modalFacturasInfoAbierta()) {
   <div class="modal-overlay" (click)="cerrarModalFacturasInfo()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-card modal-card-scroll" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h2>Facturas y Adjuntos</h2>
         <button type="button" class="close" (click)="cerrarModalFacturasInfo()">&times;</button>
@@ -1491,7 +1495,7 @@
       @if (cargandoFacturasInfoModal()) {
         <div class="desc" style="padding: 16px 0;">Cargando facturas...</div>
       } @else {
-        <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="modal-scroll-body" style="display: flex; flex-direction: column; gap: 14px;">
           @for (f of facturasInfoModal(); track f.id) {
             <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
               <div class="flex items-center gap-8" style="justify-content: space-between;">
@@ -1664,6 +1668,36 @@
             </div>
           } @empty {
             <div class="empty-state">No hay eventos registrados para este servicio.</div>
+          }
+
+          @if (imagenesIncidentesModal().length > 0) {
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+              <label style="font-weight: 600; font-size: 12px;">Imágenes y Documentos del servicio</label>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                @for (img of imagenesIncidentesModal(); track img.id) {
+                  <div class="flex items-center gap-8" style="justify-content: space-between;">
+                    <div style="overflow-wrap: anywhere;">
+                      @if (img.imagen_base64) {
+                        <div class="text-sm"><strong>{{ tipoArchivoLabel(img.imagen_base64) }}</strong> &middot; {{ tamanoArchivo(img.imagen_base64) }}</div>
+                      } @else if (img.url) {
+                        <div class="text-sm"><strong>Enlace</strong> &middot; <a class="adjunto-enlace" [href]="img.url" target="_blank" rel="noopener">{{ img.url }}</a></div>
+                      }
+                      <div class="text-muted text-sm" style="margin-top: 2px;">
+                        {{ (img.fecha | date:'d-MMM-y h:mm a') | lowercase }} &middot; {{ img.creado_por_nombre }}
+                      </div>
+                      @if (img.descripcion) {
+                        <div class="text-sm" style="margin-top: 2px;">{{ img.descripcion }}</div>
+                      }
+                    </div>
+                    @if (img.imagen_base64) {
+                      <button type="button" class="btn-icon" (click)="abrirAdjunto(img.imagen_base64)" title="Ver en otra pestaña" aria-label="Ver en otra pestaña">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
           }
         </div>
       }

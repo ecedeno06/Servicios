@@ -19,22 +19,10 @@
 
 /* Modal "Incidentes, Notas y Adjuntos": con varios incidentes (cada uno
    con su propio historico de notas y adjuntos) el popup puede crecer
-   mucho -- se fija un alto maximo y el contenido scrollea, dejando el
-   titulo/subtitulo siempre visibles (pedido explicito). */
+   mucho. El mecanismo de alto maximo/scroll (.modal-card-scroll +
+   .modal-scroll-body) ya es global (styles.css); aqui solo se ensancha. */
 .modal-card-scroll {
-  display: flex;
-  flex-direction: column;
-  max-height: 80vh;
   max-width: 720px;
-}
-.modal-card-scroll .modal-scroll-body {
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  scrollbar-width: none;
-}
-.modal-card-scroll .modal-scroll-body::-webkit-scrollbar {
-  display: none;
 }
 
 /* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
@@ -178,24 +166,14 @@
 /* .paste-area vive ahora en styles.css (global) -- la usan tanto este
    componente como Equipos Asignados. */
 
-/* Modal "Notas e Historial" de un incidente: igual que .modal-card-scroll,
-   mas ancho que el .modal-card default (420px). El card completo se limita
-   a la altura de la pantalla (antes podia sobrepasar el margen superior e
-   inferior con varias notas) y solo la lista del historico scrollea,
-   dejando el formulario de arriba siempre visible -- con el scroll oculto
-   visualmente sin perder la funcionalidad (pedido explicito). */
+/* Modal "Notas e Historial" de un incidente: mas ancho que el .modal-card
+   default (420px); el alto maximo/scroll ya lo da .modal-card-scroll +
+   .modal-scroll-body (global, aplicadas junto a esta clase en el html). */
 .modal-card-notas {
   max-width: 720px;
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 32px);
 }
 .notas-historial-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   padding-right: 4px;
-  scrollbar-width: none;
 }
 .notas-historial-list::-webkit-scrollbar {
   display: none;

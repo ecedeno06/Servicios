@@ -944,11 +944,30 @@ textarea.input { resize: vertical; min-height: 60px; }
 .modal-card {
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   background: var(--bg-surface);
   border-radius: 14px;
   box-shadow: var(--shadow-md);
   padding: 22px;
 }
+
+/* Variante para modales con contenido largo (notas, historico, adjuntos):
+   el titulo/subtitulo quedan siempre visibles y solo el cuerpo (el
+   elemento con .modal-scroll-body) scrollea dentro del alto maximo que ya
+   fija .modal-card. Combinar ambas clases: class="modal-card modal-card-scroll". */
+.modal-card-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+.modal-scroll-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: none;
+}
+.modal-scroll-body::-webkit-scrollbar { display: none; }
 
 /* ---------- Login ---------- */
 .auth-screen {
