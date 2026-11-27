@@ -36,7 +36,24 @@
   flex-shrink: 0;
 }
 .obs-section-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.obs-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.obs-section-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+}
+.obs-section-title svg { color: var(--teal-600); flex-shrink: 0; }
+
+.obs-service-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-surface-muted);
+  margin-bottom: 14px;
+}
+.obs-service-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.obs-service-nombre { display: block; font-size: 13px; font-weight: 700; color: var(--text-heading); margin-top: 1px; }
 
 .obs-links-grid { display: flex; flex-direction: column; gap: 8px; }
 .obs-link-card {
@@ -84,9 +101,19 @@
   flex-shrink: 0;
 }
 .obs-attachment-icon-link { background: var(--teal-100); color: var(--teal-600); }
+.obs-attachment-icon-pdf { background: var(--red-100); color: var(--red-600); }
 .obs-attachment-body { min-width: 0; flex: 1; }
 .obs-attachment-title { font-size: 12.5px; font-weight: 700; color: var(--text-heading); }
 .obs-attachment-actions { flex-shrink: 0; }
+
+.obs-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin: 14px -22px -22px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface-muted);
+}
 
 /* Con 5 tarjetas KPI, el minmax de 190px del .stats-grid global deja
    demasiado espacio vacio en pantallas anchas -- se angosta solo aqui

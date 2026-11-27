@@ -1307,24 +1307,32 @@
           <div class="obs-modal-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"/></svg>
           </div>
-          <div>
-            <h2>Observación</h2>
-            <p class="text-muted text-sm" style="margin: 2px 0 0;">{{ servicioObservacionActual()?.servicio }}</p>
-          </div>
+          <h2>Observación</h2>
         </div>
         <button type="button" class="close" (click)="cerrarModalObservacion()">&times;</button>
       </div>
       <div class="modal-scroll-body">
 
+      <div class="obs-service-card">
+        <span class="avatar-chip avatar-teal">{{ inicialesServicio(servicioObservacionActual()?.servicio) }}</span>
+        <div>
+          <span class="obs-service-label">Identificador del Servicio</span>
+          <span class="obs-service-nombre">{{ servicioObservacionActual()?.servicio }}</span>
+        </div>
+      </div>
+
       @if (tarjetasEnlacesObservacion().tarjetas.length > 0) {
         <div class="obs-section-header">
-          <span class="obs-section-title">Enlaces</span>
+          <span class="obs-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1"/></svg>
+            Enlaces de Gestión
+          </span>
           <button
             type="button"
             class="btn-link text-sm"
             (click)="copiarTexto(servicioObservacionActual()!.observacion!)"
           >
-            {{ textoCopiado() === servicioObservacionActual()?.observacion ? 'Copiado' : 'Copiar todo' }}
+            {{ textoCopiado() === servicioObservacionActual()?.observacion ? 'Copiado' : 'Copiar todos los enlaces' }}
           </button>
         </div>
         <div class="obs-links-grid">
@@ -1342,7 +1350,10 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   }
                 </button>
-                <a class="btn btn-outline btn-sm" [href]="t.url" target="_blank" rel="noopener noreferrer">Abrir</a>
+                <a class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" [href]="t.url" target="_blank" rel="noopener noreferrer">
+                  <span>Abrir</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
               </div>
             </div>
           }
@@ -1372,13 +1383,18 @@
 
       @if (imagenesObservacionModal().length > 0) {
         <div class="obs-section-header" style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px;">
-          <span class="obs-section-title">Imágenes y Documentos ({{ imagenesObservacionModal().length }})</span>
+          <span class="obs-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Imágenes y Documentos ({{ imagenesObservacionModal().length }})
+          </span>
         </div>
         <div class="obs-attachments-grid">
           @for (img of imagenesObservacionModal(); track img.id) {
             <div class="obs-attachment-card">
-              <div class="obs-attachment-icon" [class.obs-attachment-icon-link]="!img.imagen_base64">
-                @if (img.imagen_base64) {
+              <div class="obs-attachment-icon" [class.obs-attachment-icon-pdf]="img.imagen_base64?.startsWith('data:application/pdf')" [class.obs-attachment-icon-link]="!img.imagen_base64">
+                @if (img.imagen_base64?.startsWith('data:application/pdf')) {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3C5.34315 3 4 4.34315 4 6V18C4 19.6569 5.34315 21 7 21H17C18.6569 21 20 19.6569 20 18V8.82843C20 8.03278 19.6839 7.26972 19.1213 6.70711L16.2929 3.87868C15.7303 3.31607 14.9672 3 14.1716 3H7ZM6 6C6 5.44772 6.44772 5 7 5H13V9C13 9.55228 13.4477 10 14 10H18V18C18 18.5523 17.5523 19 17 19H7C6.44772 19 6 18.5523 6 18V6ZM15 5.41421L17.5858 8H15V5.41421Z"/></svg>
+                } @else if (img.imagen_base64) {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
                 } @else {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -1412,6 +1428,9 @@
           }
         </div>
       }
+      </div>
+      <div class="obs-modal-footer">
+        <button type="button" class="btn btn-outline" (click)="cerrarModalObservacion()">Cerrar</button>
       </div>
     </div>
   </div>

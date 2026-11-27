@@ -1676,6 +1676,15 @@ export class ServiciosProveedoresComponent implements OnInit {
 
   textoCopiado = signal<string | null>(null);
 
+  inicialesServicio(nombre: string | undefined | null): string {
+    return (nombre || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join('');
+  }
+
   copiarTexto(texto: string): void {
     navigator.clipboard?.writeText(texto.trim()).then(() => {
       this.textoCopiado.set(texto);
