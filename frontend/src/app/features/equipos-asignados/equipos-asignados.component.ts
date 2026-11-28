@@ -44,6 +44,10 @@ export class EquiposAsignadosComponent implements OnInit {
   productos = signal<Producto[]>([]);
   procesadores = signal<Procesador[]>([]);
   proveedores = signal<Proveedor[]>([]);
+  // Sugerencias del selector "Asignado a" (ver migracion 083) -- nombres ya
+  // usados en esta empresa, para evitar que la misma persona quede escrita
+  // de formas distintas de un equipo a otro.
+  personasAsignadas = signal<string[]>([]);
 
   seleccionado = signal<EquipoAsignado | null>(null);
   historial = signal<MovimientoEquipo[]>([]);
@@ -424,6 +428,7 @@ export class EquiposAsignadosComponent implements OnInit {
     this.procesadoresSrv.listar().subscribe((data) => this.procesadores.set(data));
     this.proveedoresSrv.listar().subscribe((data) => this.proveedores.set(data));
     this.checklistsSrv.listar().subscribe((data) => this.checklistItems.set(data));
+    this.srv.listarPersonasAsignadas().subscribe((data) => this.personasAsignadas.set(data));
 
     // Llegada desde una pastilla del Dashboard ("Equipos Asignados por
     // tipo") con ?categoria=...&estado=... -- precarga los filtros por
@@ -900,12 +905,24 @@ export class EquiposAsignadosComponent implements OnInit {
         // Si el equipo afectado es el que esta abierto en el formulario de
         // mantenimiento, se refresca tambien (estado/asignada_a/historico).
         if (this.seleccionado()?.id === actualizado.id) this.abrirParaEditar(actualizado);
+        if (actualizado.asignada_a) this.agregarPersonaAsignadaLocal(actualizado.asignada_a);
       },
       error: (err) => {
         this.guardandoAccion.set(false);
         this.toast.error(err?.error?.mensaje || 'No se pudo cambiar el estado');
       },
     });
+  }
+
+  // Agrega (si no estaba ya, sin distinguir mayusculas) un nombre a las
+  // sugerencias del selector "Asignado a" en memoria -- el backend ya lo
+  // guardo de forma permanente (ver registrarPersonaAsignada en el
+  // controller); esto solo evita tener que recargar la lista para verlo
+  // disponible de inmediato.
+  private agregarPersonaAsignadaLocal(nombre: string): void {
+    const actuales = this.personasAsignadas();
+    if (actuales.some((n) => n.toLowerCase() === nombre.toLowerCase())) return;
+    this.personasAsignadas.set([...actuales, nombre].sort((a, b) => a.localeCompare(b)));
   }
 
   // ---------- Checklist del equipo (ejecuciones) ----------
@@ -990,6 +1007,7 @@ export class EquiposAsignadosComponent implements OnInit {
         this.mostrandoNuevoChecklist.set(false);
         this.cargarChecklistEjecuciones();
         this.abrirChecklistEjecucion(nueva.id);
+        if (nueva.asignado_a) this.agregarPersonaAsignadaLocal(nueva.asignado_a);
       },
       error: (err) => {
         this.guardandoNuevoChecklist.set(false);

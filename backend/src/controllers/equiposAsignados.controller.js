@@ -279,6 +279,33 @@ async function eliminar(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// GET /api/equipos-asignados/personas-asignadas
+// Sugerencias para el selector "Asignado a" (ver migracion 083) -- nombres
+// ya usados en esta empresa, para que el selector ofrezca autocompletar en
+// vez de depender de que cada quien escriba el mismo nombre igual.
+async function listarPersonasAsignadas(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      'select nombre from personas_asignadas where empresa_id = $1 order by nombre asc',
+      [req.empresaId]
+    );
+    res.json(rows.map((r) => r.nombre));
+  } catch (err) { next(err); }
+}
+
+// Agrega (si no existe ya, sin distinguir mayusculas) un nombre al catalogo
+// de sugerencias de "Asignado a" de la empresa -- se llama cada vez que un
+// equipo o un checklist queda asignado a alguien.
+async function registrarPersonaAsignada(empresaId, nombre, usuarioId) {
+  if (!nombre) return;
+  await pool.query(
+    `insert into personas_asignadas (empresa_id, nombre, creado_por)
+     values ($1, $2, $3)
+     on conflict (empresa_id, lower(nombre)) do nothing`,
+    [empresaId, nombre, usuarioId]
+  );
+}
+
 const ESTADOS_VALIDOS = ['en_uso', 'stock', 'reparacion', 'dano', 'descarte', 'vendida'];
 
 // POST /api/equipos-asignados/:id/movimiento  { estado, asignada_a?, observacion?, checklist_ids? }
@@ -315,6 +342,8 @@ async function cambiarEstado(req, res, next) {
        returning id`,
       [estado, asignadaFinal, req.usuario.id, req.params.id, req.empresaId]
     );
+
+    if (asignadaFinal) await registrarPersonaAsignada(req.empresaId, asignadaFinal, req.usuario.id);
 
     let checklistSnapshot = [];
     if (Array.isArray(checklist_ids) && checklist_ids.length > 0) {
@@ -562,6 +591,8 @@ async function crearChecklistEjecucion(req, res, next) {
       [req.params.id, asignadoFinal, fecha || null, req.usuario.id]
     );
 
+    if (asignadoFinal) await registrarPersonaAsignada(req.empresaId, asignadoFinal, req.usuario.id);
+
     const { rows: completo } = await pool.query(
       `select e.id, e.asignado_a, e.fecha, uc.nombre as creado_por_nombre
        from equipo_checklist_ejecuciones e join usuarios uc on uc.id = e.creado_por
@@ -619,10 +650,13 @@ async function actualizarChecklistEjecucion(req, res, next) {
     if (!(await verificarEjecucion(req))) return res.status(404).json({ mensaje: 'Checklist no encontrado' });
 
     const { asignado_a, fecha } = req.body;
+    const asignadoFinal = asignado_a ? asignado_a.trim() : null;
     await pool.query(
       `update equipo_checklist_ejecuciones set asignado_a = $1, fecha = coalesce($2::timestamptz, fecha) where id = $3`,
-      [asignado_a ? asignado_a.trim() : null, fecha || null, req.params.ejecucionId]
+      [asignadoFinal, fecha || null, req.params.ejecucionId]
     );
+
+    if (asignadoFinal) await registrarPersonaAsignada(req.empresaId, asignadoFinal, req.usuario.id);
 
     const { rows } = await pool.query(
       `select e.id, e.asignado_a, e.fecha, uc.nombre as creado_por_nombre
@@ -768,6 +802,7 @@ async function notificarEntregaChecklist(req, res, next) {
 
 module.exports = {
   listar, reporte, crear, actualizar, eliminar, historial, historialReciente, eliminarHistorial, cambiarEstado,
+  listarPersonasAsignadas,
   listarAdjuntos, crearAdjunto, actualizarAdjunto, eliminarAdjunto,
   listarChecklistEjecuciones, crearChecklistEjecucion, obtenerChecklistEjecucion,
   actualizarChecklistEjecucion, eliminarChecklistEjecucion, actualizarChecklistEjecucionItem,

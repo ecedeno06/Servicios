@@ -10,6 +10,7 @@ router.post('/', requirePermiso('equipos_asignados', 'crear'), ctrl.crear);
 router.put('/:id', requirePermiso('equipos_asignados', 'editar'), ctrl.actualizar);
 router.delete('/:id', requirePermiso('equipos_asignados', 'eliminar'), requirePassword, ctrl.eliminar);
 router.get('/historial-reciente', requirePermiso('equipos_asignados', 'ver'), ctrl.historialReciente);
+router.get('/personas-asignadas', requirePermiso('equipos_asignados', 'ver'), ctrl.listarPersonasAsignadas);
 router.get('/:id/historial', requirePermiso('equipos_asignados', 'ver'), ctrl.historial);
 // Borrar un movimiento del historico es mas sensible que el "eliminar"
 // normal de equipos_asignados -- se restringe a super-admin, no al

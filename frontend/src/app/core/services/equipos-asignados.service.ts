@@ -32,6 +32,12 @@ export class EquiposAsignadosService {
     return this.http.delete<{ ok: boolean; mensaje: string }>(`${this.base}/${id}/historial/${historialId}`, { body: { password } });
   }
 
+  // Sugerencias del selector "Asignado a" (ver migracion 083) -- nombres ya
+  // usados en esta empresa.
+  listarPersonasAsignadas(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/personas-asignadas`);
+  }
+
   // Cambio rapido de estado desde el boton-icono de la fila (sin abrir el
   // formulario completo de mantenimiento).
   cambiarEstado(id: string, data: { estado: EstadoEquipo; asignada_a?: string; observacion?: string; checklist_ids?: string[] }): Observable<EquipoAsignado> {
